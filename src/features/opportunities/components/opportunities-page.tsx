@@ -2,6 +2,7 @@
 
 import { Search, SlidersHorizontal } from "lucide-react";
 import { useMemo, useState } from "react";
+import { MotionConfig } from "motion/react";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
@@ -56,7 +57,7 @@ export function OpportunitiesPage() {
       title="Oportunidades"
     >
       <section className="space-y-6">
-        <div className="flex flex-col gap-4 rounded-2xl border bg-card p-4 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-4 rounded-2xl border border-brand-yellow/40 bg-brand-yellow/10 p-4 sm:flex-row sm:items-center">
           <div className="relative flex-1">
             <Search
               aria-hidden="true"
@@ -70,12 +71,13 @@ export function OpportunitiesPage() {
               value={search}
             />
           </div>
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 text-sm font-medium text-brand-black">
             <SlidersHorizontal aria-hidden="true" className="size-4" />
             <span>Filtre por eixo:</span>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button
+              className={category === "Todas" ? "bg-brand-yellow text-brand-black hover:bg-brand-yellow/85" : "border-brand-black/20"}
               onClick={() => setCategory("Todas")}
               size="sm"
               variant={category === "Todas" ? "default" : "outline"}
@@ -84,6 +86,7 @@ export function OpportunitiesPage() {
             </Button>
             {opportunityCategories.map((option) => (
               <Button
+                className={category === option ? "bg-brand-yellow text-brand-black hover:bg-brand-yellow/85" : "border-brand-black/20"}
                 key={option}
                 onClick={() => setCategory(option)}
                 size="sm"
@@ -96,7 +99,7 @@ export function OpportunitiesPage() {
         </div>
 
         <div className="flex items-center justify-between gap-4">
-          <p className="text-sm text-muted-foreground">
+          <p className="text-sm font-medium text-muted-foreground">
             {filteredOpportunities.length} oportunidades encontradas
           </p>
           {registeredIds.size > 0 ? (
@@ -105,18 +108,20 @@ export function OpportunitiesPage() {
         </div>
 
         {filteredOpportunities.length > 0 ? (
-          <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">
-            {filteredOpportunities.map((opportunity) => (
-              <OpportunityCard
-                isRegistered={registeredIds.has(opportunity.id)}
-                key={opportunity.id}
-                onRegister={handleRegister}
-                opportunity={opportunity}
-              />
-            ))}
-          </div>
+          <MotionConfig reducedMotion="user">
+            <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">
+              {filteredOpportunities.map((opportunity) => (
+                <OpportunityCard
+                  isRegistered={registeredIds.has(opportunity.id)}
+                  key={opportunity.id}
+                  onRegister={handleRegister}
+                  opportunity={opportunity}
+                />
+              ))}
+            </div>
+          </MotionConfig>
         ) : (
-          <div className="rounded-2xl border border-dashed p-12 text-center">
+          <div className="rounded-2xl border border-dashed border-brand-yellow/50 bg-brand-yellow/5 p-12 text-center">
             <h2 className="font-semibold">Nenhuma oportunidade encontrada</h2>
             <p className="mt-2 text-sm text-muted-foreground">
               Tente ajustar sua busca ou selecionar outro eixo temático.

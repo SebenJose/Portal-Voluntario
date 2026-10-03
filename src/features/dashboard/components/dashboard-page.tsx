@@ -13,7 +13,7 @@ import { hoursSummary, upcomingActivities } from "../data/dashboard";
 const categoryColors: Record<(typeof hoursSummary)[number]["category"], string> = {
   Ensino: "bg-brand-yellow",
   Pesquisa: "bg-brand-black",
-  Extensão: "bg-[#8a6900]",
+  Extensão: "bg-brand-yellow/55",
 };
 
 export function DashboardPage() {
@@ -27,17 +27,17 @@ export function DashboardPage() {
       title="Meu painel"
     >
       <div className="grid gap-5 xl:grid-cols-[1.4fr_0.6fr]">
-        <Card className="overflow-hidden border-t-4 border-brand-yellow bg-brand-black text-white">
+        <Card className="overflow-hidden border-brand-black bg-brand-black text-white shadow-sm">
           <CardContent className="p-6 sm:p-8">
             <div className="flex flex-col justify-between gap-8 sm:flex-row sm:items-end">
               <div>
-                <p className="text-sm font-medium text-white/75">Banco de horas</p>
+                <p className="text-sm font-medium text-white/70">Banco de horas</p>
                 <p className="mt-2 text-5xl font-semibold tracking-tight">{totalCompleted}h</p>
-                <p className="mt-2 text-sm text-white/75">
+                <p className="mt-2 text-sm text-white/70">
                   de {totalLimit}h possíveis nas atividades acompanhadas
                 </p>
               </div>
-              <div className="rounded-2xl bg-white/10 p-4">
+              <div className="rounded-2xl border border-brand-yellow/30 bg-brand-yellow px-4 py-3 text-brand-black">
                 <CheckCircle2 aria-hidden="true" className="size-7" />
                 <p className="mt-3 text-sm font-medium">Você está no caminho certo!</p>
               </div>
@@ -45,12 +45,12 @@ export function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-brand-yellow/40 bg-brand-yellow/10">
           <CardContent className="flex h-full flex-col justify-between gap-6 p-6">
             <div>
               <div className="flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">Participações</p>
-                <CalendarDays aria-hidden="true" className="size-5 text-primary" />
+                <CalendarDays aria-hidden="true" className="size-5 text-brand-black" />
               </div>
               <p className="mt-3 text-3xl font-semibold">08</p>
             </div>
@@ -63,13 +63,13 @@ export function DashboardPage() {
       </div>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
-        <Card>
+        <Card className="border-brand-yellow/30">
           <CardHeader className="flex-row items-center justify-between space-y-0">
             <div>
               <CardTitle>Horas por eixo</CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">Seu progresso em cada categoria.</p>
             </div>
-            <Clock3 aria-hidden="true" className="size-5 text-muted-foreground" />
+            <Clock3 aria-hidden="true" className="size-5 text-brand-black" />
           </CardHeader>
           <CardContent className="space-y-6">
             {hoursSummary.map((item) => {
@@ -93,13 +93,13 @@ export function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-brand-yellow/30">
           <CardHeader className="flex-row items-center justify-between space-y-0">
             <div>
               <CardTitle>Próximas atividades</CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">O que vem pela frente.</p>
             </div>
-            <CalendarDays aria-hidden="true" className="size-5 text-muted-foreground" />
+            <CalendarDays aria-hidden="true" className="size-5 text-brand-black" />
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -107,7 +107,7 @@ export function DashboardPage() {
                 <div key={activity.id}>
                   {index > 0 ? <Separator className="mb-4" /> : null}
                   <div className="flex gap-3">
-                    <div className="mt-0.5 rounded-lg bg-primary/10 p-2 text-primary">
+                    <div className="mt-0.5 rounded-lg border border-brand-yellow/40 bg-brand-yellow/15 p-2 text-brand-black">
                       <CalendarDays aria-hidden="true" className="size-4" />
                     </div>
                     <div className="min-w-0 flex-1">
@@ -130,10 +130,10 @@ export function DashboardPage() {
         </Card>
       </div>
 
-      <Card className="mt-5">
+      <Card className="mt-5 border-brand-yellow/50 bg-brand-yellow/10">
         <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
-            <div className="rounded-lg bg-secondary p-2 text-secondary-foreground">
+            <div className="rounded-lg border border-brand-yellow/50 bg-brand-yellow/30 p-2 text-brand-black">
               <FileCheck2 aria-hidden="true" className="size-5" />
             </div>
             <div>
