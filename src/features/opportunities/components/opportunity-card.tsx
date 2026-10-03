@@ -16,9 +16,9 @@ type OpportunityCardProps = {
 };
 
 const categoryStyles: Record<Opportunity["category"], string> = {
-  Ensino: "border-brand-yellow bg-brand-yellow/20 text-foreground",
-  Pesquisa: "border-foreground/30 bg-foreground/10 text-foreground",
-  Extensão: "border-[#b58a00] bg-secondary text-secondary-foreground",
+  Ensino: "border-brand-yellow/60 bg-brand-yellow/20 text-brand-black",
+  Pesquisa: "border-brand-black/25 bg-brand-black/5 text-brand-black",
+  Extensão: "border-brand-yellow/40 bg-brand-yellow/10 text-brand-black",
 };
 
 export function OpportunityCard({
@@ -35,14 +35,14 @@ export function OpportunityCard({
       initial={{ opacity: 0, y: 12 }}
       transition={{ duration: 0.25 }}
     >
-      <Card className="flex h-full flex-col overflow-hidden transition-shadow hover:shadow-md">
+      <Card className="flex h-full flex-col overflow-hidden border-brand-yellow/30 transition-[border-color,box-shadow] hover:border-brand-yellow hover:shadow-md">
         <CardHeader className="gap-4">
           <div className="flex items-center justify-between gap-3">
             <Badge className={categoryStyles[opportunity.category]} variant="outline">
               {opportunity.category}
             </Badge>
             {opportunity.featured ? (
-              <span className="text-xs font-medium text-muted-foreground">Destaque</span>
+              <span className="rounded-full bg-brand-yellow px-2.5 py-1 text-xs font-semibold text-brand-black">Destaque</span>
             ) : null}
           </div>
           <div>
@@ -56,19 +56,19 @@ export function OpportunityCard({
 
           <div className="grid gap-3 text-sm text-muted-foreground">
             <span className="flex items-center gap-2">
-              <CalendarDays aria-hidden="true" className="size-4 text-primary" />
+              <CalendarDays aria-hidden="true" className="size-4 text-brand-black" />
               {opportunity.dateLabel}
             </span>
             <span className="flex items-center gap-2">
-              <Clock3 aria-hidden="true" className="size-4 text-primary" />
+              <Clock3 aria-hidden="true" className="size-4 text-brand-black" />
               {opportunity.durationLabel} · {opportunity.hours}h válidas
             </span>
             <span className="flex items-center gap-2">
-              <MapPin aria-hidden="true" className="size-4 text-primary" />
+              <MapPin aria-hidden="true" className="size-4 text-brand-black" />
               {opportunity.format} · {opportunity.location}
             </span>
             <span className="flex items-center gap-2">
-              <Users aria-hidden="true" className="size-4 text-primary" />
+              <Users aria-hidden="true" className="size-4 text-brand-black" />
               {opportunity.enrolled}/{opportunity.vacancies} vagas preenchidas
             </span>
           </div>
