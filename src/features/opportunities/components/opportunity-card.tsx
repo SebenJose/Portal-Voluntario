@@ -16,9 +16,9 @@ type OpportunityCardProps = {
 };
 
 const categoryStyles: Record<Opportunity["category"], string> = {
-  Ensino: "border-sky-200 bg-sky-50 text-sky-700",
-  Pesquisa: "border-violet-200 bg-violet-50 text-violet-700",
-  Extensão: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  Ensino: "border-brand-yellow bg-brand-yellow/20 text-foreground",
+  Pesquisa: "border-foreground/30 bg-foreground/10 text-foreground",
+  Extensão: "border-[#b58a00] bg-secondary text-secondary-foreground",
 };
 
 export function OpportunityCard({

@@ -1,7 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Award,
-  BookOpen,
   CalendarDays,
   Compass,
   LayoutDashboard,
@@ -11,6 +10,8 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
+
+import { PortalBrand } from "@/components/layout/portal-brand";
 
 type AppShellProps = {
   active: "dashboard" | "opportunities";
@@ -54,7 +55,7 @@ function NavigationLink({
       aria-current={isActive ? "page" : undefined}
       className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-colors ${
         isActive
-          ? "bg-primary text-primary-foreground"
+          ? "border-l-4 border-brand-yellow bg-primary pl-2 text-primary-foreground"
           : "text-muted-foreground hover:bg-muted hover:text-foreground"
       }`}
       href={href}
@@ -69,13 +70,8 @@ export function AppShell({ active, children, description, title }: AppShellProps
   return (
     <div className="min-h-screen bg-muted/20">
       <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 flex-col border-r bg-background lg:flex">
-        <div className="flex h-20 items-center border-b px-6">
-          <Link className="flex items-center gap-2 font-semibold tracking-tight" href="/">
-            <span className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <BookOpen aria-hidden="true" className="size-4" />
-            </span>
-            Portal Voluntário
-          </Link>
+        <div className="flex h-24 items-center border-b border-brand-yellow px-5">
+          <PortalBrand stacked />
         </div>
 
         <div className="flex flex-1 flex-col justify-between p-4">
@@ -121,12 +117,9 @@ export function AppShell({ active, children, description, title }: AppShellProps
       </aside>
 
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-10 border-b bg-background/90 backdrop-blur lg:hidden">
+        <header className="sticky top-0 z-10 border-b border-brand-yellow bg-background/90 backdrop-blur lg:hidden">
           <div className="flex h-16 items-center justify-between px-4">
-            <Link className="flex items-center gap-2 font-semibold" href="/">
-              <BookOpen aria-hidden="true" className="size-4 text-primary" />
-              Portal Voluntário
-            </Link>
+            <PortalBrand hideNameOnMobile />
             <Link className="text-sm font-medium text-primary" href="/">
               Sair
             </Link>
@@ -144,9 +137,9 @@ export function AppShell({ active, children, description, title }: AppShellProps
           </nav>
         </header>
 
-        <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
+        <main className="w-full px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
           <div className="mb-8 space-y-2">
-            <p className="text-sm font-medium text-primary">Olá, João 👋</p>
+            <p className="text-sm font-medium text-primary">Olá, João</p>
             <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
             <p className="max-w-2xl text-muted-foreground">{description}</p>
           </div>

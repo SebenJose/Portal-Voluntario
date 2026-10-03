@@ -11,9 +11,9 @@ import { Separator } from "@/components/ui/separator";
 import { hoursSummary, upcomingActivities } from "../data/dashboard";
 
 const categoryColors: Record<(typeof hoursSummary)[number]["category"], string> = {
-  Ensino: "bg-sky-500",
-  Pesquisa: "bg-violet-500",
-  Extensão: "bg-emerald-500",
+  Ensino: "bg-brand-yellow",
+  Pesquisa: "bg-brand-black",
+  Extensão: "bg-[#8a6900]",
 };
 
 export function DashboardPage() {
@@ -27,17 +27,17 @@ export function DashboardPage() {
       title="Meu painel"
     >
       <div className="grid gap-5 xl:grid-cols-[1.4fr_0.6fr]">
-        <Card className="overflow-hidden bg-primary text-primary-foreground">
+        <Card className="overflow-hidden border-t-4 border-brand-yellow bg-brand-black text-white">
           <CardContent className="p-6 sm:p-8">
             <div className="flex flex-col justify-between gap-8 sm:flex-row sm:items-end">
               <div>
-                <p className="text-sm font-medium text-primary-foreground/75">Banco de horas</p>
+                <p className="text-sm font-medium text-white/75">Banco de horas</p>
                 <p className="mt-2 text-5xl font-semibold tracking-tight">{totalCompleted}h</p>
-                <p className="mt-2 text-sm text-primary-foreground/75">
+                <p className="mt-2 text-sm text-white/75">
                   de {totalLimit}h possíveis nas atividades acompanhadas
                 </p>
               </div>
-              <div className="rounded-2xl bg-primary-foreground/10 p-4">
+              <div className="rounded-2xl bg-white/10 p-4">
                 <CheckCircle2 aria-hidden="true" className="size-7" />
                 <p className="mt-3 text-sm font-medium">Você está no caminho certo!</p>
               </div>
@@ -133,7 +133,7 @@ export function DashboardPage() {
       <Card className="mt-5">
         <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
-            <div className="rounded-lg bg-amber-100 p-2 text-amber-700">
+            <div className="rounded-lg bg-secondary p-2 text-secondary-foreground">
               <FileCheck2 aria-hidden="true" className="size-5" />
             </div>
             <div>

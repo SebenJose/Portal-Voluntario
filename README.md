@@ -15,6 +15,16 @@ Frontend do Portal Voluntário, desenvolvido como trabalho da disciplina de Dese
 - MSW para mocks de API;
 - pnpm.
 
+## Identidade visual
+
+O portal usa preto e amarelo como cores principais, seguindo o
+[manual de identidade visual da UTFPR](https://www.utfpr.edu.br/comunicacao/design/manual-de-uso-da-identidade-visual-da-utfpr/).
+A marca horizontal em `public/brand/utfpr-logo-horizontal.png` foi obtida na
+[página oficial de marcas da UTFPR](https://www.utfpr.edu.br/comunicacao/design/marca-da-utfpr/)
+e é exibida sem alterar seus elementos ou proporções. O favicon foi obtido no
+[portal institucional](https://www.utfpr.edu.br/favicon.ico). As cores de interface estão
+centralizadas em `src/app/globals.css`.
+
 ## Desenvolvimento
 
 ```bash

@@ -105,7 +105,7 @@ export function OpportunitiesPage() {
         </div>
 
         {filteredOpportunities.length > 0 ? (
-          <div className="grid gap-5 lg:grid-cols-2">
+          <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">
             {filteredOpportunities.map((opportunity) => (
               <OpportunityCard
                 isRegistered={registeredIds.has(opportunity.id)}
