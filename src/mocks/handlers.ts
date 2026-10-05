@@ -138,4 +138,40 @@ export const handlers = [
       { status: 201 },
     );
   }),
+  http.post("/api/submissions", async ({ request }) => {
+    const formData = await request.formData();
+    const fieldsSchema = z.object({
+      title: z.string().trim().min(5),
+      category: z.enum(["Ensino", "Pesquisa", "Extensão"]),
+      hours: z.coerce.number().int().min(1).max(200),
+      description: z.string().trim().min(10),
+    });
+    const parsedFields = fieldsSchema.safeParse({
+      title: formData.get("title"),
+      category: formData.get("category"),
+      hours: formData.get("hours"),
+      description: formData.get("description"),
+    });
+    const document = formData.get("document");
+
+    if (!parsedFields.success || !(document instanceof File)) {
+      return HttpResponse.json({ message: "Dados inválidos." }, { status: 400 });
+    }
+
+    if (
+      !["application/pdf", "image/jpeg", "image/png"].includes(document.type) ||
+      document.size > 5 * 1024 * 1024
+    ) {
+      return HttpResponse.json({ message: "Arquivo inválido." }, { status: 400 });
+    }
+
+    return HttpResponse.json(
+      {
+        id: crypto.randomUUID().slice(0, 8).toUpperCase(),
+        title: parsedFields.data.title,
+        status: "Em análise",
+      },
+      { status: 201 },
+    );
+  }),
 ] satisfies Array<RequestHandler>;
