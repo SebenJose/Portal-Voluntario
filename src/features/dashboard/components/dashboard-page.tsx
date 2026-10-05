@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, CalendarDays, CheckCircle2, Clock3, FileCheck2 } from "lucide-react";
+import { ArrowUpRight, CalendarDays, CheckCircle2, Clock3 } from "lucide-react";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import type { AuthUser } from "@/features/auth/schemas/session-schema";
 
 import { hoursSummary, upcomingActivities } from "../data/dashboard";
+import { ExternalCertificateForm } from "./external-certificate-form";
 
 const categoryColors: Record<(typeof hoursSummary)[number]["category"], string> = {
   Ensino: "bg-brand-yellow",
@@ -132,24 +133,7 @@ export function DashboardPage({ user }: { user: AuthUser }) {
         </Card>
       </div>
 
-      <Card className="mt-5 border-brand-yellow/50 bg-brand-yellow/10">
-        <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3">
-            <div className="rounded-lg border border-brand-yellow/50 bg-brand-yellow/30 p-2 text-brand-black">
-              <FileCheck2 aria-hidden="true" className="size-5" />
-            </div>
-            <div>
-              <p className="font-medium">Você possui certificados externos?</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Envie seus comprovantes para solicitar a homologação das horas.
-              </p>
-            </div>
-          </div>
-          <Button render={<Link href="#submeter-certificado" />} variant="outline">
-            Submeter certificado
-          </Button>
-        </CardContent>
-      </Card>
+      <ExternalCertificateForm />
     </AppShell>
   );
 }

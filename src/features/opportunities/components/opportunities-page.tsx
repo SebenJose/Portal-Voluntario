@@ -1,7 +1,7 @@
 "use client";
 
 import { Search, SlidersHorizontal } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { MotionConfig } from "motion/react";
 
 import { AppShell } from "@/components/layout/app-shell";
@@ -9,7 +9,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-import { opportunities } from "../data/opportunities";
+import {
+  getOpportunities,
+  OpportunitiesServiceError,
+  registerForOpportunity,
+} from "../services/opportunities";
+import type { Opportunity } from "../types";
 import { OpportunityCard } from "./opportunity-card";
 import { opportunityCategories, type OpportunityCategory } from "../types";
 
@@ -17,6 +22,39 @@ export function OpportunitiesPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<OpportunityCategory | "Todas">("Todas");
   const [registeredIds, setRegisteredIds] = useState<ReadonlySet<string>>(new Set());
+  const [opportunities, setOpportunities] = useState<Array<Opportunity>>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [registeringIds, setRegisteringIds] = useState<ReadonlySet<string>>(new Set());
+  const [registrationError, setRegistrationError] = useState<string | null>(null);
+
+  const loadOpportunities = useCallback(async (signal?: AbortSignal) => {
+    try {
+      const result = await getOpportunities(signal);
+      setOpportunities(result.items);
+      setRegisteredIds(new Set(result.registeredIds));
+    } catch (error: unknown) {
+      if (error instanceof DOMException && error.name === "AbortError") {
+        return;
+      }
+      setLoadError(
+        error instanceof OpportunitiesServiceError
+          ? error.message
+          : "Ocorreu um erro inesperado ao carregar o catálogo.",
+      );
+    } finally {
+      if (!signal?.aborted) {
+        setIsLoading(false);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void Promise.resolve().then(() => loadOpportunities(controller.signal));
+
+    return () => controller.abort();
+  }, [loadOpportunities]);
 
   const filteredOpportunities = useMemo(() => {
     const normalizedSearch = search.trim().toLocaleLowerCase();
@@ -34,20 +72,35 @@ export function OpportunitiesPage() {
 
       return matchesCategory && searchableContent.includes(normalizedSearch);
     });
-  }, [category, search]);
+  }, [category, opportunities, search]);
 
-  function handleRegister(opportunityId: string) {
-    setRegisteredIds((currentIds) => {
-      const nextIds = new Set(currentIds);
+  async function handleRegister(opportunityId: string) {
+    setRegistrationError(null);
+    setRegisteringIds((currentIds) => new Set(currentIds).add(opportunityId));
 
-      if (nextIds.has(opportunityId)) {
+    try {
+      const result = await registerForOpportunity(opportunityId);
+      setRegisteredIds((currentIds) => new Set(currentIds).add(result.opportunityId));
+      setOpportunities((currentOpportunities) =>
+        currentOpportunities.map((opportunity) =>
+          opportunity.id === result.opportunityId
+            ? { ...opportunity, enrolled: result.enrolled }
+            : opportunity,
+        ),
+      );
+    } catch (error: unknown) {
+      setRegistrationError(
+        error instanceof OpportunitiesServiceError
+          ? error.message
+          : "Ocorreu um erro inesperado ao realizar a inscrição.",
+      );
+    } finally {
+      setRegisteringIds((currentIds) => {
+        const nextIds = new Set(currentIds);
         nextIds.delete(opportunityId);
-      } else {
-        nextIds.add(opportunityId);
-      }
-
-      return nextIds;
-    });
+        return nextIds;
+      });
+    }
   }
 
   return (
@@ -100,19 +153,47 @@ export function OpportunitiesPage() {
 
         <div className="flex items-center justify-between gap-4">
           <p className="text-sm font-medium text-muted-foreground">
-            {filteredOpportunities.length} oportunidades encontradas
+            {isLoading ? "Carregando oportunidades..." : `${filteredOpportunities.length} oportunidades encontradas`}
           </p>
           {registeredIds.size > 0 ? (
-            <Badge variant="secondary">{registeredIds.size} inscrição(ões) nesta sessão</Badge>
+            <Badge variant="secondary">{registeredIds.size} inscrição(ões) realizadas</Badge>
           ) : null}
         </div>
 
-        {filteredOpportunities.length > 0 ? (
+        {registrationError ? (
+          <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive" role="alert">
+            {registrationError}
+          </p>
+        ) : null}
+
+        {isLoading ? (
+          <div aria-live="polite" className="rounded-2xl border border-dashed border-brand-yellow/50 bg-white p-12 text-center" role="status">
+            <p className="font-semibold">Buscando oportunidades</p>
+            <p className="mt-2 text-sm text-muted-foreground">Isso pode levar alguns instantes.</p>
+          </div>
+        ) : loadError ? (
+          <div className="rounded-2xl border border-dashed border-destructive/40 bg-white p-12 text-center" role="alert">
+            <h2 className="font-semibold">Não foi possível carregar o catálogo</h2>
+            <p className="mt-2 text-sm text-muted-foreground">{loadError}</p>
+            <Button
+              className="mt-5"
+              onClick={() => {
+                setIsLoading(true);
+                setLoadError(null);
+                void loadOpportunities();
+              }}
+              variant="outline"
+            >
+              Tentar novamente
+            </Button>
+          </div>
+        ) : filteredOpportunities.length > 0 ? (
           <MotionConfig reducedMotion="user">
             <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">
               {filteredOpportunities.map((opportunity) => (
                 <OpportunityCard
                   isRegistered={registeredIds.has(opportunity.id)}
+                  isRegistering={registeringIds.has(opportunity.id)}
                   key={opportunity.id}
                   onRegister={handleRegister}
                   opportunity={opportunity}
