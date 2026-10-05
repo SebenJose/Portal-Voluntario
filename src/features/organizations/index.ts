@@ -1,1 +1,1 @@
-// Componentes, hooks, serviços e tipos relacionados às organizações.
+export { OrganizationManagementPage } from "./components/organization-management-page";

@@ -4,6 +4,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   Award,
   CalendarDays,
+  ClipboardCheck,
   Compass,
   LayoutDashboard,
   LogOut,
@@ -35,6 +36,7 @@ type NavigationItem = {
 const navigationItems: Array<NavigationItem> = [
   { href: "/painel", icon: LayoutDashboard, label: "Meu painel", value: "dashboard" },
   { href: "/oportunidades", icon: Compass, label: "Oportunidades", value: "opportunities" },
+  { href: "/organizacao", icon: ClipboardCheck, label: "Gestão de atividades", value: "organization" },
 ];
 
 const secondaryItems = [
