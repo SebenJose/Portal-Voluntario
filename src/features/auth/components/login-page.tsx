@@ -5,12 +5,12 @@ import { PortalBrand } from "@/components/layout/portal-brand";
 
 import { LoginForm } from "./login-form";
 
-export function LoginPage() {
+export function LoginPage({ nextPath }: { nextPath?: string }) {
   return (
     <main className="min-h-screen bg-zinc-50">
       <div className="grid min-h-screen w-full lg:grid-cols-2">
         <section className="hidden flex-col justify-between border-t-8 border-brand-yellow bg-brand-black p-10 text-white lg:flex">
-          <PortalBrand inverse stacked />
+          <PortalBrand inverse />
           <div className="max-w-md space-y-6">
             <Sparkles aria-hidden="true" className="size-8 text-brand-yellow" />
             <h1 className="text-4xl font-semibold leading-tight">
@@ -31,9 +31,9 @@ export function LoginPage() {
           </Link>
           <div className="w-full">
             <div className="mb-8 lg:hidden">
-              <PortalBrand stacked />
+              <PortalBrand />
             </div>
-            <LoginForm />
+            <LoginForm nextPath={nextPath} />
           </div>
         </section>
       </div>

@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
+import type { AuthUser } from "@/features/auth/schemas/session-schema";
 
 import { hoursSummary, upcomingActivities } from "../data/dashboard";
 
@@ -16,7 +17,7 @@ const categoryColors: Record<(typeof hoursSummary)[number]["category"], string> 
   Extensão: "bg-brand-yellow/55",
 };
 
-export function DashboardPage() {
+export function DashboardPage({ user }: { user: AuthUser }) {
   const totalCompleted = hoursSummary.reduce((total, item) => total + item.completed, 0);
   const totalLimit = hoursSummary.reduce((total, item) => total + item.limit, 0);
 
@@ -25,6 +26,7 @@ export function DashboardPage() {
       active="dashboard"
       description="Acompanhe seu progresso e encontre os próximos passos da sua jornada."
       title="Meu painel"
+      user={user}
     >
       <div className="grid gap-5 xl:grid-cols-[1.4fr_0.6fr]">
         <Card className="overflow-hidden border-brand-black bg-brand-black text-white shadow-sm">
