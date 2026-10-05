@@ -27,6 +27,18 @@ centralizadas em `src/app/globals.css`.
 
 ## Desenvolvimento
 
+Gere uma chave local para assinar sessões e salve o valor em `.env.local` na raiz do projeto:
+
+```bash
+openssl rand -base64 32
+```
+
+```dotenv
+SESSION_SECRET=<cole aqui o valor gerado>
+```
+
+As [credenciais de demonstração](docs/AUTH.md) permitem acessar o painel.
+
 ```bash
 pnpm install
 pnpm dev
