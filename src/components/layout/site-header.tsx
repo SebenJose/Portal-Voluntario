@@ -7,7 +7,7 @@ export function SiteHeader() {
   return (
     <header className="border-b-4 border-yellow-400 bg-black text-white">
       <div className="flex min-h-24 w-full flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 sm:px-6 lg:px-8">
-        <PortalBrand className="text-yellow-400" inverse size="default" />
+        <PortalBrand inverse size="large" />
 
         <nav aria-label="Navegação principal" className="ml-auto flex flex-wrap items-center justify-end gap-1 sm:gap-3">
           <Button
