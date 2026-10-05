@@ -12,6 +12,7 @@ import type { Opportunity } from "../types";
 type OpportunityCardProps = {
   opportunity: Opportunity;
   isRegistered: boolean;
+  isRegistering: boolean;
   onRegister: (opportunityId: string) => void;
 };
 
@@ -24,6 +25,7 @@ const categoryStyles: Record<Opportunity["category"], string> = {
 export function OpportunityCard({
   opportunity,
   isRegistered,
+  isRegistering,
   onRegister,
 }: OpportunityCardProps) {
   const isFull = opportunity.enrolled >= opportunity.vacancies;
@@ -77,11 +79,17 @@ export function OpportunityCard({
         <CardFooter>
           <Button
             className="w-full"
-            disabled={isFull && !isRegistered}
+            disabled={(isFull && !isRegistered) || isRegistered || isRegistering}
             onClick={() => onRegister(opportunity.id)}
             variant={isRegistered ? "secondary" : "default"}
           >
-            {isRegistered ? "Inscrição realizada" : isFull ? "Vagas esgotadas" : "Quero participar"}
+            {isRegistering
+              ? "Inscrevendo..."
+              : isRegistered
+                ? "Inscrição realizada"
+                : isFull
+                  ? "Vagas esgotadas"
+                  : "Quero participar"}
           </Button>
         </CardFooter>
       </Card>
