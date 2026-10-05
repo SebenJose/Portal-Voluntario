@@ -11,6 +11,6 @@ Configure `SESSION_SECRET` no ambiente do servidor com pelo menos 32 caracteres 
 
 A sessão usa um cookie `HttpOnly`, `SameSite=Lax` e assinatura HMAC-SHA-256, expira após oito horas e é validada tanto pelo Proxy quanto no servidor de `/painel`. O atributo `Secure` é aplicado quando a requisição usa HTTPS; em desenvolvimento HTTP local, o cookie não recebe esse atributo para que o fluxo funcione.
 
-`POST /api/auth/login` valida as credenciais e cria a sessão. `GET /api/auth/session` devolve os dados públicos da conta autenticada e não permite cache. `POST /api/auth/logout` expira o cookie e redireciona para a página inicial. A página de login aceita `next` somente como caminho local seguro; caminhos absolutos e destinos externos retornam ao painel.
+`POST /api/auth/login` valida as credenciais e cria a sessão. `GET /api/auth/session` devolve os dados públicos da conta autenticada e não permite cache. `POST /api/auth/logout` expira o cookie e responde `204`; o cliente então navega para a página inicial usando a origem atual. A página de login aceita `next` somente como caminho local seguro; caminhos absolutos e destinos externos retornam ao painel.
 
 Esta conta fixa serve apenas para demonstração e não representa uma integração com cadastro persistente ou um provedor de identidade.
