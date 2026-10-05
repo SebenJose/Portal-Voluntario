@@ -53,7 +53,7 @@ export async function getCurrentUser() {
 export async function logout() {
   let response: Response;
   try {
-    response = await fetch("/api/auth/logout", { method: "POST", redirect: "follow" });
+    response = await fetch("/api/auth/logout", { method: "POST" });
   } catch {
     throw new AuthServiceError("Não foi possível encerrar a sessão. Tente novamente.");
   }
