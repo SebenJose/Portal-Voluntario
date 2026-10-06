@@ -1,15 +1,12 @@
 import { http, HttpResponse, passthrough, type RequestHandler } from "msw";
 import { z } from "zod";
 
-import { opportunities } from "@/features/opportunities/data/opportunities";
 import type { ManagedActivity } from "@/features/organizations/types";
 
 type HealthResponse = {
   status: "ok";
 };
 
-const registeredOpportunityIds = new Set<string>();
-const enrolledCounts = new Map(opportunities.map((opportunity) => [opportunity.id, opportunity.enrolled]));
 const organizationActivities: Array<ManagedActivity> = [
   {
     id: "horta-comunitaria",
@@ -55,41 +52,9 @@ export const handlers = [
       return HttpResponse.json({ message: "Falha simulada ao carregar o catálogo." }, { status: 500 });
     }
 
-    return HttpResponse.json({
-      items: opportunities.map((opportunity) => ({
-        ...opportunity,
-        enrolled: enrolledCounts.get(opportunity.id) ?? opportunity.enrolled,
-      })),
-      registeredIds: Array.from(registeredOpportunityIds),
-    });
+    return passthrough();
   }),
-  http.post("/api/opportunities/:id/registrations", ({ params }) => {
-    const opportunityId = params.id;
-    const opportunity = opportunities.find((item) => item.id === opportunityId);
-
-    if (!opportunity) {
-      return HttpResponse.json({ message: "Oportunidade não encontrada." }, { status: 404 });
-    }
-
-    if (registeredOpportunityIds.has(opportunity.id)) {
-      return HttpResponse.json({ message: "Você já está inscrito nesta oportunidade." }, { status: 409 });
-    }
-
-    const enrolled = enrolledCounts.get(opportunity.id) ?? opportunity.enrolled;
-
-    if (enrolled >= opportunity.vacancies) {
-      return HttpResponse.json({ message: "Não há vagas disponíveis." }, { status: 409 });
-    }
-
-    registeredOpportunityIds.add(opportunity.id);
-    const nextEnrolledCount = enrolled + 1;
-    enrolledCounts.set(opportunity.id, nextEnrolledCount);
-
-    return HttpResponse.json(
-      { opportunityId: opportunity.id, registered: true, enrolled: nextEnrolledCount },
-      { status: 201 },
-    );
-  }),
+  http.post("/api/opportunities/:id/registrations", () => passthrough()),
   http.get("/api/organizations/activities", () => {
     return HttpResponse.json(organizationActivities);
   }),

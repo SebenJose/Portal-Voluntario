@@ -3,11 +3,14 @@
 import { Search, SlidersHorizontal } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { MotionConfig } from "motion/react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import type { AuthUser } from "@/features/auth/schemas/session-schema";
 
 import {
   getOpportunities,
@@ -18,7 +21,8 @@ import type { Opportunity } from "../types";
 import { OpportunityCard } from "./opportunity-card";
 import { opportunityCategories, type OpportunityCategory } from "../types";
 
-export function OpportunitiesPage() {
+export function OpportunitiesPage({ user }: { user: AuthUser | null }) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<OpportunityCategory | "Todas">("Todas");
   const [registeredIds, setRegisteredIds] = useState<ReadonlySet<string>>(new Set());
@@ -75,6 +79,11 @@ export function OpportunitiesPage() {
   }, [category, opportunities, search]);
 
   async function handleRegister(opportunityId: string) {
+    if (!user) {
+      router.push("/entrar?next=%2Foportunidades");
+      return;
+    }
+    if (registeringIds.has(opportunityId) || registeredIds.has(opportunityId)) return;
     setRegistrationError(null);
     setRegisteringIds((currentIds) => new Set(currentIds).add(opportunityId));
 
@@ -89,6 +98,10 @@ export function OpportunitiesPage() {
         ),
       );
     } catch (error: unknown) {
+      if (error instanceof OpportunitiesServiceError && error.status === 401) {
+        router.push("/entrar?next=%2Foportunidades");
+        return;
+      }
       setRegistrationError(
         error instanceof OpportunitiesServiceError
           ? error.message
@@ -108,8 +121,21 @@ export function OpportunitiesPage() {
       active="opportunities"
       description="Encontre atividades que combinam com seus interesses e disponibilidade."
       title="Oportunidades"
+      user={user}
     >
       <section className="space-y-6">
+        {!user ? (
+          <div className="flex flex-col justify-between gap-4 rounded-2xl border border-border bg-white p-5 sm:flex-row sm:items-center">
+            <div>
+              <h2 className="font-semibold">Encontre sua causa. Participe com sua conta.</h2>
+              <p className="mt-1 text-sm text-muted-foreground">Você pode explorar as oportunidades. Para se inscrever, entre ou crie uma conta.</p>
+            </div>
+            <div className="flex shrink-0 flex-wrap gap-2">
+              <Button nativeButton={false} render={<Link href="/entrar?next=%2Foportunidades" />} variant="outline">Entrar</Button>
+              <Button className="bg-brand-yellow text-brand-black hover:bg-brand-yellow/85" nativeButton={false} render={<Link href="/criar-conta?next=%2Foportunidades" />}>Criar conta</Button>
+            </div>
+          </div>
+        ) : null}
         <div className="flex flex-col gap-4 rounded-2xl border border-brand-yellow/40 bg-brand-yellow/10 p-4 sm:flex-row sm:items-center">
           <div className="relative flex-1">
             <Search
@@ -192,6 +218,7 @@ export function OpportunitiesPage() {
             <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">
               {filteredOpportunities.map((opportunity) => (
                 <OpportunityCard
+                  canRegister={Boolean(user)}
                   isRegistered={registeredIds.has(opportunity.id)}
                   isRegistering={registeringIds.has(opportunity.id)}
                   key={opportunity.id}

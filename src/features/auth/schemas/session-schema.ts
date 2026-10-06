@@ -14,8 +14,8 @@ export const sessionPayloadSchema = z.object({
 });
 
 export const loginRequestSchema = z.object({
-  email: z.email("Digite um e-mail válido."),
-  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres."),
+  email: z.string().trim().toLowerCase().pipe(z.email("Digite um e-mail válido.").max(254, "O e-mail é muito longo.")),
+  password: z.string().min(6, "A senha deve ter pelo menos 6 caracteres.").max(128, "Use até 128 caracteres para a senha."),
 });
 
 export type AuthUser = z.infer<typeof authUserSchema>;

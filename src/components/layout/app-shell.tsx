@@ -23,7 +23,7 @@ type AppShellProps = {
   children: ReactNode;
   description: string;
   title: string;
-  user?: AuthUser;
+  user?: AuthUser | null;
 };
 
 type NavigationItem = {
@@ -77,14 +77,14 @@ export function AppShell({ active, children, description, title, user: initialUs
   const [sessionUser, setSessionUser] = useState<AuthUser | null>(null);
   const user = initialUser ?? sessionUser;
   const [sessionStatus, setSessionStatus] = useState<"loading" | "ready" | "error">(
-    initialUser ? "ready" : "loading",
+    initialUser !== undefined ? "ready" : "loading",
   );
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [sessionAttempt, setSessionAttempt] = useState(0);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
-    if (initialUser) return;
+    if (initialUser !== undefined) return;
     let isCurrent = true;
     getCurrentUser()
       .then((currentUser) => {
