@@ -2,6 +2,7 @@
 
 import { CalendarDays, Clock3, MapPin, Users } from "lucide-react";
 import { motion } from "motion/react";
+import Link from "next/link";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ type OpportunityCardProps = {
   isRegistered: boolean;
   isRegistering: boolean;
   onRegister: (opportunityId: string) => void;
+  canRegister: boolean;
 };
 
 const categoryStyles: Record<Opportunity["category"], string> = {
@@ -27,6 +29,7 @@ export function OpportunityCard({
   isRegistered,
   isRegistering,
   onRegister,
+  canRegister,
 }: OpportunityCardProps) {
   const isFull = opportunity.enrolled >= opportunity.vacancies;
 
@@ -77,7 +80,11 @@ export function OpportunityCard({
         </CardContent>
 
         <CardFooter>
-          <Button
+          {!canRegister && !isFull ? (
+            <Button className="w-full" nativeButton={false} render={<Link href="/entrar?next=%2Foportunidades" />} variant="outline">
+              Entre para participar
+            </Button>
+          ) : <Button
             className="w-full"
             disabled={(isFull && !isRegistered) || isRegistered || isRegistering}
             onClick={() => onRegister(opportunity.id)}
@@ -90,7 +97,7 @@ export function OpportunityCard({
                 : isFull
                   ? "Vagas esgotadas"
                   : "Quero participar"}
-          </Button>
+          </Button>}
         </CardFooter>
       </Card>
     </motion.div>

@@ -1,39 +1,9 @@
-import { z } from "zod";
+import { opportunitiesResponseSchema, registrationResponseSchema, type OpportunitiesResponse, type RegistrationResponse } from "@/features/opportunities/schemas/opportunity-schema";
 
-import { opportunityCategories } from "../types";
-
-const opportunitySchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  organization: z.string(),
-  description: z.string(),
-  category: z.enum(opportunityCategories),
-  format: z.enum(["Presencial", "Híbrido", "Online"]),
-  location: z.string(),
-  dateLabel: z.string(),
-  durationLabel: z.string(),
-  hours: z.number(),
-  vacancies: z.number(),
-  enrolled: z.number(),
-  featured: z.boolean().optional(),
-});
-
-const opportunitiesResponseSchema = z.object({
-  items: z.array(opportunitySchema),
-  registeredIds: z.array(z.string()),
-});
-
-const registrationResponseSchema = z.object({
-  opportunityId: z.string(),
-  registered: z.literal(true),
-  enrolled: z.number(),
-});
-
-export type OpportunitiesResponse = z.infer<typeof opportunitiesResponseSchema>;
-export type RegistrationResponse = z.infer<typeof registrationResponseSchema>;
+export type { OpportunitiesResponse, RegistrationResponse } from "@/features/opportunities/schemas/opportunity-schema";
 
 export class OpportunitiesServiceError extends Error {
-  constructor(message: string) {
+  constructor(message: string, readonly status?: number) {
     super(message);
     this.name = "OpportunitiesServiceError";
   }
@@ -76,12 +46,16 @@ export async function registerForOpportunity(opportunityId: string): Promise<Reg
     throw new OpportunitiesServiceError("Não foi possível conectar ao serviço de inscrições. Tente novamente.");
   }
 
+  if (response.status === 401) {
+    throw new OpportunitiesServiceError("Entre na sua conta para se inscrever.", 401);
+  }
+
   if (response.status === 409) {
-    throw new OpportunitiesServiceError("As vagas desta oportunidade foram preenchidas.");
+    throw new OpportunitiesServiceError("Você já está inscrito ou as vagas foram preenchidas.", 409);
   }
 
   if (!response.ok) {
-    throw new OpportunitiesServiceError("Não foi possível concluir a inscrição. Tente novamente.");
+    throw new OpportunitiesServiceError("Não foi possível concluir a inscrição. Tente novamente.", response.status);
   }
 
   const result: unknown = await response.json().catch(() => null);
