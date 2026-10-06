@@ -1,17 +1,18 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { type SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ArrowRight, LockKeyhole, Mail } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { AuthField } from "@/features/auth/components/auth-field";
 import { AuthServiceError, login } from "@/features/auth/services/client-auth";
 import { getSafeRedirectPath } from "@/features/auth/services/safe-redirect";
 
-import { loginSchema, type LoginFormValues } from "../schemas/login-schema";
+import { loginSchema, type LoginFormValues } from "@/features/auth/schemas/login-schema";
 
 export function LoginForm({ nextPath }: { nextPath?: string }) {
   const router = useRouter();
@@ -41,52 +42,48 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
   };
 
   return (
-    <Card className="border-brand-yellow/30 bg-white shadow-xl shadow-brand-black/5">
-      <CardHeader className="space-y-1">
-        <CardTitle className="text-2xl">Bem-vindo de volta</CardTitle>
-        <CardDescription>Entre para acompanhar sua jornada de impacto.</CardDescription>
+    <Card className="gap-8 overflow-visible rounded-2xl bg-white py-8 shadow-xl shadow-brand-black/5 ring-1 ring-brand-black/5 sm:py-10">
+      <CardHeader className="gap-3 px-6 sm:px-8">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+          Seu espaço no portal
+        </p>
+        <h1 className="text-3xl font-semibold leading-tight tracking-tight text-brand-black sm:text-[2rem]" id="login-title">
+          Bem-vindo de volta.
+        </h1>
+        <p className="text-sm leading-6 text-muted-foreground">
+          Entre na sua conta e continue sua jornada de impacto.
+        </p>
       </CardHeader>
-      <CardContent>
-        <form className="space-y-5" noValidate onSubmit={form.handleSubmit(handleLogin)}>
-          <div className="space-y-2">
-            <Label htmlFor="email">E-mail</Label>
-            <Input
-              aria-describedby={form.formState.errors.email ? "email-error" : undefined}
-              aria-invalid={Boolean(form.formState.errors.email)}
-              id="email"
-              autoComplete="username"
-              type="email"
-              {...form.register("email")}
-            />
-            {form.formState.errors.email ? (
-              <p className="text-sm text-destructive" id="email-error">
-                {form.formState.errors.email.message}
-              </p>
-            ) : null}
-          </div>
+      <CardContent className="px-6 sm:px-8">
+        <form aria-busy={form.formState.isSubmitting} className="space-y-6" noValidate onSubmit={form.handleSubmit(handleLogin)}>
+          <AuthField
+            autoCapitalize="none"
+            autoComplete="username"
+            disabled={form.formState.isSubmitting}
+            error={form.formState.errors.email?.message}
+            icon={Mail}
+            id="email"
+            label="E-mail"
+            placeholder="voce@exemplo.com"
+            spellCheck={false}
+            type="email"
+            {...form.register("email")}
+          />
+          <AuthField
+            autoComplete="current-password"
+            disabled={form.formState.isSubmitting}
+            error={form.formState.errors.password?.message}
+            icon={LockKeyhole}
+            id="password"
+            label="Senha"
+            placeholder="Digite sua senha"
+            type="password"
+            {...form.register("password")}
+          />
 
-          <div className="space-y-2">
-            <div className="flex items-center justify-between gap-4">
-              <Label htmlFor="password">Senha</Label>
-              <span className="text-xs text-muted-foreground">Conta de demonstração</span>
-            </div>
-            <Input
-              aria-describedby={form.formState.errors.password ? "password-error" : undefined}
-              aria-invalid={Boolean(form.formState.errors.password)}
-              id="password"
-              autoComplete="current-password"
-              type="password"
-              {...form.register("password")}
-            />
-            {form.formState.errors.password ? (
-              <p className="text-sm text-destructive" id="password-error">
-                {form.formState.errors.password.message}
-              </p>
-            ) : null}
-          </div>
-
-          <Button aria-busy={form.formState.isSubmitting} className="w-full bg-brand-yellow font-semibold text-brand-black hover:bg-brand-yellow/85" disabled={form.formState.isSubmitting} type="submit">
+          <Button aria-busy={form.formState.isSubmitting} className="h-13 w-full justify-between rounded-xl bg-brand-yellow px-5 text-sm font-semibold text-brand-black hover:bg-brand-yellow/85" disabled={form.formState.isSubmitting} type="submit">
             {form.formState.isSubmitting ? "Entrando…" : form.formState.errors.root?.server ? "Tentar novamente" : "Entrar no portal"}
+            <ArrowRight aria-hidden="true" className="size-4" />
           </Button>
 
           {form.formState.errors.root?.server ? (
@@ -96,8 +93,11 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
           ) : null}
         </form>
 
-        <p className="mt-6 rounded-lg border border-brand-yellow/50 bg-brand-yellow/10 px-3 py-2 text-sm text-brand-black">
-          Demonstração: <span className="font-semibold">rh@portalvoluntario.dev</span> / <span className="font-semibold">Voluntario2026!</span>
+        <p className="mt-7 border-t border-border pt-6 text-center text-sm leading-6 text-muted-foreground">
+          Ainda não tem uma conta?{" "}
+          <Link className="rounded-sm font-semibold text-brand-black underline decoration-brand-yellow decoration-2 underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring" href={`/criar-conta?next=${encodeURIComponent(destination)}`}>
+            Crie sua conta
+          </Link>
         </p>
       </CardContent>
     </Card>
