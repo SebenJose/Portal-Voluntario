@@ -12,8 +12,12 @@ Para adicionar um novo endpoint:
 4. Mantenha o serviço da feature independente do mock para que a troca pelo backend real não exija
    alterações nos componentes.
 
-O catálogo usa `GET /api/opportunities` e `POST /api/opportunities/:id/registrations`. O mock mantém
-as inscrições e a contagem de vagas durante a sessão de desenvolvimento; respostas `404` e `409`
-representam oportunidade inexistente, duplicidade de inscrição e falta de vagas.
+O catálogo usa `GET /api/opportunities` e `POST /api/opportunities/:id/registrations`. O MSW libera
+o fluxo padrão para os Route Handlers locais, que usam fixtures validadas e persistem inscrições
+por usuário. O servidor exige sessão válida para inscrições: `401` representa sessão ausente ou
+expirada; `404` e `409` representam oportunidade inexistente, duplicidade e falta de vagas.
 Para revisar estados de lista vazia ou erro de servidor, consulte `/api/opportunities?scenario=empty`
 ou `/api/opportunities?scenario=server-error`.
+
+As rotas `/api/auth/*` também passam para o servidor. Não simule cookies ou autenticação no
+navegador, pois isso permitiria contornar a proteção das inscrições.

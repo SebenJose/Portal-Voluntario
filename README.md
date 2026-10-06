@@ -37,7 +37,8 @@ openssl rand -base64 32
 SESSION_SECRET=<cole aqui o valor gerado>
 ```
 
-As [credenciais de demonstração](docs/AUTH.md) permitem acessar o painel.
+Crie uma conta em `/criar-conta` para acessar o painel e se inscrever nas oportunidades.
+As contas e inscrições usam armazenamento local no servidor; veja [contas e acesso](docs/AUTH.md).
 
 ```bash
 pnpm install
