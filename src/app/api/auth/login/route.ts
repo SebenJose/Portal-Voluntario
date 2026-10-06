@@ -1,11 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { authenticateDemoUser } from "@/features/auth/services/demo-credentials";
-import {
-  createSessionToken,
-  SESSION_COOKIE_NAME,
-  SESSION_DURATION_SECONDS,
-} from "@/features/auth/services/session";
+import { authenticateAccount } from "@/features/auth/services/accounts";
+import { authResponse } from "@/features/auth/services/auth-response";
+import { createSessionToken } from "@/features/auth/services/session";
 import { loginRequestSchema } from "@/features/auth/schemas/session-schema";
 
 export async function POST(request: NextRequest) {
@@ -21,24 +18,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Confira o e-mail e a senha informados." }, { status: 400 });
   }
 
-  const user = authenticateDemoUser(credentials.data);
-  if (!user) {
-    return NextResponse.json({ error: "E-mail ou senha incorretos." }, { status: 401 });
-  }
-
   try {
+    const user = await authenticateAccount(credentials.data);
+    if (!user) {
+      return NextResponse.json({ error: "E-mail ou senha incorretos." }, { status: 401 });
+    }
     const session = await createSessionToken(user);
-    const response = NextResponse.json({ user });
-    response.cookies.set(SESSION_COOKIE_NAME, session.token, {
-      httpOnly: true,
-      secure: new URL(request.url).protocol === "https:",
-      sameSite: "lax",
-      path: "/",
-      maxAge: SESSION_DURATION_SECONDS,
-      expires: session.expiresAt,
-    });
-    return response;
+    return authResponse(request, user, session);
   } catch {
-    return NextResponse.json({ error: "O serviço de acesso não está configurado." }, { status: 500 });
+    return NextResponse.json({ error: "O serviço de acesso está indisponível. Tente novamente." }, { status: 500 });
   }
 }

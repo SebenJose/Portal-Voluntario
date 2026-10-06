@@ -1,6 +1,7 @@
 import { z } from "zod";
 
 import { authUserSchema, loginRequestSchema, type LoginRequest } from "@/features/auth/schemas/session-schema";
+import { registrationSchema, type RegistrationValues } from "@/features/auth/schemas/registration-schema";
 
 const authResponseSchema = z.object({ user: authUserSchema });
 const errorResponseSchema = z.object({ error: z.string().min(1) });
@@ -14,12 +15,20 @@ export class AuthServiceError extends Error {
 
 export async function login(credentials: LoginRequest) {
   const validatedCredentials = loginRequestSchema.parse(credentials);
+  return submitAuth("/api/auth/login", validatedCredentials);
+}
+
+export async function registerAccount(values: RegistrationValues) {
+  return submitAuth("/api/auth/register", registrationSchema.parse(values));
+}
+
+async function submitAuth(url: string, values: LoginRequest | RegistrationValues) {
   let response: Response;
   try {
-    response = await fetch("/api/auth/login", {
+    response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(validatedCredentials),
+      body: JSON.stringify(values),
     });
   } catch {
     throw new AuthServiceError("Não foi possível conectar. Verifique sua internet e tente novamente.");
@@ -28,7 +37,7 @@ export async function login(credentials: LoginRequest) {
   const body: unknown = await response.json().catch(() => null);
   if (!response.ok) {
     const error = errorResponseSchema.safeParse(body);
-    throw new AuthServiceError(error.success ? error.data.error : "Não foi possível entrar. Tente novamente.");
+    throw new AuthServiceError(error.success ? error.data.error : "Não foi possível concluir a solicitação. Tente novamente.");
   }
   const parsedBody = authResponseSchema.safeParse(body);
   if (!parsedBody.success) throw new AuthServiceError("A resposta do serviço de acesso é inválida.");

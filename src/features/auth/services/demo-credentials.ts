@@ -11,6 +11,10 @@ const demoCredential = {
   } satisfies AuthUser,
 };
 
+export function isDemoEmail(email: string): boolean {
+  return email.trim().toLowerCase() === demoCredential.email;
+}
+
 export function authenticateDemoUser(credentials: LoginRequest): AuthUser | null {
   if (
     credentials.email.trim().toLocaleLowerCase("pt-BR") !== demoCredential.email ||

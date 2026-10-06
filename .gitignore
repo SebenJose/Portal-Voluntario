@@ -20,6 +20,9 @@
 # production
 /build
 
+# Local account and registration data
+/.local-data/
+
 # misc
 .DS_Store
 *.pem
