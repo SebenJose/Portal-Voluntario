@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import type { AuthUser } from "@/features/auth/schemas/session-schema";
 
 import {
   dispatchActivityCertificates,
@@ -25,7 +26,7 @@ const statusStyles: Record<AttendanceStatus, string> = {
   Ausente: "border-red-800/20 bg-red-50 text-red-900",
 };
 
-export function OrganizationManagementPage() {
+export function OrganizationManagementPage({ user }: { user: AuthUser }) {
   const [activities, setActivities] = useState<Array<ManagedActivity>>([]);
   const [activeActivityId, setActiveActivityId] = useState("");
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set());
@@ -190,6 +191,7 @@ export function OrganizationManagementPage() {
       active="organization"
       description="Confirme a frequência e prepare os certificados de quem participou."
       title="Gestão de atividades"
+      user={user}
     >
       {isLoading ? (
         <div className="rounded-2xl border border-dashed border-brand-yellow/50 bg-white p-12 text-center" role="status">
