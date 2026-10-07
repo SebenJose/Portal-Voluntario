@@ -8,8 +8,6 @@ import {
   Compass,
   LayoutDashboard,
   LogOut,
-  Settings,
-  UserRound,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
@@ -40,10 +38,8 @@ const navigationItems: Array<NavigationItem> = [
 ];
 
 const secondaryItems = [
-  { href: "#minhas-atividades", icon: CalendarDays, label: "Minhas atividades" },
-  { href: "#certificados", icon: Award, label: "Certificados" },
-  { href: "#perfil", icon: UserRound, label: "Meu perfil" },
-  { href: "#configuracoes", icon: Settings, label: "Configurações" },
+  { href: "/painel#minhas-atividades", icon: CalendarDays, label: "Minhas atividades" },
+  { href: "/painel#certificados", icon: Award, label: "Certificados" },
 ];
 
 function NavigationLink({
@@ -234,7 +230,6 @@ export function AppShell({ active, children, description, title, user: initialUs
             </p>
           ) : null}
           <div className="mb-8 space-y-2">
-            <p className="inline-flex rounded-full border border-brand-yellow/50 bg-brand-yellow/15 px-3 py-1 text-sm font-semibold text-brand-black">{user ? `Olá, ${displayName}` : "Explore como visitante"}</p>
             <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
             <p className="max-w-2xl text-muted-foreground">{description}</p>
           </div>
