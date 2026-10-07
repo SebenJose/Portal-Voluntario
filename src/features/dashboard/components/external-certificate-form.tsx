@@ -54,7 +54,7 @@ export function ExternalCertificateForm() {
 
   if (receipt) {
     return (
-      <Card className="mt-5 border-emerald-700/25 bg-emerald-50">
+      <Card className="mt-5 border-emerald-700/25 bg-emerald-50" id="certificados">
         <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <div className="rounded-lg bg-white p-2 text-emerald-800">
@@ -79,7 +79,7 @@ export function ExternalCertificateForm() {
   }
 
   return (
-    <Card className="mt-5 border-brand-yellow/50" id="submeter-certificado">
+    <Card className="mt-5 border-brand-yellow/50" id="certificados">
       <CardHeader>
         <CardTitle>Submeter certificado externo</CardTitle>
         <CardDescription>

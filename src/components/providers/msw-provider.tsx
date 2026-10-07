@@ -3,6 +3,8 @@
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
 
+import { PublicRouteSkeleton } from "@/components/layout/route-loading-skeletons";
+
 type MswProviderProps = {
   children: ReactNode;
 };
@@ -84,9 +86,5 @@ export function MswProvider({ children }: MswProviderProps) {
     );
   }
 
-  return (
-    <main aria-live="polite" className="flex min-h-screen items-center justify-center bg-zinc-50 px-6 py-12" role="status">
-      <p className="text-lg font-medium text-zinc-700">Preparando a demonstração…</p>
-    </main>
-  );
+  return <PublicRouteSkeleton title="Portal Voluntário" />;
 }

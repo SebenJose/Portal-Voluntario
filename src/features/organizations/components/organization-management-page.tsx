@@ -4,10 +4,12 @@ import { CheckCheck, Mail, Users } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { AppShell } from "@/components/layout/app-shell";
+import { OrganizationDataSkeleton } from "@/components/layout/route-loading-skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import type { AuthUser } from "@/features/auth/schemas/session-schema";
 
 import {
   dispatchActivityCertificates,
@@ -25,7 +27,7 @@ const statusStyles: Record<AttendanceStatus, string> = {
   Ausente: "border-red-800/20 bg-red-50 text-red-900",
 };
 
-export function OrganizationManagementPage() {
+export function OrganizationManagementPage({ user }: { user: AuthUser }) {
   const [activities, setActivities] = useState<Array<ManagedActivity>>([]);
   const [activeActivityId, setActiveActivityId] = useState("");
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set());
@@ -190,11 +192,10 @@ export function OrganizationManagementPage() {
       active="organization"
       description="Confirme a frequência e prepare os certificados de quem participou."
       title="Gestão de atividades"
+      user={user}
     >
       {isLoading ? (
-        <div className="rounded-2xl border border-dashed border-brand-yellow/50 bg-white p-12 text-center" role="status">
-          Carregando atividades e participantes...
-        </div>
+        <OrganizationDataSkeleton />
       ) : error && activities.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-destructive/40 bg-white p-12 text-center" role="alert">
           <p className="font-semibold">Não foi possível carregar a gestão de atividades</p>

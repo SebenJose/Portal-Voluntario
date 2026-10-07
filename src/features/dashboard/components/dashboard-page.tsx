@@ -15,7 +15,7 @@ import { ExternalCertificateForm } from "./external-certificate-form";
 const categoryColors: Record<(typeof hoursSummary)[number]["category"], string> = {
   Ensino: "bg-brand-yellow",
   Pesquisa: "bg-brand-black",
-  Extensão: "bg-brand-yellow/55",
+  Extensão: "bg-emerald-600",
 };
 
 export function DashboardPage({ user }: { user: AuthUser }) {
@@ -57,7 +57,7 @@ export function DashboardPage({ user }: { user: AuthUser }) {
               </div>
               <p className="mt-3 text-3xl font-semibold">08</p>
             </div>
-            <Button render={<Link href="/oportunidades" />} variant="outline">
+            <Button nativeButton={false} render={<Link href="/oportunidades" />} variant="outline">
               Encontrar oportunidade
               <ArrowUpRight aria-hidden="true" />
             </Button>
@@ -89,14 +89,14 @@ export function DashboardPage({ user }: { user: AuthUser }) {
                       {item.completed}h / {item.limit}h
                     </span>
                   </div>
-                  <Progress value={percentage} />
+                  <Progress indicatorClassName={categoryColors[item.category]} value={percentage} />
                 </div>
               );
             })}
           </CardContent>
         </Card>
 
-        <Card className="border-brand-yellow/30">
+        <Card className="scroll-mt-24 border-brand-yellow/30" id="minhas-atividades">
           <CardHeader className="flex-row items-center justify-between space-y-0">
             <div>
               <CardTitle>Próximas atividades</CardTitle>
@@ -110,8 +110,8 @@ export function DashboardPage({ user }: { user: AuthUser }) {
                 <div key={activity.id}>
                   {index > 0 ? <Separator className="mb-4" /> : null}
                   <div className="flex gap-3">
-                    <div className="mt-0.5 rounded-lg border border-brand-yellow/40 bg-brand-yellow/15 p-2 text-brand-black">
-                      <CalendarDays aria-hidden="true" className="size-4" />
+                    <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-yellow/20 text-brand-black ring-1 ring-brand-yellow/40">
+                      <CalendarDays aria-hidden="true" className="size-5" />
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="font-medium leading-5">{activity.title}</p>

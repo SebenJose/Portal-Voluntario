@@ -1,12 +1,7 @@
-import { cookies } from "next/headers";
-import { redirect } from "next/navigation";
-
 import { DashboardPage } from "@/features/dashboard";
-import { SESSION_COOKIE_NAME, verifySessionToken } from "@/features/auth/services/session";
+import { requireAuthenticatedUser } from "@/features/auth/services/server-session";
 
 export default async function Page() {
-  const cookieStore = await cookies();
-  const user = await verifySessionToken(cookieStore.get(SESSION_COOKIE_NAME)?.value);
-  if (!user) redirect("/entrar?next=%2Fpainel");
+  const user = await requireAuthenticatedUser("/painel");
   return <DashboardPage user={user} />;
 }
