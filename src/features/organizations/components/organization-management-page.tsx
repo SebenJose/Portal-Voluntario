@@ -4,6 +4,7 @@ import { CheckCheck, Mail, Users } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { AppShell } from "@/components/layout/app-shell";
+import { OrganizationDataSkeleton } from "@/components/layout/route-loading-skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -194,9 +195,7 @@ export function OrganizationManagementPage({ user }: { user: AuthUser }) {
       user={user}
     >
       {isLoading ? (
-        <div className="rounded-2xl border border-dashed border-brand-yellow/50 bg-white p-12 text-center" role="status">
-          Carregando atividades e participantes...
-        </div>
+        <OrganizationDataSkeleton />
       ) : error && activities.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-destructive/40 bg-white p-12 text-center" role="alert">
           <p className="font-semibold">Não foi possível carregar a gestão de atividades</p>

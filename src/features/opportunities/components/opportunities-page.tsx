@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 import { AppShell } from "@/components/layout/app-shell";
+import { OpportunityGridSkeleton } from "@/components/layout/route-loading-skeletons";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -193,10 +194,7 @@ export function OpportunitiesPage({ user }: { user: AuthUser | null }) {
         ) : null}
 
         {isLoading ? (
-          <div aria-live="polite" className="rounded-2xl border border-dashed border-brand-yellow/50 bg-white p-12 text-center" role="status">
-            <p className="font-semibold">Buscando oportunidades</p>
-            <p className="mt-2 text-sm text-muted-foreground">Isso pode levar alguns instantes.</p>
-          </div>
+          <OpportunityGridSkeleton />
         ) : loadError ? (
           <div className="rounded-2xl border border-dashed border-destructive/40 bg-white p-12 text-center" role="alert">
             <h2 className="font-semibold">Não foi possível carregar o catálogo</h2>
