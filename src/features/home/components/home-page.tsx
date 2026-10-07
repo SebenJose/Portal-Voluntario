@@ -1,138 +1,80 @@
+import { ArrowRight, Compass, GraduationCap, Users } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
-import { SiteHeader } from "@/components/layout/site-header";
+import { AnimatedBlock } from "@/features/home/components/home-motion";
+import { HomeHeader } from "@/features/home/components/home-header";
+import { HomeHeroVisual } from "@/features/home/components/home-hero-visual";
+import { VolunteerCta } from "@/features/home/components/volunteer-cta";
 
-import { AnimatedBlock } from "./home-motion";
-import { VolunteerCta } from "./volunteer-cta";
+type HomeBenefit = {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+};
 
-const highlights = [
-  {
-    title: "Encontre oportunidades",
-    description: "Descubra iniciativas alinhadas aos seus interesses e à sua disponibilidade.",
-  },
-  {
-    title: "Conecte pessoas",
-    description: "Organizações e voluntários trabalham juntos para transformar comunidades.",
-  },
-  {
-    title: "Acompanhe seu impacto",
-    description: "Tenha uma visão clara das atividades e contribuições realizadas.",
-  },
+const benefits: HomeBenefit[] = [
+  { icon: Compass, title: "Uma causa que combina com você", description: "Encontre oportunidades alinhadas aos seus interesses e à sua disponibilidade." },
+  { icon: Users, title: "Conexões que vão além do campus", description: "Conheça pessoas e organizações que também querem fazer a diferença." },
+  { icon: GraduationCap, title: "Experiências que ficam com você", description: "Aprenda na prática e acompanhe suas atividades, horas e certificados." },
 ];
 
 const steps = [
-  {
-    number: "01",
-    title: "Crie seu perfil",
-    description: "Conte um pouco sobre você e as causas que importam.",
-    cardClassName: "border-zinc-900 bg-gradient-to-br from-zinc-50 to-zinc-100 text-zinc-950",
-    numberClassName: "text-zinc-950 drop-shadow-[0_2px_0_#ffcc00]",
-    descriptionClassName: "text-zinc-600",
-  },
-  {
-    number: "02",
-    title: "Encontre seu lugar",
-    description: "Explore oportunidades que combinam com seu momento.",
-    cardClassName: "border-yellow-400 bg-gradient-to-br from-yellow-50 to-amber-100/70 text-zinc-950",
-    numberClassName: "text-zinc-950 drop-shadow-[0_2px_0_#ffffff]",
-    descriptionClassName: "text-zinc-700",
-  },
-  {
-    number: "03",
-    title: "Faça acontecer",
-    description: "Participe, acompanhe seu impacto e inspire outras pessoas.",
-    cardClassName: "border-zinc-900 bg-gradient-to-br from-zinc-50 to-stone-100 text-zinc-950",
-    numberClassName: "text-zinc-950 drop-shadow-[0_2px_0_#ffcc00]",
-    descriptionClassName: "text-zinc-600",
-  },
+  { number: "01", title: "Conte sua história", description: "Crie seu perfil e apresente seus interesses." },
+  { number: "02", title: "Encontre sua causa", description: "Explore as oportunidades e escolha onde participar." },
+  { number: "03", title: "Faça a diferença", description: "Participe e acompanhe cada conquista da sua jornada." },
 ];
 
 export function HomePage() {
   return (
-    <div className="min-h-screen bg-background">
-      <SiteHeader />
-
-      <main>
-        <section className="grid min-h-[calc(100svh-6rem)] w-full gap-10 px-4 py-12 sm:px-6 lg:grid-cols-[1.15fr_0.85fr] lg:items-center lg:px-8 lg:py-16 xl:gap-16">
-          <div className="space-y-10 lg:self-start">
-            <div className="space-y-6">
-              <p className="inline-flex bg-yellow-400 px-4 py-2 text-sm font-bold uppercase tracking-[0.16em] text-black">
-                Comunidade UTFPR em movimento
-              </p>
-              <h1 className="max-w-5xl text-5xl font-bold tracking-tight text-balance sm:text-6xl xl:text-7xl">
-                Seu tempo pode transformar uma história.
-              </h1>
-              <p className="max-w-4xl text-xl leading-8 text-zinc-600 xl:text-2xl xl:leading-10">
-                Um espaço para conectar a comunidade da UTFPR a iniciativas de voluntariado que
-                fazem a diferença dentro e fora do campus.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-4 sm:flex-row">
+    <div className="min-h-screen bg-[#f7f7f2] text-brand-black">
+      <HomeHeader />
+      <main id="conteudo">
+        <section aria-labelledby="home-title" className="grid w-full items-center gap-12 px-6 py-12 sm:px-10 sm:py-16 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16 lg:px-16 lg:py-20">
+          <div>
+            <p className="mb-6 inline-flex items-center gap-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-600">
+              <span aria-hidden="true" className="size-2 rounded-full bg-brand-yellow" />
+              Portal Voluntário · UTFPR
+            </p>
+            <h1 className="text-5xl font-semibold leading-[1.04] tracking-[-0.055em] sm:text-6xl xl:text-7xl" id="home-title">
+              Seu tempo.<br />
+              Um mundo de<br />
+              <span className="relative isolate inline-block">
+                <span aria-hidden="true" className="absolute inset-x-0 bottom-1 -z-10 h-[0.3em] bg-brand-yellow sm:bottom-2" />
+                possibilidades.
+              </span>
+            </h1>
+            <p className="mt-7 max-w-lg text-base leading-7 text-zinc-600 sm:text-lg sm:leading-8">
+              Conecte o que você sabe ao que o mundo precisa. Descubra iniciativas de voluntariado e transforme seu tempo em impacto dentro e fora da UTFPR.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <VolunteerCta />
-              <Button
-                className="h-12 px-6 text-base"
-                nativeButton={false}
-                render={<Link href="/entrar" />}
-                size="lg"
-                variant="outline"
-              >
+              <Button className="h-12 rounded-full border-zinc-300 bg-transparent px-6 text-sm font-semibold text-brand-black hover:bg-white" nativeButton={false} render={<Link href="/sobre" />} size="lg" variant="outline">
                 Conhecer o portal
               </Button>
             </div>
+            <p className="mt-5 text-xs text-zinc-500">Ensino, pesquisa e extensão. Muitas formas de contribuir.</p>
           </div>
-
-          <AnimatedBlock
-            className="rounded-3xl border border-yellow-200 bg-gradient-to-br from-yellow-100 via-amber-50 to-white p-6 shadow-lg shadow-amber-950/5 sm:p-8 xl:p-10"
-            delay={0.12}
-          >
-            <div className="space-y-8">
-              <div>
-                <p className="text-sm font-bold uppercase tracking-[0.14em] text-zinc-700">
-                  Voluntariado na universidade
-                </p>
-                <h2 className="mt-3 text-3xl font-bold xl:text-4xl">
-                  O impacto começa com uma conexão.
-                </h2>
-              </div>
-              <div className="grid gap-4">
-                {highlights.map((highlight) => (
-                  <div
-                    className="rounded-2xl border border-amber-200/80 bg-white/85 p-5 shadow-sm shadow-amber-950/5"
-                    key={highlight.title}
-                  >
-                    <h3 className="text-lg font-semibold">{highlight.title}</h3>
-                    <p className="mt-2 text-base leading-7 text-zinc-600">
-                      {highlight.description}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
+          <AnimatedBlock delay={0.12}>
+            <HomeHeroVisual />
           </AnimatedBlock>
         </section>
 
-        <section className="border-y border-zinc-200 bg-zinc-100" id="como-funciona">
-          <div className="w-full px-4 py-16 sm:px-6 lg:px-8 lg:py-20">
-            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">
-              Como funciona
-            </h2>
-            <div className="mt-8 grid gap-5 md:grid-cols-3">
-              {steps.map((step, index) => (
-                <AnimatedBlock
-                  className={`rounded-2xl border p-6 shadow-sm transition-shadow hover:shadow-md ${step.cardClassName}`}
-                  delay={index * 0.1}
-                  key={step.number}
-                >
+        <section aria-labelledby="benefits-title" className="border-y border-zinc-200 bg-white">
+          <div className="w-full px-6 py-12 sm:px-10 sm:py-16 lg:px-16">
+            <div className="mb-9">
+              <h2 className="max-w-lg text-3xl font-semibold tracking-tight sm:text-4xl" id="benefits-title">Você contribui.<br />E também se transforma.</h2>
+            </div>
+            <div className="grid gap-8 md:grid-cols-3 md:gap-10">
+              {benefits.map(({ icon: Icon, title, description }, index) => (
+                <AnimatedBlock delay={index * 0.08} key={title}>
                   <article>
-                    <p className={`text-3xl font-black leading-none tracking-wide ${step.numberClassName}`}>
-                      {step.number}
-                    </p>
-                    <h3 className="mt-5 text-2xl font-bold">{step.title}</h3>
-                    <p className={`mt-3 text-lg leading-8 ${step.descriptionClassName}`}>
-                      {step.description}
-                    </p>
+                    <div className="mb-5 flex size-11 items-center justify-center rounded-xl bg-[#f7f7f2]">
+                      <Icon aria-hidden="true" className="size-5" />
+                    </div>
+                    <h3 className="max-w-xs text-lg font-semibold leading-6">{title}</h3>
+                    <p className="mt-3 text-sm leading-6 text-zinc-600">{description}</p>
                   </article>
                 </AnimatedBlock>
               ))}
@@ -140,23 +82,38 @@ export function HomePage() {
           </div>
         </section>
 
-        <section className="w-full px-4 py-20 sm:px-6 lg:px-8" id="proximos-passos">
-          <div className="flex flex-col gap-8 rounded-3xl border-l-8 border-yellow-400 bg-black px-6 py-12 text-white sm:px-12 lg:flex-row lg:items-center lg:justify-between lg:py-16">
+        <section aria-labelledby="journey-title" className="w-full px-6 py-14 sm:px-10 sm:py-20 lg:px-16">
+          <div className="grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:gap-16">
             <div>
-              <h2 className="max-w-4xl text-3xl font-bold tracking-tight sm:text-4xl">
-                Leve seu tempo e conhecimento para além do campus.
-              </h2>
-              <p className="mt-4 max-w-3xl text-lg leading-8 text-zinc-300">
-                Descubra oportunidades e acompanhe sua participação em um só lugar.
-              </p>
+              <p className="mb-4 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-500">Do primeiro passo ao impacto</p>
+              <h2 className="max-w-sm text-3xl font-semibold leading-tight tracking-tight sm:text-4xl" id="journey-title">Uma pequena iniciativa.<br />Um novo começo.</h2>
+              <p className="mt-5 max-w-sm text-base leading-7 text-zinc-600">Você não precisa ter todas as respostas. Comece com vontade de participar.</p>
             </div>
-            <Button
-              className="h-12 bg-yellow-400 px-6 text-base font-semibold text-black hover:bg-yellow-300"
-              nativeButton={false}
-              render={<Link href="/oportunidades" />}
-              size="lg"
-            >
-              Explorar oportunidades
+            <ol className="grid grid-cols-2 gap-3 sm:gap-4">
+              {steps.map((step, index) => (
+                <li className={`rounded-2xl border p-5 sm:p-6 ${index === 2 ? "col-span-2 border-brand-yellow bg-brand-yellow" : "border-zinc-200 bg-white"}`} key={step.number}>
+                  <span className="text-xs font-semibold tracking-widest text-brand-black/60">{step.number}</span>
+                  <h3 className="mt-4 text-lg font-semibold tracking-tight">{step.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-brand-black/65">{step.description}</p>
+                  {index === 2 ? (
+                    <Link className="mt-5 inline-flex items-center gap-2 rounded-sm text-sm font-semibold underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-brand-black" href="/oportunidades">
+                      Encontrar uma oportunidade <ArrowRight aria-hidden="true" className="size-4" />
+                    </Link>
+                  ) : null}
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        <section aria-labelledby="invitation-title" className="bg-brand-black text-white">
+          <div className="flex w-full flex-col gap-7 px-6 py-12 sm:px-10 sm:py-16 lg:flex-row lg:items-center lg:justify-between lg:px-16">
+            <div>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.16em] text-brand-yellow">A próxima conexão começa com você</p>
+              <h2 className="max-w-2xl text-3xl font-semibold tracking-tight sm:text-4xl" id="invitation-title">Tem lugar para o seu talento.</h2>
+            </div>
+            <Button className="h-12 w-full rounded-full bg-brand-yellow px-6 font-semibold text-brand-black hover:bg-brand-yellow/90 sm:w-auto" nativeButton={false} render={<Link href="/oportunidades" />} size="lg">
+              Explorar oportunidades <ArrowRight aria-hidden="true" className="size-4" />
             </Button>
           </div>
         </section>
