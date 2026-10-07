@@ -59,9 +59,9 @@ export function AppRouteSkeleton({ kind, title }: AppRouteSkeletonProps) {
 export function PublicRouteSkeleton({ title }: { title: string }) {
   return (
     <main aria-label={`Carregando ${title.toLocaleLowerCase("pt-BR")}`} className="min-h-screen bg-background" role="status">
-      <header className="flex min-h-24 items-center justify-between border-b-4 border-brand-yellow bg-brand-black px-4 sm:px-6 lg:px-8">
-        <Skeleton className="h-12 w-44 bg-white/15" />
-        <Skeleton className="h-10 w-56 max-w-[45%] bg-white/15" />
+      <header className="flex min-h-20 flex-wrap items-center justify-between gap-3 border-b border-zinc-200 bg-white px-5 py-4 sm:px-8">
+        <Skeleton className="h-12 w-44" />
+        <Skeleton className="h-10 w-40 max-w-[45%] rounded-full" />
       </header>
       <div className="space-y-12 px-4 py-12 sm:px-6 lg:px-8">
         <section className="space-y-5 py-8">

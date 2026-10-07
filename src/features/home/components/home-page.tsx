@@ -4,7 +4,7 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { AnimatedBlock } from "@/features/home/components/home-motion";
-import { HomeHeader } from "@/features/home/components/home-header";
+import { SiteHeader } from "@/components/layout/site-header";
 import { HomeHeroVisual } from "@/features/home/components/home-hero-visual";
 import { VolunteerCta } from "@/features/home/components/volunteer-cta";
 
@@ -29,7 +29,7 @@ const steps = [
 export function HomePage() {
   return (
     <div className="min-h-screen bg-[#f7f7f2] text-brand-black">
-      <HomeHeader />
+      <SiteHeader active="home" />
       <main id="conteudo">
         <section aria-labelledby="home-title" className="grid w-full items-center gap-12 px-6 py-12 sm:px-10 sm:py-16 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16 lg:px-16 lg:py-20">
           <div>
@@ -50,7 +50,7 @@ export function HomePage() {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <VolunteerCta />
-              <Button className="h-12 rounded-full border-zinc-300 bg-transparent px-6 text-sm font-semibold text-brand-black hover:bg-white" nativeButton={false} render={<Link href="/sobre" />} size="lg" variant="outline">
+              <Button className="h-12 rounded-full border-zinc-300 bg-transparent px-6 text-sm font-semibold text-brand-black hover:bg-white" nativeButton={false} render={<Link href="#beneficios" />} size="lg" variant="outline">
                 Conhecer o portal
               </Button>
             </div>
@@ -61,7 +61,7 @@ export function HomePage() {
           </AnimatedBlock>
         </section>
 
-        <section aria-labelledby="benefits-title" className="border-y border-zinc-200 bg-white">
+        <section aria-labelledby="benefits-title" className="border-y border-zinc-200 bg-white" id="beneficios">
           <div className="w-full px-6 py-12 sm:px-10 sm:py-16 lg:px-16">
             <div className="mb-9">
               <h2 className="max-w-lg text-3xl font-semibold tracking-tight sm:text-4xl" id="benefits-title">Você contribui.<br />E também se transforma.</h2>
