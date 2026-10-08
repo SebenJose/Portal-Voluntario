@@ -1,0 +1,646 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light" />
+    <meta name="description" content="Apresentação acadêmica do Portal Voluntário da UTFPR: MSW, tecnologias e desenvolvimento." />
+    <title>Portal Voluntário | Apresentação</title>
+    <style>
+      /* Tokens e tipografia de src/app/globals.css; fundo da página inicial. */
+      :root {
+        --brand-yellow: #ffcc00;
+        --brand-black: #111111;
+        --background: #f7f7f2;
+        --foreground: #171717;
+        --muted: #f5f5f2;
+        --muted-foreground: #5f5f5b;
+        --secondary: #fff4cc;
+        --border: #deded8;
+        --ring: #b88600;
+        --radius: 0.625rem;
+        font-family: ui-sans-serif, system-ui, sans-serif;
+        color: var(--foreground);
+      }
+
+      * { box-sizing: border-box; }
+      html, body { width: 100%; height: 100%; margin: 0; overflow: hidden; }
+      body { display: grid; place-items: center; background: var(--brand-black); }
+      button { font: inherit; }
+      [hidden] { display: none !important; }
+      h1, h2, h3, p, ol, ul { margin: 0; }
+      h1, h2, h3 { font-weight: 600; }
+      h1, h2 { letter-spacing: -0.05em; line-height: 1.08; }
+      h3 { letter-spacing: -0.025em; }
+      p { line-height: 1.45; }
+      code { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+      img { max-width: 100%; object-fit: contain; }
+      button:focus-visible, a:focus-visible {
+        outline: 3px solid var(--ring);
+        outline-offset: 4px;
+      }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+        border: 0;
+      }
+
+      /* Um quadro 16:9, centralizado em monitores de outras proporções. */
+      .presentation {
+        container-type: inline-size;
+        position: relative;
+        width: min(100vw, calc(100vh * 16 / 9));
+        width: min(100vw, calc(100dvh * 16 / 9));
+        height: min(100vh, calc(100vw * 9 / 16));
+        height: min(100dvh, calc(100vw * 9 / 16));
+        overflow: hidden;
+        background: var(--background);
+      }
+      .presentation-inner {
+        --body-size: clamp(0.875rem, 1.55cqw, 1.65rem);
+        --small-size: clamp(0.75rem, 1.35cqw, 1.45rem);
+        --h2-size: clamp(1.625rem, 3.55cqw, 3.8rem);
+        --h3-size: clamp(1rem, 1.75cqw, 1.85rem);
+        --slide-padding: clamp(1.25rem, 4.5cqw, 5rem);
+        --content-gap: clamp(0.75rem, 1.4cqw, 1.5rem);
+        height: 100%;
+        display: grid;
+        grid-template-rows: auto minmax(0, 1fr) auto;
+      }
+      .masthead {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--content-gap);
+        padding: clamp(0.75rem, 1.3cqw, 1.5rem) var(--slide-padding);
+        border-bottom: 1px solid var(--border);
+        background: #fff;
+      }
+      .brand { display: flex; align-items: center; gap: clamp(0.75rem, 1.2cqw, 1.3rem); }
+      .brand-logo { display: block; width: clamp(5.5rem, 9cqw, 10rem); height: auto; }
+      .brand-name {
+        border-left: 1px solid var(--border);
+        padding-left: clamp(0.75rem, 1.2cqw, 1.3rem);
+        font-size: var(--small-size);
+        font-weight: 600;
+        line-height: 1.2;
+      }
+      .masthead-caption, .eyebrow {
+        font-size: var(--small-size);
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted-foreground);
+      }
+      main { min-height: 0; }
+      .slide {
+        width: 100%;
+        height: 100vh;
+        height: 100dvh;
+        height: 100%;
+        overflow: hidden;
+        outline: none;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        gap: var(--content-gap);
+        padding: clamp(0.875rem, 1.8cqw, 2rem) var(--slide-padding);
+        font-size: var(--body-size);
+      }
+      .slide-header { display: grid; gap: clamp(0.4rem, 0.65cqw, 0.75rem); }
+      .slide > * { flex-shrink: 0; }
+      h2 { font-size: var(--h2-size); }
+      h3 { font-size: var(--h3-size); line-height: 1.2; }
+      .muted { color: var(--muted-foreground); }
+      .icon { width: 1.2em; height: 1.2em; flex-shrink: 0; }
+      .icon-box {
+        display: grid;
+        place-items: center;
+        width: clamp(2rem, 3.4cqw, 3.6rem);
+        aspect-ratio: 1;
+        border-radius: calc(var(--radius) * 1.4);
+        background: var(--muted);
+      }
+      .icon-box .icon { width: 52%; height: 52%; }
+
+      /* Capa: hierarquia e destaque amarelo usados no título da home. */
+      .cover { gap: clamp(1.5rem, 3cqw, 3.25rem); }
+      .cover h1 { font-size: clamp(3.2rem, 7.5cqw, 8rem); }
+      .highlight {
+        background: linear-gradient(transparent 72%, var(--brand-yellow) 72%, var(--brand-yellow) 94%, transparent 94%);
+      }
+      .cover-description { max-width: 39ch; font-size: clamp(1rem, 2cqw, 2.15rem); }
+      .authors { display: grid; gap: clamp(0.5rem, 0.85cqw, 1rem); }
+      .author-list { display: flex; flex-wrap: wrap; gap: clamp(0.5rem, 2.25cqw, 2.5rem); list-style: none; padding: 0; }
+      .author-list li { font-weight: 500; }
+
+      /* MSW: fluxo real com uma resposta simulada ou passagem ao servidor. */
+      .msw-layout { display: grid; grid-template-columns: 1fr 1.08fr; align-items: center; gap: clamp(1rem, 3.5cqw, 4rem); }
+      .point-list { display: grid; gap: clamp(0.75rem, 1.6cqw, 1.8rem); padding: 0; list-style: none; }
+      .point-list li { display: grid; gap: clamp(0.2rem, 0.4cqw, 0.5rem); }
+      .point-list h3 { font-size: var(--body-size); }
+      .flow { display: grid; gap: clamp(0.3rem, 0.65cqw, 0.75rem); }
+      .flow-node, .flow-endpoint {
+        display: grid;
+        gap: clamp(0.15rem, 0.3cqw, 0.4rem);
+        border: 1px solid var(--border);
+        border-radius: calc(var(--radius) * 1.8);
+        padding: clamp(0.6rem, 1cqw, 1.15rem);
+        background: #fff;
+        text-align: center;
+      }
+      .flow-node h3, .flow-endpoint h3 { font-size: var(--body-size); }
+      .flow-node p, .flow-endpoint p { font-size: var(--small-size); }
+      .flow-node.accent { border-color: var(--brand-yellow); background: var(--brand-yellow); }
+      .flow-arrow { display: flex; justify-content: center; }
+      .flow-split { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(0.5rem, 0.8cqw, 1rem); }
+      .flow-destination { display: grid; gap: clamp(0.3rem, 0.65cqw, 0.75rem); }
+      .configuration {
+        border-left: clamp(0.2rem, 0.3cqw, 0.35rem) solid var(--brand-yellow);
+        padding: clamp(0.6rem, 0.9cqw, 1rem) clamp(0.8rem, 1.2cqw, 1.4rem);
+        background: var(--secondary);
+        font-size: var(--small-size);
+        line-height: 1.5;
+      }
+      .configuration code { overflow-wrap: anywhere; }
+
+      /* Cartões seguem as bordas, cores neutras e raios da interface. */
+      .technology-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(0.6rem, 1.1cqw, 1.25rem); }
+      .technology-card {
+        display: grid;
+        align-content: start;
+        gap: clamp(0.5rem, 0.8cqw, 1rem);
+        border: 1px solid var(--border);
+        border-radius: calc(var(--radius) * 2.2);
+        background: #fff;
+        padding: clamp(0.75rem, 1.5cqw, 1.7rem);
+      }
+      .technology-card p { font-size: var(--small-size); color: var(--muted-foreground); }
+      .technology-card h3 { font-size: clamp(1rem, 1.65cqw, 1.75rem); }
+      .architecture { font-size: var(--small-size); color: var(--muted-foreground); }
+      .architecture strong { color: var(--foreground); }
+
+      /* Git e validação: testes de comportamento separados dos outros checks. */
+      .development-grid { display: grid; grid-template-columns: 1fr 1fr; gap: clamp(0.65rem, 1.1cqw, 1.25rem); }
+      .development-card {
+        display: grid;
+        align-content: start;
+        gap: clamp(0.45rem, 0.8cqw, 0.9rem);
+        border: 1px solid var(--border);
+        border-radius: calc(var(--radius) * 2.2);
+        background: #fff;
+        padding: clamp(0.75rem, 1.5cqw, 1.7rem);
+      }
+      .card-heading { display: flex; align-items: center; gap: clamp(0.5rem, 0.8cqw, 0.9rem); }
+      .card-heading .icon { width: 1.1em; height: 1.1em; }
+      .development-card p, .development-card ul, .example { font-size: var(--small-size); line-height: 1.5; }
+      .development-card ul { display: grid; gap: clamp(0.1rem, 0.3cqw, 0.35rem); padding-left: 1.2em; color: var(--muted-foreground); }
+      .example { display: block; padding: clamp(0.4rem, 0.65cqw, 0.75rem); border-radius: var(--radius); background: var(--muted); overflow-wrap: anywhere; }
+      .pipeline { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+
+      .footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: clamp(0.5rem, 1cqw, 1.2rem);
+        padding: clamp(0.6rem, 1cqw, 1.15rem) var(--slide-padding);
+        border-top: 1px solid var(--border);
+        font-size: var(--small-size);
+      }
+      .keyboard-hint { color: var(--muted-foreground); }
+      .footer-navigation { display: flex; align-items: center; gap: clamp(0.4rem, 0.8cqw, 0.9rem); margin-left: auto; }
+      .counter { min-width: 4.5em; font-variant-numeric: tabular-nums; color: var(--muted-foreground); }
+      .control {
+        display: grid;
+        place-items: center;
+        width: clamp(2.5rem, 3cqw, 3.25rem);
+        aspect-ratio: 1;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: #fff;
+        color: var(--brand-black);
+        cursor: pointer;
+      }
+      .control:hover { background: var(--secondary); border-color: var(--ring); }
+      .control:disabled { cursor: default; opacity: 0.35; background: transparent; border-color: var(--border); }
+      .control .icon { width: 45%; height: 45%; }
+
+      /* Em retrato o quadro usa a tela inteira, com conteúdo reorganizado. */
+      @media (max-aspect-ratio: 1/1) {
+        .presentation { width: 100vw; height: 100vh; height: 100dvh; }
+        .presentation-inner { --slide-padding: clamp(1rem, 4cqw, 2rem); }
+        .technology-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .msw-layout { grid-template-columns: 1fr; }
+        .point-list { gap: clamp(0.5rem, 1cqw, 1rem); }
+        .point-list li { gap: 0.15rem; }
+        .flow-node { display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .author-list { flex-direction: column; }
+      }
+      @media (max-width: 600px) and (max-aspect-ratio: 1/1) {
+        .masthead-caption { display: none; }
+        .development-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .development-card { gap: 0.3rem; padding: 0.5rem 0.75rem; }
+        .development-card ul { display: block; }
+        .card-heading h3 { font-size: 1rem; }
+        .technology-card { gap: 0.4rem; padding: 0.6rem; }
+        .technology-card .icon-box { display: none; }
+        .slide { padding-top: 0.75rem; padding-bottom: 0.75rem; }
+        .point-list li { display: block; }
+        .point-list h3, .point-list p { display: inline; }
+        .point-list h3::after { content: ": "; }
+        .slide-header .muted { font-size: var(--small-size); }
+        .architecture { line-height: 1.4; }
+        .keyboard-hint { display: none; }
+      }
+      @media (max-height: 700px) {
+        .slide { gap: clamp(0.65rem, 1.5cqw, 1.5rem); }
+      }
+      @media (max-height: 600px) and (min-aspect-ratio: 1/1) {
+        .presentation-inner { --slide-padding: clamp(1rem, 3.5cqw, 3rem); --h2-size: clamp(1.5rem, 3cqw, 2.8rem); }
+        .masthead { padding-top: clamp(0.4rem, 0.65cqw, 0.8rem); padding-bottom: clamp(0.4rem, 0.65cqw, 0.8rem); }
+        .slide { padding-top: clamp(0.5rem, 1.2cqw, 1.2rem); padding-bottom: clamp(0.5rem, 1.2cqw, 1.2rem); }
+        .technology-card, .development-card { padding: clamp(0.5rem, 0.85cqw, 0.9rem); gap: clamp(0.3rem, 0.55cqw, 0.6rem); }
+        .technology-card .icon-box { display: none; }
+        .point-list { gap: clamp(0.5rem, 0.8cqw, 0.85rem); }
+        .keyboard-hint { display: none; }
+      }
+      @media (max-height: 500px) and (min-aspect-ratio: 1/1) {
+        .presentation-inner { --body-size: clamp(0.8rem, 1.4cqw, 1rem); --small-size: clamp(0.7rem, 1.05cqw, 0.8rem); --h3-size: clamp(0.95rem, 1.6cqw, 1.2rem); }
+        .brand-logo { width: clamp(4.5rem, 7cqw, 6rem); }
+        .slide { gap: 0.4rem; padding-top: 0.25rem; padding-bottom: 0.25rem; }
+        .slide-header { gap: 0.25rem; }
+        .flow-node, .flow-endpoint { padding: 0.4rem; }
+        .flow-node { display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+        .development-card { padding: 0.4rem; }
+        .development-grid { gap: 0.4rem; }
+        .flow { gap: 0.2rem; }
+        .flow-destination { gap: 0.2rem; }
+        .flow-arrow .icon { width: 0.85rem; height: 0.85rem; }
+        .configuration { padding: 0.4rem 0.6rem; }
+        .footer { padding-top: 0.3rem; padding-bottom: 0.3rem; }
+        .control { width: 2rem; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { scroll-behavior: auto !important; animation: none !important; transition: none !important; }
+      }
+      @media print {
+        @page { size: 16in 9in; margin: 0; }
+        html, body { display: block; height: auto; overflow: visible; background: #fff; }
+        .presentation { width: 16in; height: auto; overflow: visible; }
+        .presentation-inner { display: block; height: auto; }
+        .masthead, .footer { display: none; }
+        .slide, .slide[hidden] { display: flex !important; height: 9in; break-after: page; padding: 0.65in; }
+        .slide:last-child { break-after: auto; }
+        * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+      }
+    </style>
+  </head>
+  <body>
+    <!--
+      Abra este arquivo diretamente no navegador. Não depende de servidor ou internet.
+      Marca: public/brand/utfpr-logo-horizontal.png, incorporada sem alteração.
+      Ícones: renderização estática dos componentes instalados de lucide-react.
+      Os SVGs originais são incorporados como imagens para dispensar React em execução;
+      não há ícones desenhados manualmente nem biblioteca adicional.
+
+      Conteúdo conferido na main 69d2c64 (07/10/2026):
+      MSW: docs/DEMO.md, src/mocks/README.md, browser.ts, handlers.ts,
+        src/components/providers/msw-provider.tsx e mocks das features.
+      Stack: package.json e imports efetivos em src; Zustand instalado, sem uso atual.
+      Arquitetura: src/features/README.md e diretórios efetivamente presentes.
+      Validação: .github/workflows/ci.yml, scripts/test-security.mts,
+        tests/security.test.ts (16 testes node:test, incluindo integração MSW).
+      Git: origin, branches locais/remotas, mensagens e merges de PRs no histórico.
+      A existência do workflow não implica que a proteção da main esteja configurada.
+    -->
+    <div class="presentation" id="presentation">
+      <div class="presentation-inner">
+        <header class="masthead">
+          <div class="brand">
+            <img class="brand-logo" src="data:image/png;base64,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" width="367" height="143" alt="UTFPR — Universidade Tecnológica Federal do Paraná" />
+            <span class="brand-name">Portal<br />Voluntário</span>
+          </div>
+          <span class="masthead-caption">Desenvolvimento Web</span>
+        </header>
+
+        <main aria-label="Slides da apresentação">
+          <section class="slide cover" id="slide-1" aria-labelledby="title-1" tabindex="-1" data-title="Portal Voluntário">
+            <p class="eyebrow">Portal Voluntário · UTFPR</p>
+            <h1 id="title-1">Portal<br /><span class="highlight">Voluntário</span></h1>
+            <p class="cover-description muted">Conectando a comunidade da UTFPR a oportunidades de voluntariado.</p>
+            <div class="authors">
+              <p class="eyebrow">Integrantes</p>
+              <ul class="author-list">
+                <li>Fernando Buligon</li>
+                <li>José Carlos</li>
+                <li>Bruno Eduardo</li>
+              </ul>
+            </div>
+          </section>
+
+          <section class="slide" id="slide-2" aria-labelledby="title-2" tabindex="-1" data-title="MSW — Mock Service Worker" hidden>
+            <header class="slide-header">
+              <p class="eyebrow">MSW · Mock Service Worker</p>
+              <h2 id="title-2">Requisições simuladas.</h2>
+            </header>
+            <div class="msw-layout">
+              <ul class="point-list">
+                <li>
+                  <h3>O que faz</h3>
+                  <p class="muted">Intercepta requisições HTTP com um Service Worker e responde por handlers.</p>
+                </li>
+                <li>
+                  <h3>Por que usar</h3>
+                  <p class="muted">Demonstra certificados e gestão, com demora, lista vazia e erros.</p>
+                </li>
+                <li>
+                  <h3>Como foi integrado</h3>
+                  <p class="muted"><code>MswProvider</code> inicia <code>setupWorker</code> antes da UI; handlers por domínio.</p>
+                </li>
+              </ul>
+              <div class="flow" role="group" aria-label="Fluxo: interface chama o serviço, MSW intercepta e responde pelo mock ou encaminha ao Next.js">
+                <div class="flow-node">
+                  <h3>Interface → serviço</h3>
+                  <p class="muted">Requisição HTTP</p>
+                </div>
+                <div class="flow-arrow" aria-hidden="true"><img class="icon" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxMTExMTEiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWFycm93LWRvd24iIGFyaWEtaGlkZGVuPSJ0cnVlIj48cGF0aCBkPSJNMTIgNXYxNCI+PC9wYXRoPjxwYXRoIGQ9Im0xOSAxMi03IDctNy03Ij48L3BhdGg+PC9zdmc+" alt="" /></div>
+                <div class="flow-node accent">
+                  <h3>MSW</h3>
+                  <p>Interceptação HTTP</p>
+                </div>
+                <div class="flow-split">
+                  <div class="flow-destination">
+                    <div class="flow-arrow" aria-hidden="true"><img class="icon" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxMTExMTEiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWFycm93LWRvd24iIGFyaWEtaGlkZGVuPSJ0cnVlIj48cGF0aCBkPSJNMTIgNXYxNCI+PC9wYXRoPjxwYXRoIGQ9Im0xOSAxMi03IDctNy03Ij48L3BhdGg+PC9zdmc+" alt="" /></div>
+                    <div class="flow-endpoint">
+                      <h3>Resposta simulada</h3>
+                      <p class="muted">Certificados (IndexedDB)<br />Gestão simulada</p>
+                    </div>
+                  </div>
+                  <div class="flow-destination">
+                    <div class="flow-arrow" aria-hidden="true"><img class="icon" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxMTExMTEiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWFycm93LWRvd24iIGFyaWEtaGlkZGVuPSJ0cnVlIj48cGF0aCBkPSJNMTIgNXYxNCI+PC9wYXRoPjxwYXRoIGQ9Im0xOSAxMi03IDctNy03Ij48L3BhdGg+PC9zdmc+" alt="" /></div>
+                    <div class="flow-endpoint">
+                      <h3>Rotas Next.js</h3>
+                      <p class="muted">Login, catálogo padrão e inscrições</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <p class="configuration"><strong>Desenvolvimento:</strong> ativo por padrão. <strong>Produção:</strong> <code>NEXT_PUBLIC_API_MOCKING=enabled</code> antes do build.</p>
+          </section>
+
+          <section class="slide" id="slide-3" aria-labelledby="title-3" tabindex="-1" data-title="Bibliotecas e tecnologias" hidden>
+            <header class="slide-header">
+              <p class="eyebrow">Bibliotecas e tecnologias</p>
+              <h2 id="title-3">Tecnologias usadas no sistema.</h2>
+            </header>
+            <div class="technology-grid">
+              <article class="technology-card">
+                <span class="icon-box" aria-hidden="true"><img class="icon" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxMTExMTEiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWNvZGUteG1sIGx1Y2lkZS1jb2RlLTIiIGFyaWEtaGlkZGVuPSJ0cnVlIj48cGF0aCBkPSJtMTggMTYgNC00LTQtNCI+PC9wYXRoPjxwYXRoIGQ9Im02IDgtNCA0IDQgNCI+PC9wYXRoPjxwYXRoIGQ9Im0xNC41IDQtNSAxNiI+PC9wYXRoPjwvc3ZnPg==" alt="" /></span>
+                <h3>Next.js · React · TypeScript</h3>
+                <p>App Router, componentes de interface e contratos tipados.</p>
+              </article>
+              <article class="technology-card">
+                <span class="icon-box" aria-hidden="true"><img class="icon" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxMTExMTEiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXBhbmVscy10b3AtbGVmdCBsdWNpZGUtbGF5b3V0IiBhcmlhLWhpZGRlbj0idHJ1ZSI+PHJlY3Qgd2lkdGg9IjE4IiBoZWlnaHQ9IjE4IiB4PSIzIiB5PSIzIiByeD0iMiI+PC9yZWN0PjxwYXRoIGQ9Ik0zIDloMTgiPjwvcGF0aD48cGF0aCBkPSJNOSAyMVY5Ij48L3BhdGg+PC9zdmc+" alt="" /></span>
+                <h3>Tailwind CSS · shadcn/ui</h3>
+                <p>Estilos e componentes reutilizados em botões, campos e cartões.</p>
+              </article>
+              <article class="technology-card">
+                <span class="icon-box" aria-hidden="true"><img class="icon" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxMTExMTEiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWNvbXBhc3MiIGFyaWEtaGlkZGVuPSJ0cnVlIj48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIxMCI+PC9jaXJjbGU+PHBhdGggZD0ibTE2LjI0IDcuNzYtMS44MDQgNS40MTFhMiAyIDAgMCAxLTEuMjY1IDEuMjY1TDcuNzYgMTYuMjRsMS44MDQtNS40MTFhMiAyIDAgMCAxIDEuMjY1LTEuMjY1eiI+PC9wYXRoPjwvc3ZnPg==" alt="" /></span>
+                <h3>Lucide React</h3>
+                <p>Ícones consistentes na navegação e nas ações da interface.</p>
+              </article>
+              <article class="technology-card">
+                <span class="icon-box" aria-hidden="true"><img class="icon" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxMTExMTEiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWxpc3QtY2hlY2tzIiBhcmlhLWhpZGRlbj0idHJ1ZSI+PHBhdGggZD0iTTEzIDVoOCI+PC9wYXRoPjxwYXRoIGQ9Ik0xMyAxMmg4Ij48L3BhdGg+PHBhdGggZD0iTTEzIDE5aDgiPjwvcGF0aD48cGF0aCBkPSJtMyAxNyAyIDIgNC00Ij48L3BhdGg+PHBhdGggZD0ibTMgNyAyIDIgNC00Ij48L3BhdGg+PC9zdmc+" alt="" /></span>
+                <h3>React Hook Form · Zod</h3>
+                <p>Estado dos formulários, mensagens de erro e validação dos dados.</p>
+              </article>
+              <article class="technology-card">
+                <span class="icon-box" aria-hidden="true"><img class="icon" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxMTExMTEiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLW1vdXNlLXBvaW50ZXItMiIgYXJpYS1oaWRkZW49InRydWUiPjxwYXRoIGQ9Ik00LjAzNyA0LjY4OGEuNDk1LjQ5NSAwIDAgMSAuNjUxLS42NTFsMTYgNi41YS41LjUgMCAwIDEtLjA2My45NDdsLTYuMTI0IDEuNThhMiAyIDAgMCAwLTEuNDM4IDEuNDM1bC0xLjU3OSA2LjEyNmEuNS41IDAgMCAxLS45NDcuMDYzeiI+PC9wYXRoPjwvc3ZnPg==" alt="" /></span>
+                <h3>Motion</h3>
+                <p>Transições na home e no catálogo, respeitando movimento reduzido.</p>
+              </article>
+              <article class="technology-card">
+                <span class="icon-box" aria-hidden="true"><img class="icon" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxMTExMTEiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWNhbGVuZGFyLWRheXMiIGFyaWEtaGlkZGVuPSJ0cnVlIj48cGF0aCBkPSJNOCAydjMiPjwvcGF0aD48cGF0aCBkPSJNMTYgMnYzIj48L3BhdGg+PHJlY3QgeD0iMyIgeT0iMyIgd2lkdGg9IjE4IiBoZWlnaHQ9IjE4IiByeD0iMiI+PC9yZWN0PjxwYXRoIGQ9Ik0zIDloMTgiPjwvcGF0aD48cGF0aCBkPSJNOCAxM2guMDEiPjwvcGF0aD48cGF0aCBkPSJNMTIgMTNoLjAxIj48L3BhdGg+PHBhdGggZD0iTTE2IDEzaC4wMSI+PC9wYXRoPjxwYXRoIGQ9Ik04IDE3aC4wMSI+PC9wYXRoPjxwYXRoIGQ9Ik0xMiAxN2guMDEiPjwvcGF0aD48cGF0aCBkPSJNMTYgMTdoLjAxIj48L3BhdGg+PC9zdmc+" alt="" /></span>
+                <h3>React DayPicker</h3>
+                <p>Calendário do shadcn/ui para os encontros das atividades inscritas.</p>
+              </article>
+            </div>
+            <p class="architecture"><strong>Feature-Based:</strong> domínios em <code>src/features</code>; UI compartilhada em <code>src/components</code>.</p>
+          </section>
+
+          <section class="slide" id="slide-4" aria-labelledby="title-4" tabindex="-1" data-title="GitHub, testes e desenvolvimento" hidden>
+            <header class="slide-header">
+              <p class="eyebrow">GitHub, testes e desenvolvimento</p>
+              <h2 id="title-4">Colaboração e validação contínua.</h2>
+            </header>
+            <div class="development-grid">
+              <article class="development-card">
+                <div class="card-heading"><img class="icon" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxMTExMTEiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWdpdC1wdWxsLXJlcXVlc3QiIGFyaWEtaGlkZGVuPSJ0cnVlIj48Y2lyY2xlIGN4PSIxOCIgY3k9IjE4IiByPSIzIj48L2NpcmNsZT48Y2lyY2xlIGN4PSI2IiBjeT0iNiIgcj0iMyI+PC9jaXJjbGU+PHBhdGggZD0iTTEzIDZoM2EyIDIgMCAwIDEgMiAydjciPjwvcGF0aD48bGluZSB4MT0iNiIgeDI9IjYiIHkxPSI5IiB5Mj0iMjEiPjwvbGluZT48L3N2Zz4=" alt="" aria-hidden="true" /><h3>GitHub e branches</h3></div>
+                <p class="muted">Branches <code>tipo/descricao</code> → Pull Requests → <code>main</code>.</p>
+                <code class="example">feat/melhorar-pagina-entrar<br />fix/corrigir-auditoria</code>
+              </article>
+              <article class="development-card">
+                <div class="card-heading"><img class="icon" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxMTExMTEiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWdpdC1jb21taXQtaG9yaXpvbnRhbCBsdWNpZGUtZ2l0LWNvbW1pdCIgYXJpYS1oaWRkZW49InRydWUiPjxjaXJjbGUgY3g9IjEyIiBjeT0iMTIiIHI9IjMiPjwvY2lyY2xlPjxsaW5lIHgxPSIzIiB4Mj0iOSIgeTE9IjEyIiB5Mj0iMTIiPjwvbGluZT48bGluZSB4MT0iMTUiIHgyPSIyMSIgeTE9IjEyIiB5Mj0iMTIiPjwvbGluZT48L3N2Zz4=" alt="" aria-hidden="true" /><h3>Conventional Commits</h3></div>
+                <p class="muted"><code>tipo(escopo): descrição no imperativo</code></p>
+                <code class="example">fix(ui): padronizar cores dos eixos de atividades</code>
+              </article>
+              <article class="development-card">
+                <div class="card-heading"><img class="icon" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxMTExMTEiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXNoaWVsZC1jaGVjayIgYXJpYS1oaWRkZW49InRydWUiPjxwYXRoIGQ9Ik0yMCAxM2MwIDUtMy41IDcuNS03LjY2IDguOTVhMSAxIDAgMCAxLS42Ny0uMDFDNy41IDIwLjUgNCAxOCA0IDEzVjZhMSAxIDAgMCAxIDEtMWMyIDAgNC41LTEuMiA2LjI0LTIuNzJhMS4xNyAxLjE3IDAgMCAxIDEuNTIgMEMxNC41MSAzLjgxIDE3IDUgMTkgNWExIDEgMCAwIDEgMSAxeiI+PC9wYXRoPjxwYXRoIGQ9Im05IDEyIDIgMiA0LTQiPjwvcGF0aD48L3N2Zz4=" alt="" aria-hidden="true" /><h3>Testes automatizados</h3></div>
+                <p><strong>16 testes · <code>node:test</code></strong><br /><code>pnpm test</code></p>
+                <ul>
+                  <li>Sessões, autorização e inscrições.</li>
+                  <li>Agenda, lotes e integração MSW.</li>
+                </ul>
+              </article>
+              <article class="development-card">
+                <div class="card-heading"><img class="icon" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxMTExMTEiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLXdvcmtmbG93IiBhcmlhLWhpZGRlbj0idHJ1ZSI+PHJlY3Qgd2lkdGg9IjgiIGhlaWdodD0iOCIgeD0iMyIgeT0iMyIgcng9IjIiPjwvcmVjdD48cGF0aCBkPSJNNyAxMXY0YTIgMiAwIDAgMCAyIDJoNCI+PC9wYXRoPjxyZWN0IHdpZHRoPSI4IiBoZWlnaHQ9IjgiIHg9IjEzIiB5PSIxMyIgcng9IjIiPjwvcmVjdD48L3N2Zz4=" alt="" aria-hidden="true" /><h3>GitHub Actions · CI</h3></div>
+                <p class="muted">PRs para a <code>main</code> e pushes na <code>main</code>.</p>
+                <p class="pipeline" aria-label="Etapas: lint, typecheck, test e build">lint · typecheck · test · build</p>
+                <p class="muted">Testes verificam comportamentos; lint, tipos e build são verificações de código.</p>
+              </article>
+            </div>
+          </section>
+        </main>
+
+        <footer class="footer">
+          <span class="keyboard-hint">Use as setas do teclado para navegar</span>
+          <nav class="footer-navigation" aria-label="Controles da apresentação">
+            <span class="counter" id="counter" aria-hidden="true">01 / 04</span>
+            <button class="control" id="previous" type="button" aria-label="Slide anterior" title="Slide anterior (seta esquerda)" disabled>
+              <img class="icon" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxMTExMTEiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWFycm93LWxlZnQiIGFyaWEtaGlkZGVuPSJ0cnVlIj48cGF0aCBkPSJtMTIgMTktNy03IDctNyI+PC9wYXRoPjxwYXRoIGQ9Ik0xOSAxMkg1Ij48L3BhdGg+PC9zdmc+" alt="" aria-hidden="true" />
+            </button>
+            <button class="control" id="next" type="button" aria-label="Próximo slide" title="Próximo slide (seta direita)">
+              <img class="icon" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxMTExMTEiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLWFycm93LXJpZ2h0IiBhcmlhLWhpZGRlbj0idHJ1ZSI+PHBhdGggZD0iTTUgMTJoMTQiPjwvcGF0aD48cGF0aCBkPSJtMTIgNSA3IDctNyA3Ij48L3BhdGg+PC9zdmc+" alt="" aria-hidden="true" />
+            </button>
+            <button class="control" id="fullscreen" type="button" aria-label="Entrar em tela cheia" title="Tela cheia (F)">
+              <img class="icon" src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiMxMTExMTEiIHN0cm9rZS13aWR0aD0iMS44IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiIGNsYXNzPSJsdWNpZGUgbHVjaWRlLW1heGltaXplIiBhcmlhLWhpZGRlbj0idHJ1ZSI+PHBhdGggZD0iTTggM0g1YTIgMiAwIDAgMC0yIDJ2MyI+PC9wYXRoPjxwYXRoIGQ9Ik0yMSA4VjVhMiAyIDAgMCAwLTItMmgtMyI+PC9wYXRoPjxwYXRoIGQ9Ik0zIDE2djNhMiAyIDAgMCAwIDIgMmgzIj48L3BhdGg+PHBhdGggZD0iTTE2IDIxaDNhMiAyIDAgMCAwIDItMnYtMyI+PC9wYXRoPjwvc3ZnPg==" alt="" aria-hidden="true" />
+            </button>
+          </nav>
+          <p class="sr-only" id="status" role="status" aria-live="polite" aria-atomic="true">Slide 1 de 4: Portal Voluntário</p>
+        </footer>
+      </div>
+    </div>
+    <script>
+      "use strict";
+
+      // JavaScript nativo com contratos JSDoc; sem dependências em execução.
+      class PresentationController {
+        #slides = Array.from(document.querySelectorAll(".slide")).filter(
+          (element) => element instanceof HTMLElement,
+        );
+        #index = 0;
+        #lastWheel = 0;
+        #lastWheelEvent = 0;
+        #wheelDelta = 0;
+        /** @type {{ x: number, y: number } | null} */
+        #touchStart = null;
+
+        /**
+         * @param {HTMLElement} frame
+         * @param {HTMLButtonElement} previous
+         * @param {HTMLButtonElement} next
+         * @param {HTMLButtonElement} fullscreen
+         * @param {HTMLElement} counter
+         * @param {HTMLElement} status
+         */
+        constructor(frame, previous, next, fullscreen, counter, status) {
+          this.frame = frame;
+          this.previous = previous;
+          this.next = next;
+          this.fullscreen = fullscreen;
+          this.counter = counter;
+          this.status = status;
+
+          previous.addEventListener("click", () => this.show(this.#index - 1));
+          next.addEventListener("click", () => this.show(this.#index + 1));
+          fullscreen.addEventListener("click", () => { void this.toggleFullscreen(); });
+          document.addEventListener("keydown", (event) => this.onKey(event));
+          document.addEventListener("fullscreenchange", () => this.updateFullscreen());
+          window.addEventListener("hashchange", () => this.show(this.indexFromHash(), false, true));
+          frame.addEventListener("wheel", (event) => this.onWheel(event), { passive: true });
+          frame.addEventListener("touchstart", (event) => this.onTouchStart(event), { passive: true });
+          frame.addEventListener("touchend", (event) => this.onTouchEnd(event), { passive: true });
+          frame.addEventListener("touchcancel", () => { this.#touchStart = null; }, { passive: true });
+
+          fullscreen.hidden = !document.fullscreenEnabled;
+          this.show(this.indexFromHash(), false, false);
+        }
+
+        /** @returns {number} */
+        indexFromHash() {
+          const match = /^#slide-([1-9]\d*)$/.exec(window.location.hash);
+          const index = match ? Number(match[1]) - 1 : 0;
+          return Number.isSafeInteger(index) && index >= 0 && index < this.#slides.length ? index : 0;
+        }
+
+        /** @param {number} index @param {boolean} [updateHash] @param {boolean} [focusSlide] @returns {void} */
+        show(index, updateHash = true, focusSlide = true) {
+          const boundedIndex = Math.max(0, Math.min(index, this.#slides.length - 1));
+          const active = this.#slides[boundedIndex];
+          if (!active) return;
+
+          this.#index = boundedIndex;
+          this.#slides.forEach((slide, slideIndex) => { slide.hidden = slideIndex !== boundedIndex; });
+          this.previous.disabled = boundedIndex === 0;
+          this.next.disabled = boundedIndex === this.#slides.length - 1;
+          this.counter.textContent = `${String(boundedIndex + 1).padStart(2, "0")} / ${String(this.#slides.length).padStart(2, "0")}`;
+          this.status.textContent = `Slide ${boundedIndex + 1} de ${this.#slides.length}: ${active.dataset.title ?? ""}`;
+          document.title = `${active.dataset.title ?? "Apresentação"} | Portal Voluntário`;
+          if (updateHash) window.location.hash = active.id;
+          if (focusSlide) active.focus({ preventScroll: true });
+        }
+
+        /** @param {KeyboardEvent} event @returns {void} */
+        onKey(event) {
+          if (event.altKey || event.ctrlKey || event.metaKey || event.shiftKey) return;
+          if (event.target instanceof HTMLElement && event.target.closest("input, textarea, select, [contenteditable='true']")) return;
+          if (event.key === " " && event.target instanceof HTMLButtonElement) return;
+
+          switch (event.key) {
+            case "ArrowRight": case "ArrowDown": case "PageDown": case " ":
+              event.preventDefault(); this.show(this.#index + 1); break;
+            case "ArrowLeft": case "ArrowUp": case "PageUp":
+              event.preventDefault(); this.show(this.#index - 1); break;
+            case "Home":
+              event.preventDefault(); this.show(0); break;
+            case "End":
+              event.preventDefault(); this.show(this.#slides.length - 1); break;
+            case "f": case "F":
+              event.preventDefault(); void this.toggleFullscreen(); break;
+          }
+        }
+
+        /** @param {WheelEvent} event @returns {void} */
+        onWheel(event) {
+          if (event.ctrlKey) return;
+          const now = performance.now();
+          if (now - this.#lastWheel < 600) return;
+          const delta = Math.abs(event.deltaX) > Math.abs(event.deltaY) ? event.deltaX : event.deltaY;
+          if (Math.sign(delta) !== Math.sign(this.#wheelDelta) || now - this.#lastWheelEvent > 300) this.#wheelDelta = 0;
+          this.#lastWheelEvent = now;
+          this.#wheelDelta += delta;
+          if (Math.abs(this.#wheelDelta) < 80) return;
+          this.show(this.#index + Math.sign(this.#wheelDelta));
+          this.#lastWheel = now;
+          this.#wheelDelta = 0;
+        }
+
+        /** @param {TouchEvent} event @returns {void} */
+        onTouchStart(event) {
+          const touch = event.touches[0];
+          this.#touchStart = touch && event.touches.length === 1 ? { x: touch.clientX, y: touch.clientY } : null;
+        }
+
+        /** @param {TouchEvent} event @returns {void} */
+        onTouchEnd(event) {
+          const start = this.#touchStart;
+          const touch = event.changedTouches[0];
+          this.#touchStart = null;
+          if (!start || !touch) return;
+          const deltaX = start.x - touch.clientX;
+          const deltaY = start.y - touch.clientY;
+          if (Math.abs(deltaX) > 55 && Math.abs(deltaX) > Math.abs(deltaY) * 1.5) this.show(this.#index + Math.sign(deltaX));
+        }
+
+        /** @returns {Promise<void>} */
+        async toggleFullscreen() {
+          if (!document.fullscreenEnabled) return;
+          try {
+            if (document.fullscreenElement) await document.exitFullscreen();
+            else await this.frame.requestFullscreen();
+          } catch {
+            this.status.textContent = "Tela cheia indisponível. A navegação entre slides continua disponível.";
+          }
+        }
+
+        /** @returns {void} */
+        updateFullscreen() {
+          const label = document.fullscreenElement ? "Sair da tela cheia" : "Entrar em tela cheia";
+          this.fullscreen.setAttribute("aria-label", label);
+          this.fullscreen.title = `${label} (F)`;
+        }
+      }
+
+      const frame = document.getElementById("presentation");
+      const previous = document.getElementById("previous");
+      const next = document.getElementById("next");
+      const fullscreen = document.getElementById("fullscreen");
+      const counter = document.getElementById("counter");
+      const liveStatus = document.getElementById("status");
+      if (
+        frame instanceof HTMLElement && previous instanceof HTMLButtonElement &&
+        next instanceof HTMLButtonElement && fullscreen instanceof HTMLButtonElement &&
+        counter instanceof HTMLElement && liveStatus instanceof HTMLElement
+      ) {
+        new PresentationController(frame, previous, next, fullscreen, counter, liveStatus);
+      }
+    </script>
+  </body>
+</html>
