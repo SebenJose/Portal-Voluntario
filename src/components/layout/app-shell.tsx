@@ -10,10 +10,12 @@ import {
   LogOut,
 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { PortalBrand } from "@/components/layout/portal-brand";
-import { AuthServiceError, getCurrentUser, logout } from "@/features/auth/services/client-auth";
+import { AuthServiceError, getCurrentUser } from "@/features/auth/services/client-auth";
+import { LogoutConfirmationDialog } from "@/features/auth/components/logout-confirmation-dialog";
+import { useLogoutConfirmation } from "@/features/auth/hooks/use-logout-confirmation";
 import type { AuthUser } from "@/features/auth/schemas/session-schema";
 
 type AppShellProps = {
@@ -34,10 +36,11 @@ type NavigationItem = {
 const navigationItems: Array<NavigationItem> = [
   { href: "/painel", icon: LayoutDashboard, label: "Meu painel", value: "dashboard" },
   { href: "/oportunidades", icon: Compass, label: "Oportunidades", value: "opportunities" },
-  { href: "/organizacao", icon: ClipboardCheck, label: "Gestão de atividades", value: "organization" },
   { href: "/minhas-atividades", icon: CalendarDays, label: "Minhas atividades", value: "activities" },
   { href: "/certificados", icon: Award, label: "Meus certificados", value: "certificates" },
 ];
+
+const organizationItem: NavigationItem = { href: "/organizacao", icon: ClipboardCheck, label: "Gestão de atividades", value: "organization" };
 
 const secondaryItems = [
   { href: "/certificados#registrar-certificado", icon: Award, label: "Registrar certificado" },
@@ -78,7 +81,9 @@ export function AppShell({ active, children, description, title, user: initialUs
   );
   const [sessionError, setSessionError] = useState<string | null>(null);
   const [sessionAttempt, setSessionAttempt] = useState(0);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const logoutConfirmation = useLogoutConfirmation();
+  const logoutTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const { isLoggingOut } = logoutConfirmation;
 
   useEffect(() => {
     if (initialUser !== undefined) return;
@@ -108,23 +113,7 @@ export function AppShell({ active, children, description, title, user: initialUs
     setSessionAttempt((attempt) => attempt + 1);
   }
 
-  async function handleLogout() {
-    setIsLoggingOut(true);
-    setSessionError(null);
-    try {
-      await logout();
-      window.location.assign(new URL("/", window.location.href).href);
-    } catch (error: unknown) {
-      setSessionError(error instanceof AuthServiceError
-        ? error.message
-        : "Não foi possível encerrar a sessão. Tente novamente.");
-    } finally {
-      setIsLoggingOut(false);
-    }
-  }
-
   const displayName = user?.name ?? "Visitante";
-  const allowedNavigation = navigationItems.filter((item) => item.value !== "organization" || user?.role === "organization");
   const initials = user?.name
     .split(" ")
     .filter((part) => part.length > 0)
@@ -140,104 +129,116 @@ export function AppShell({ active, children, description, title, user: initialUs
         : "Acesso público";
 
   return (
-    <div className="min-h-screen bg-zinc-50">
-      <aside className="fixed inset-y-0 left-0 z-20 hidden w-64 flex-col border-r border-white/10 bg-brand-black lg:flex">
-        <div className="flex h-24 items-center border-b border-white/10 px-5">
-          <PortalBrand inverse />
-        </div>
+    <>
+      <div className="min-h-screen bg-zinc-50">
+        <a className="sr-only z-50 rounded-lg bg-brand-yellow p-3 text-brand-black focus:not-sr-only focus:fixed focus:top-3 focus:left-3" href="#conteudo">Ir para o conteúdo</a>
+        <aside aria-label="Menu do portal" className="fixed inset-y-0 left-0 z-20 hidden w-64 flex-col border-r border-white/10 bg-brand-black lg:flex">
+          <header className="flex h-24 items-center border-b border-white/10 px-5">
+            <PortalBrand inverse />
+          </header>
 
-        <div className="flex flex-1 flex-col justify-between p-4">
-          <div className="space-y-8">
-            <nav aria-label="Navegação principal" className="space-y-1">
-              <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/45">
-                Principal
-              </p>
-              {allowedNavigation.map((item) => (
-                <NavigationLink
-                  href={item.href}
-                  icon={item.icon}
-                  isActive={item.value === active}
-                  key={item.value}
-                  label={item.label}
-                />
-              ))}
-            </nav>
+          <div className="flex flex-1 flex-col justify-between p-4">
+            <div className="space-y-8">
+              <nav aria-label="Navegação principal" className="space-y-1">
+                <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/45">
+                  Principal
+                </p>
+                <ul className="space-y-1">
+                  {[...navigationItems, ...(user?.role === "organization" ? [organizationItem] : [])].map((item) => (
+                    <li key={item.value}>
+                      <NavigationLink
+                        href={item.href}
+                        icon={item.icon}
+                        isActive={item.value === active}
+                        label={item.label}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </nav>
 
-            <nav aria-label="Atalhos da conta" className="space-y-1">
-              <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/45">
-                Sua jornada
-              </p>
-              {secondaryItems.map((item) => (
-                <NavigationLink href={item.href} icon={item.icon} key={item.label} label={item.label} />
-              ))}
-            </nav>
+              <nav aria-label="Atalhos da conta" className="space-y-1">
+                <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/45">
+                  Sua jornada
+                </p>
+                <ul className="space-y-1">
+                  {secondaryItems.map((item) => (
+                    <li key={item.label}><NavigationLink href={item.href} icon={item.icon} label={item.label} /></li>
+                  ))}
+                </ul>
+              </nav>
+            </div>
+
+            <footer aria-label="Perfil da conta" className="rounded-2xl border border-white/10 bg-white/5 p-3">
+              <div className="flex items-center gap-3">
+                <div className="flex size-9 items-center justify-center rounded-full bg-brand-yellow text-sm font-semibold text-brand-black">
+                  {initials}
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-white">{displayName}</p>
+                  <p className="truncate text-xs text-white/55">{roleLabel}</p>
+                </div>
+                {user ? (
+                  <button aria-label="Sair da conta" aria-haspopup="dialog" onClick={(event) => { logoutTriggerRef.current = event.currentTarget; logoutConfirmation.onOpenChange(true); }} className="ml-auto rounded-md p-2 text-white/65 hover:bg-white/10 hover:text-white disabled:opacity-50" disabled={isLoggingOut} type="button">
+                    <LogOut aria-hidden="true" className="size-4" />
+                  </button>
+                ) : sessionStatus === "error" ? (
+                  <button className="ml-auto text-xs font-semibold text-brand-yellow" onClick={retrySession} type="button">
+                    Tentar novamente
+                  </button>
+                ) : sessionStatus === "loading" ? null : (
+                  <Link className="ml-auto text-xs font-semibold text-brand-yellow" href="/entrar">Entrar</Link>
+                )}
+              </div>
+            </footer>
           </div>
+        </aside>
 
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-3">
-            <div className="flex items-center gap-3">
-              <div className="flex size-9 items-center justify-center rounded-full bg-brand-yellow text-sm font-semibold text-brand-black">
-                {initials}
-              </div>
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-white">{displayName}</p>
-                <p className="truncate text-xs text-white/55">{roleLabel}</p>
-              </div>
+        <div className="lg:pl-64">
+          <header className="sticky top-0 z-10 border-b border-white/10 bg-brand-black text-white backdrop-blur lg:hidden">
+            <div className="flex h-16 items-center justify-between px-4">
+              <PortalBrand inverse />
               {user ? (
-                <button aria-busy={isLoggingOut} aria-label="Sair da conta" className="ml-auto rounded-md p-2 text-white/65 hover:bg-white/10 hover:text-white disabled:opacity-50" disabled={isLoggingOut} onClick={handleLogout} type="button">
-                  <LogOut aria-hidden="true" className="size-4" />
+                <button aria-label="Sair da conta" aria-haspopup="dialog" onClick={(event) => { logoutTriggerRef.current = event.currentTarget; logoutConfirmation.onOpenChange(true); }} className="text-sm font-medium text-brand-yellow disabled:opacity-50" disabled={isLoggingOut} type="button">
+                  {isLoggingOut ? "Saindo…" : "Sair"}
                 </button>
               ) : sessionStatus === "error" ? (
-                <button className="ml-auto text-xs font-semibold text-brand-yellow" onClick={retrySession} type="button">
-                  Tentar novamente
-                </button>
+                <button className="text-sm font-medium text-brand-yellow" onClick={retrySession} type="button">Tentar novamente</button>
               ) : sessionStatus === "loading" ? null : (
-                <Link className="ml-auto text-xs font-semibold text-brand-yellow" href="/entrar">Entrar</Link>
+                <Link className="text-sm font-medium text-brand-yellow" href="/entrar">Entrar</Link>
               )}
             </div>
-          </div>
+            <nav aria-label="Navegação mobile" className="overflow-x-auto px-4 pb-3">
+              <ul className="flex min-w-max gap-1">
+                {[...navigationItems, ...(user?.role === "organization" ? [organizationItem] : [])].map((item) => (
+                  <li key={item.value}>
+                    <NavigationLink
+                      href={item.href}
+                      icon={item.icon}
+                      isActive={item.value === active}
+                      label={item.label}
+                    />
+                  </li>
+                ))}
+              </ul>
+            </nav>
+          </header>
+
+          <main aria-labelledby="page-title" className="w-full px-4 py-8 sm:px-6 lg:px-8 lg:py-10" id="conteudo" tabIndex={-1}>
+            {sessionError ? (
+              <p className="mb-6 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive" role="alert">
+                {sessionError}
+              </p>
+            ) : null}
+            <header className="mb-8 space-y-2">
+              <h1 className="text-3xl font-semibold tracking-tight" id="page-title">{title}</h1>
+              <p className="max-w-2xl text-muted-foreground">{description}</p>
+            </header>
+            {children}
+          </main>
         </div>
-      </aside>
-
-      <div className="lg:pl-64">
-        <header className="sticky top-0 z-10 border-b border-white/10 bg-brand-black text-white backdrop-blur lg:hidden">
-          <div className="flex h-16 items-center justify-between px-4">
-            <PortalBrand inverse />
-            {user ? (
-              <button aria-busy={isLoggingOut} className="text-sm font-medium text-brand-yellow disabled:opacity-50" disabled={isLoggingOut} onClick={handleLogout} type="button">
-                {isLoggingOut ? "Saindo…" : "Sair"}
-              </button>
-            ) : sessionStatus === "error" ? (
-              <button className="text-sm font-medium text-brand-yellow" onClick={retrySession} type="button">Tentar novamente</button>
-            ) : sessionStatus === "loading" ? null : (
-              <Link className="text-sm font-medium text-brand-yellow" href="/entrar">Entrar</Link>
-            )}
-          </div>
-          <nav aria-label="Navegação mobile" className="flex gap-1 overflow-x-auto px-4 pb-3">
-            {allowedNavigation.map((item) => (
-              <NavigationLink
-                href={item.href}
-                icon={item.icon}
-                isActive={item.value === active}
-                key={item.value}
-                label={item.label}
-              />
-            ))}
-          </nav>
-        </header>
-
-        <main className="w-full px-4 py-8 sm:px-6 lg:px-8 lg:py-10">
-          {sessionError ? (
-            <p className="mb-6 rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive" role="alert">
-              {sessionError}
-            </p>
-          ) : null}
-          <div className="mb-8 space-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
-            <p className="max-w-2xl text-muted-foreground">{description}</p>
-          </div>
-          {children}
-        </main>
       </div>
-    </div>
+      <LogoutConfirmationDialog isOpen={logoutConfirmation.isOpen} onOpenChange={logoutConfirmation.onOpenChange} returnFocus={logoutTriggerRef} error={logoutConfirmation.error} isLoggingOut={isLoggingOut} onConfirm={logoutConfirmation.confirmLogout} />
+    </>
   );
 }
