@@ -2,10 +2,10 @@
 
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FileCheck2, Upload } from "lucide-react";
-import Link from "next/link";
 import { useState } from "react";
 import { Controller, type SubmitHandler, useForm } from "react-hook-form";
 
+import { SectionLink } from "@/components/section-link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -77,7 +77,7 @@ export function CertificateSubmissionForm({ onSubmitted }: { onSubmitted?: () =>
             </div>
           </div>
           <div className="flex shrink-0 flex-col gap-2">
-            <Button nativeButton={false} render={<Link href="#certificados-registrados" />}>Ver registros</Button>
+            <Button nativeButton={false} render={<SectionLink sectionId="certificados-registrados" />}>Ver registros</Button>
             <Button onClick={() => setReceipt(null)} variant="outline">Registrar outro certificado</Button>
           </div>
         </CardContent>
