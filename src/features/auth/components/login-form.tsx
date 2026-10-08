@@ -1,7 +1,7 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useState } from "react";
 import { type SubmitHandler, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ArrowRight, LockKeyhole, Mail } from "lucide-react";
@@ -15,7 +15,7 @@ import { getSafeRedirectPath } from "@/features/auth/services/safe-redirect";
 import { loginSchema, type LoginFormValues } from "@/features/auth/schemas/login-schema";
 
 export function LoginForm({ nextPath }: { nextPath?: string }) {
-  const router = useRouter();
+  const [isRedirecting, setIsRedirecting] = useState(false);
   const destination = getSafeRedirectPath(nextPath);
   const form = useForm<LoginFormValues>({
     mode: "onTouched",
@@ -25,14 +25,17 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
     },
     resolver: zodResolver(loginSchema),
   });
+  const isLoggingIn = form.formState.isSubmitting || isRedirecting;
 
   const handleLogin: SubmitHandler<LoginFormValues> = async (values) => {
     form.clearErrors("root.server");
     try {
       await login(values);
-      router.replace(destination);
-      router.refresh();
+      setIsRedirecting(true);
+      // Recarrega o destino com o cookie da sessão, sem reutilizar rotas pré-autenticação.
+      window.location.replace(destination);
     } catch (error: unknown) {
+      setIsRedirecting(false);
       form.setError("root.server", {
         type: "server",
         message: error instanceof AuthServiceError
@@ -56,11 +59,11 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
         </p>
       </CardHeader>
       <CardContent className="px-6 sm:px-8">
-        <form aria-busy={form.formState.isSubmitting} className="space-y-6" noValidate onSubmit={form.handleSubmit(handleLogin)}>
+        <form aria-busy={isLoggingIn} className="space-y-6" noValidate onSubmit={form.handleSubmit(handleLogin)}>
           <AuthField
             autoCapitalize="none"
             autoComplete="username"
-            disabled={form.formState.isSubmitting}
+            disabled={isLoggingIn}
             error={form.formState.errors.email?.message}
             icon={Mail}
             id="email"
@@ -72,7 +75,7 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
           />
           <AuthField
             autoComplete="current-password"
-            disabled={form.formState.isSubmitting}
+            disabled={isLoggingIn}
             error={form.formState.errors.password?.message}
             icon={LockKeyhole}
             id="password"
@@ -82,8 +85,8 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
             {...form.register("password")}
           />
 
-          <Button aria-busy={form.formState.isSubmitting} className="h-13 w-full justify-between rounded-xl bg-brand-yellow px-5 text-sm font-semibold text-brand-black hover:bg-brand-yellow/85" disabled={form.formState.isSubmitting} type="submit">
-            {form.formState.isSubmitting ? "Entrando…" : form.formState.errors.root?.server ? "Tentar novamente" : "Entrar no portal"}
+          <Button aria-busy={isLoggingIn} className="h-13 w-full justify-between rounded-xl bg-brand-yellow px-5 text-sm font-semibold text-brand-black hover:bg-brand-yellow/85" disabled={isLoggingIn} type="submit">
+            {isRedirecting ? "Abrindo o portal…" : isLoggingIn ? "Entrando…" : form.formState.errors.root?.server ? "Tentar novamente" : "Entrar no portal"}
             <ArrowRight aria-hidden="true" className="size-4" />
           </Button>
 

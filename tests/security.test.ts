@@ -14,6 +14,7 @@ import { POST as registerRoute } from "@/app/api/auth/register/route";
 import { POST as logoutRoute } from "@/app/api/auth/logout/route";
 import { POST as enrollRoute, DELETE as cancelEnrollmentRoute } from "@/app/api/opportunities/[id]/registrations/route";
 import { createAccount, authenticateAccount } from "@/features/auth/services/accounts";
+import { getSafeRedirectPath } from "@/features/auth/services/safe-redirect";
 import { createSessionToken, verifySessionToken, revokeSessionToken, SESSION_DURATION_SECONDS } from "@/features/auth/services/session";
 import { requireOrganizationRequest, organizationBackendUnavailable } from "@/features/organizations/services/server-authorization";
 import { getOpportunityCatalog, enrollInOpportunity } from "@/features/opportunities/services/enrollments";
@@ -45,6 +46,18 @@ function request(url: string, body?: unknown, cookie?: string, headers: Record<s
 }
 
 const publicUserSchema = z.object({ user: z.object({ id: z.string(), role: z.literal("volunteer") }) });
+
+test("redirecionamento após login preserva destinos internos, filtros e âncoras", () => {
+  for (const destination of ["/painel", "/minhas-atividades", "/certificados?scenario=empty#registrar-certificado", "/oportunidades", "/organizacao"]) {
+    assert.equal(getSafeRedirectPath(destination), destination);
+  }
+});
+
+test("redirecionamento após login rejeita destinos externos e evita retornar a formulários de acesso", () => {
+  for (const destination of [undefined, ["/certificados"], "https://attacker.example", "//attacker.example", "/\\attacker.example", "/painel\n", "/entrar", "/entrar?next=%2Fcertificados", "/entrar/", "/criar-conta#cadastro", "/painel/../entrar"]) {
+    assert.equal(getSafeRedirectPath(destination), "/painel");
+  }
+});
 
 test("cadastro novo e duplicado têm a mesma resposta, não autenticam e não permitem role injetado", async () => {
   const values = accountValues();
