@@ -1,8 +1,8 @@
 import { z } from "zod";
 
-import { certificateDocumentTypes, certificateFieldsSchema, maximumCertificateSize } from "@/features/certificates/schemas/certificate-schema";
+import { certificateDocumentTypes, certificateFieldsInputSchema, maximumCertificateSize } from "@/features/certificates/schemas/certificate-schema";
 
-export const externalSubmissionSchema = certificateFieldsSchema.extend({
+export const externalSubmissionSchema = certificateFieldsInputSchema.extend({
   document: z
     .custom<FileList>(
       (value) => typeof FileList !== "undefined" && value instanceof FileList && value.length === 1,
@@ -25,3 +25,4 @@ export const externalSubmissionSchema = certificateFieldsSchema.extend({
 });
 
 export type ExternalSubmissionFormValues = z.infer<typeof externalSubmissionSchema>;
+export type ExternalSubmissionFormInput = z.input<typeof externalSubmissionSchema>;

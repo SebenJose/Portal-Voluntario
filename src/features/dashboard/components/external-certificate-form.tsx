@@ -4,12 +4,13 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { FileCheck2, Upload } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { type SubmitHandler, useForm } from "react-hook-form";
+import { Controller, type SubmitHandler, useForm } from "react-hook-form";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { certificateHoursDraftSchema } from "@/features/certificates/schemas/certificate-schema";
 import { activityCategories } from "@/lib/activity-categories";
 
 import {
@@ -19,6 +20,7 @@ import {
 } from "../services/external-submissions";
 import {
   externalSubmissionSchema,
+  type ExternalSubmissionFormInput,
   type ExternalSubmissionFormValues,
 } from "../schemas/external-submission-schema";
 
@@ -28,12 +30,13 @@ const fieldClassName =
 export function ExternalCertificateForm() {
   const [receipt, setReceipt] = useState<ExternalSubmissionReceipt | null>(null);
   const [requestError, setRequestError] = useState<string | null>(null);
-  const form = useForm<ExternalSubmissionFormValues>({
+  const form = useForm<ExternalSubmissionFormInput, unknown, ExternalSubmissionFormValues>({
     resolver: zodResolver(externalSubmissionSchema),
+    mode: "onTouched",
     defaultValues: {
       title: "",
       category: "Extensão",
-      hours: 1,
+      hours: "1",
       description: "",
     },
   });
@@ -44,7 +47,7 @@ export function ExternalCertificateForm() {
     try {
       const submittedReceipt = await submitExternalCertificate(values);
       setReceipt(submittedReceipt);
-      form.reset({ title: "", category: "Extensão", hours: 1, description: "" });
+      form.reset({ title: "", category: "Extensão", hours: "1", description: "" });
     } catch (error: unknown) {
       setRequestError(
         error instanceof ExternalSubmissionError
@@ -128,15 +131,25 @@ export function ExternalCertificateForm() {
 
           <div className="space-y-2">
             <Label htmlFor="submission-hours">Horas declaradas</Label>
-            <Input
-              aria-describedby={form.formState.errors.hours ? "submission-hours-error" : undefined}
-              aria-invalid={Boolean(form.formState.errors.hours)}
-              id="submission-hours"
-              max={200}
-              min={1}
-              type="number"
-              {...form.register("hours", { valueAsNumber: true })}
+            <Controller
+              control={form.control}
+              name="hours"
+              render={({ field, fieldState }) => (
+                <Input
+                  {...field}
+                  aria-describedby={fieldState.error ? "submission-hours-help submission-hours-error" : "submission-hours-help"}
+                  aria-invalid={Boolean(fieldState.error)}
+                  id="submission-hours"
+                  inputMode="numeric"
+                  onChange={(event) => {
+                    const value = event.currentTarget.value;
+                    if (certificateHoursDraftSchema.safeParse(value).success) field.onChange(value);
+                  }}
+                  type="text"
+                />
+              )}
             />
+            <p className="text-xs text-muted-foreground" id="submission-hours-help">Use apenas números inteiros, de 1 a 200.</p>
             {form.formState.errors.hours ? (
               <p className="text-sm text-destructive" id="submission-hours-error">
                 {form.formState.errors.hours.message}

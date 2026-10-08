@@ -3,7 +3,7 @@ import { z } from "zod";
 
 import { getCurrentUser } from "@/features/auth/services/client-auth";
 import type { AuthUser } from "@/features/auth/schemas/session-schema";
-import { certificateBlobSchema, certificateFieldsSchema } from "@/features/certificates/schemas/certificate-schema";
+import { certificateBlobSchema, certificateFieldsInputSchema } from "@/features/certificates/schemas/certificate-schema";
 import { getStoredDocument, listStoredCertificates, storeCertificate } from "@/features/certificates/mocks/certificate-store";
 
 async function requireMockUser(): Promise<AuthUser | Response> {
@@ -42,10 +42,10 @@ export const certificateHandlers: RequestHandler[] = [
     if (user instanceof Response) return user;
     const data = await request.formData().catch(() => null);
     if (!data) return HttpResponse.json({ message: "Envie o certificado e os dados da atividade." }, { status: 400 });
-    const fields = certificateFieldsSchema.safeParse({
+    const fields = certificateFieldsInputSchema.safeParse({
       title: data.get("title"),
       category: data.get("category"),
-      hours: Number(data.get("hours")),
+      hours: data.get("hours"),
       description: data.get("description"),
     });
     const file = data.get("document");

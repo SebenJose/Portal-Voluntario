@@ -8,11 +8,25 @@ export const maximumCertificateSize = 5 * 1024 * 1024;
 export const certificateFieldsSchema = z.object({
   title: z.string().trim().min(5, "Informe um título com pelo menos 5 caracteres."),
   category: z.enum(activityCategories),
-  hours: z.number()
+  hours: z.number({ error: "Informe um número válido de horas." })
     .int("Informe um número inteiro de horas.")
     .min(1, "Informe pelo menos 1 hora.")
     .max(200, "O limite é de 200 horas por envio."),
   description: z.string().trim().min(10, "Descreva a atividade com pelo menos 10 caracteres."),
+});
+
+export const certificateHoursDraftSchema = z.string().regex(
+  /^[0-9]*$/u,
+  "Use apenas dígitos para informar as horas.",
+);
+
+export const certificateHoursInputSchema = certificateHoursDraftSchema
+  .min(1, "Informe as horas da atividade.")
+  .transform(Number)
+  .pipe(certificateFieldsSchema.shape.hours);
+
+export const certificateFieldsInputSchema = certificateFieldsSchema.extend({
+  hours: certificateHoursInputSchema,
 });
 
 export const certificateBlobSchema = z.custom<Blob>(
