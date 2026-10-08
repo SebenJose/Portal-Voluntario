@@ -30,7 +30,7 @@ export function HomePage() {
   return (
     <div className="min-h-screen bg-[#f7f7f2] text-brand-black">
       <SiteHeader active="home" />
-      <main id="conteudo">
+      <main aria-labelledby="home-title" id="conteudo" tabIndex={-1}>
         <section aria-labelledby="home-title" className="grid w-full items-center gap-12 px-6 py-12 sm:px-10 sm:py-16 lg:grid-cols-[1.1fr_0.9fr] lg:gap-16 lg:px-16 lg:py-20">
           <div>
             <p className="mb-6 inline-flex items-center gap-2.5 text-xs font-semibold uppercase tracking-[0.16em] text-zinc-600">
@@ -63,9 +63,9 @@ export function HomePage() {
 
         <section aria-labelledby="benefits-title" className="border-y border-zinc-200 bg-white" id="beneficios">
           <div className="w-full px-6 py-12 sm:px-10 sm:py-16 lg:px-16">
-            <div className="mb-9">
+            <header className="mb-9">
               <h2 className="max-w-lg text-3xl font-semibold tracking-tight sm:text-4xl" id="benefits-title">Você contribui.<br />E também se transforma.</h2>
-            </div>
+            </header>
             <div className="grid gap-8 md:grid-cols-3 md:gap-10">
               {benefits.map(({ icon: Icon, title, description }, index) => (
                 <AnimatedBlock delay={index * 0.08} key={title}>
