@@ -10,8 +10,18 @@ import { Skeleton } from "@/components/ui/skeleton";
 import type { AuthUser } from "@/features/auth/schemas/session-schema";
 import { CertificateCard } from "@/features/certificates/components/certificate-card";
 import { useCertificateHistory } from "@/features/certificates/hooks/use-certificate-history";
+import { isDemoModeEnabled } from "@/lib/demo-mode";
 
 export function CertificatesPage({ user }: { user: AuthUser }) {
+  if (!isDemoModeEnabled) return (
+    <AppShell active="certificates" description="Consulte seus comprovantes." title="Meus certificados" user={user}>
+      <Card><CardContent className="p-6">O registro de certificados está disponível somente na demonstração. O serviço de homologação ainda não está integrado.</CardContent></Card>
+    </AppShell>
+  );
+  return <CertificateHistory user={user} />;
+}
+
+function CertificateHistory({ user }: { user: AuthUser }) {
   const { certificates, isLoading, error, retry, downloadingId, downloadError, download } = useCertificateHistory(user.id);
 
   return (

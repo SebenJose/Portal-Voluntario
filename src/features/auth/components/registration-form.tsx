@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { type SubmitHandler, useForm } from "react-hook-form";
 import { ArrowRight, LockKeyhole, Mail, UserRound } from "lucide-react";
@@ -14,7 +14,7 @@ import { AuthServiceError, registerAccount } from "@/features/auth/services/clie
 import { getSafeRedirectPath } from "@/features/auth/services/safe-redirect";
 
 export function RegistrationForm({ nextPath }: { nextPath?: string }) {
-  const router = useRouter();
+  const [message, setMessage] = useState<string | null>(null);
   const destination = getSafeRedirectPath(nextPath);
   const form = useForm<RegistrationValues>({
     mode: "onTouched",
@@ -25,9 +25,9 @@ export function RegistrationForm({ nextPath }: { nextPath?: string }) {
   const handleRegister: SubmitHandler<RegistrationValues> = async (values) => {
     form.clearErrors("root.server");
     try {
-      await registerAccount(values);
-      router.replace(destination);
-      router.refresh();
+      const result = await registerAccount(values);
+      setMessage(result.message);
+      form.reset();
     } catch (error: unknown) {
       form.setError("root.server", {
         type: "server",
@@ -44,7 +44,12 @@ export function RegistrationForm({ nextPath }: { nextPath?: string }) {
         <p className="text-sm leading-6 text-muted-foreground">Faça parte da comunidade e encontre sua próxima causa.</p>
       </CardHeader>
       <CardContent className="px-6 sm:px-8">
-        <form aria-busy={form.formState.isSubmitting} className="space-y-5" noValidate onSubmit={form.handleSubmit(handleRegister)}>
+        {message ? (
+          <div className="space-y-4" role="status">
+            <p>{message}</p>
+            <Button nativeButton={false} render={<Link href={`/entrar?next=${encodeURIComponent(destination)}`} />}>Entrar no portal</Button>
+          </div>
+        ) : <form aria-busy={form.formState.isSubmitting} className="space-y-5" noValidate onSubmit={form.handleSubmit(handleRegister)}>
           <AuthField
             autoComplete="name"
             disabled={form.formState.isSubmitting}
@@ -97,7 +102,7 @@ export function RegistrationForm({ nextPath }: { nextPath?: string }) {
           {form.formState.errors.root?.server ? (
             <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive" role="alert">{form.formState.errors.root.server.message}</p>
           ) : null}
-        </form>
+        </form>}
         <p className="mt-7 border-t border-border pt-6 text-center text-sm leading-6 text-muted-foreground">
           Já tem uma conta?{" "}
           <Link className="rounded-sm font-semibold text-brand-black underline decoration-brand-yellow decoration-2 underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring" href={`/entrar?next=${encodeURIComponent(destination)}`}>Entre no portal</Link>

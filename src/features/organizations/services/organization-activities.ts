@@ -59,7 +59,7 @@ async function readJson<T>(response: Response, schema: z.ZodType<T>): Promise<T>
 
 export async function getManagedActivities(): Promise<Array<ManagedActivity>> {
   try {
-    const response = await fetch("/api/organizations/activities");
+    const response = await fetch("/api/organizations/activities", { cache: "no-store" });
     return await readJson(response, activityListSchema);
   } catch (error: unknown) {
     if (error instanceof OrganizationActivitiesError) {
@@ -84,6 +84,7 @@ export async function updateParticipantAttendance(
       },
     );
     const result = await readJson(response, attendanceUpdateSchema);
+    if (result.participant.id !== participantId) throw new OrganizationActivitiesError("O serviço retornou outro participante.");
     return result.participant;
   } catch (error: unknown) {
     if (error instanceof OrganizationActivitiesError) {
@@ -91,6 +92,22 @@ export async function updateParticipantAttendance(
     }
     throw new OrganizationActivitiesError("Não foi possível atualizar a presença.");
   }
+}
+
+export async function updateParticipantsAttendance(activityId: string, participantIds: string[], status: AttendanceStatus) {
+  const results = await Promise.allSettled(
+    participantIds.map((id) => updateParticipantAttendance(activityId, id, status)),
+  );
+  const updated: ActivityParticipant[] = [];
+  const failedIds: string[] = [];
+  results.forEach((result, index) => {
+    if (result.status === "fulfilled") updated.push(result.value);
+    else {
+      const id = participantIds[index];
+      if (id !== undefined) failedIds.push(id);
+    }
+  });
+  return { updated, failedIds };
 }
 
 export async function dispatchActivityCertificates(

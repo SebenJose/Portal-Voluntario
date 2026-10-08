@@ -8,7 +8,7 @@ export const authUserSchema = z.object({
 });
 
 export const sessionPayloadSchema = z.object({
-  user: authUserSchema,
+  sessionId: z.uuid(),
   issuedAt: z.number().int().positive(),
   expiresAt: z.number().int().positive(),
 });

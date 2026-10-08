@@ -37,7 +37,7 @@ openssl rand -base64 32
 SESSION_SECRET=<cole aqui o valor gerado>
 ```
 
-Crie uma conta em `/criar-conta` para acessar o painel e se inscrever nas oportunidades.
+Use Node.js 22.12 ou superior. Crie uma conta em `/criar-conta` e entre em `/entrar` para acessar o painel e se inscrever nas oportunidades.
 As contas e inscrições usam armazenamento local no servidor; veja [contas e acesso](docs/AUTH.md).
 
 ```bash
@@ -51,6 +51,7 @@ Para validar o projeto:
 
 ```bash
 pnpm lint
+pnpm test
 pnpm typecheck
 pnpm build
 ```
@@ -92,9 +93,15 @@ pnpm dlx shadcn@latest add <componente>
 O alias geral `@/*` aponta para `src/*`, permitindo imports como `@/features/home` e
 `@/components/ui/button`.
 
-O MSW é iniciado automaticamente no navegador no desenvolvimento e no build de demonstração,
-interceptando os handlers em `src/mocks`. Para integrar serviços reais, use
-`NEXT_PUBLIC_API_MOCKING=disabled` antes de iniciar ou gerar o build.
+O MSW é iniciado automaticamente no navegador durante o desenvolvimento. Em builds de produção,
+a demonstração exige `NEXT_PUBLIC_API_MOCKING=enabled` antes do build; sem isso, os recursos ainda
+sem backend informam indisponibilidade. `NEXT_PUBLIC_API_MOCKING=disabled` desativa os mocks
+também no desenvolvimento. Consulte [a configuração da demonstração](docs/DEMO.md).
+
+Em produção, configure `PORTAL_ORIGIN` com a origem HTTPS externa do portal, sem caminho
+(por exemplo, `https://portal.example.org`), além de `SESSION_SECRET`. Essa origem é usada
+para verificar operações de escrita e definir cookies seguros, inclusive atrás de proxy.
+O armazenamento local suporta uma única instância Node.js; não é um backend distribuído.
 
 O envio de certificados é uma simulação de frontend: os registros e arquivos ficam no armazenamento
 local do navegador, separados por conta, e podem ser consultados e baixados na página privada

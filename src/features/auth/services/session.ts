@@ -1,4 +1,14 @@
+import "server-only";
+
+import { randomUUID } from "node:crypto";
+import { z } from "zod";
 import { sessionPayloadSchema, type AuthUser, type SessionPayload } from "@/features/auth/schemas/session-schema";
+import { getAccountUser } from "@/features/auth/services/accounts";
+import { readLocalData, updateLocalData } from "@/lib/server/local-store";
+
+const storedSessionSchema = sessionPayloadSchema.extend({ userId: z.string().min(1) });
+const storedSessionsSchema = z.array(storedSessionSchema);
+const sessionsFile = "sessions.json";
 
 export const SESSION_COOKIE_NAME = "portal_session";
 export const SESSION_DURATION_SECONDS = 60 * 60 * 8;
@@ -46,10 +56,11 @@ function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
 }
 
 export async function createSessionToken(user: AuthUser): Promise<{ token: string; expiresAt: Date }> {
+  if (!getAccountUser(user.id)) throw new Error("Account is unavailable.");
   const issuedAt = Math.floor(Date.now() / 1000);
   const expiresAtSeconds = issuedAt + SESSION_DURATION_SECONDS;
   const payload: SessionPayload = {
-    user,
+    sessionId: randomUUID(),
     issuedAt,
     expiresAt: expiresAtSeconds,
   };
@@ -57,14 +68,19 @@ export async function createSessionToken(user: AuthUser): Promise<{ token: strin
   const encodedPayload = encodeText(JSON.stringify(validatedPayload));
   const signature = await crypto.subtle.sign("HMAC", await getSigningKey(), new TextEncoder().encode(encodedPayload));
 
+  updateLocalData(sessionsFile, storedSessionsSchema, [], (sessions) => [
+    ...sessions.filter((session) => session.expiresAt > issuedAt),
+    { ...validatedPayload, userId: user.id },
+  ]);
+
   return {
     token: `${encodedPayload}.${encodeBase64Url(new Uint8Array(signature))}`,
     expiresAt: new Date(expiresAtSeconds * 1000),
   };
 }
 
-export async function verifySessionToken(token: string | undefined): Promise<AuthUser | null> {
-  if (!token) return null;
+async function readSignedSession(token: string | undefined): Promise<SessionPayload | null> {
+  if (!token || token.length > 2048) return null;
   const [encodedPayload, encodedSignature, extraPart] = token.split(".");
   if (!encodedPayload || !encodedSignature || extraPart !== undefined) return null;
 
@@ -87,8 +103,29 @@ export async function verifySessionToken(token: string | undefined): Promise<Aut
 
     const currentTime = Math.floor(Date.now() / 1000);
     if (payloadResult.data.expiresAt <= currentTime || payloadResult.data.issuedAt > currentTime) return null;
-    return payloadResult.data.user;
+    return payloadResult.data;
   } catch {
     return null;
   }
+}
+
+export async function verifySessionToken(token: string | undefined): Promise<AuthUser | null> {
+  const payload = await readSignedSession(token);
+  if (!payload) return null;
+  try {
+    const session = readLocalData(sessionsFile, storedSessionsSchema, []).find((item) =>
+      item.sessionId === payload.sessionId && item.issuedAt === payload.issuedAt && item.expiresAt === payload.expiresAt,
+    );
+    return session ? getAccountUser(session.userId) : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function revokeSessionToken(token: string | undefined): Promise<void> {
+  const payload = await readSignedSession(token);
+  if (!payload) return;
+  updateLocalData(sessionsFile, storedSessionsSchema, [], (sessions) =>
+    sessions.filter((session) => session.sessionId !== payload.sessionId && session.expiresAt > Math.floor(Date.now() / 1000)),
+  );
 }

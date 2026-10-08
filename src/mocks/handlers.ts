@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import type { ManagedActivity } from "@/features/organizations/types";
 import { certificateHandlers } from "@/features/certificates/mocks/handlers";
+import { requireMockOrganization } from "@/features/organizations/mocks/authorization";
 
 type HealthResponse = {
   status: "ok";
@@ -35,6 +36,16 @@ const organizationActivities: Array<ManagedActivity> = [
   },
 ];
 
+const activitiesByOwner = new Map<string, Array<ManagedActivity>>();
+
+function getOwnerActivities(ownerId: string): Array<ManagedActivity> {
+  const stored = activitiesByOwner.get(ownerId);
+  if (stored) return stored;
+  const activities = structuredClone(organizationActivities);
+  activitiesByOwner.set(ownerId, activities);
+  return activities;
+}
+
 export const handlers = [
   http.all("/api/auth/*", () => passthrough()),
   http.get("/api/health", () => {
@@ -56,12 +67,16 @@ export const handlers = [
     return passthrough();
   }),
   http.post("/api/opportunities/:id/registrations", () => passthrough()),
-  http.get("/api/organizations/activities", () => {
-    return HttpResponse.json(organizationActivities);
+  http.get("/api/organizations/activities", async () => {
+    const user = await requireMockOrganization();
+    if (user instanceof Response) return user;
+    return HttpResponse.json(getOwnerActivities(user.id));
   }),
   http.patch(
     "/api/organizations/activities/:activityId/participants/:participantId",
     async ({ params, request }) => {
+      const user = await requireMockOrganization();
+      if (user instanceof Response) return user;
       const payload: unknown = await request.json().catch(() => null);
       const bodySchema = z.object({ status: z.enum(["Inscrito", "Presente", "Ausente"]) });
       const parsedBody = bodySchema.safeParse(payload);
@@ -70,19 +85,24 @@ export const handlers = [
         return HttpResponse.json({ message: "Status de presença inválido." }, { status: 400 });
       }
 
-      const activity = organizationActivities.find(({ id }) => id === params.activityId);
+      const activity = getOwnerActivities(user.id).find(({ id }) => id === params.activityId);
       const participant = activity?.participants.find(({ id }) => id === params.participantId);
 
       if (!activity || !participant) {
         return HttpResponse.json({ message: "Atividade ou participante não encontrado." }, { status: 404 });
       }
 
+      if (activity.certificatesDispatched) {
+        return HttpResponse.json({ message: "A presença está encerrada após o despacho." }, { status: 409 });
+      }
       participant.status = parsedBody.data.status;
       return HttpResponse.json({ participant });
     },
   ),
-  http.post("/api/organizations/activities/:activityId/certificates", ({ params }) => {
-    const activity = organizationActivities.find(({ id }) => id === params.activityId);
+  http.post("/api/organizations/activities/:activityId/certificates", async ({ params }) => {
+    const user = await requireMockOrganization();
+    if (user instanceof Response) return user;
+    const activity = getOwnerActivities(user.id).find(({ id }) => id === params.activityId);
 
     if (!activity) {
       return HttpResponse.json({ message: "Atividade não encontrada." }, { status: 404 });

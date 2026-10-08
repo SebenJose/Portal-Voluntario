@@ -10,12 +10,13 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import type { AuthUser } from "@/features/auth/schemas/session-schema";
+import { isDemoModeEnabled } from "@/lib/demo-mode";
 
 import {
   dispatchActivityCertificates,
   getManagedActivities,
   OrganizationActivitiesError,
-  updateParticipantAttendance,
+  updateParticipantsAttendance,
   type ActivityParticipant,
   type AttendanceStatus,
   type ManagedActivity,
@@ -32,7 +33,7 @@ export function OrganizationManagementPage({ user }: { user: AuthUser }) {
   const [activeActivityId, setActiveActivityId] = useState("");
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set());
   const [search, setSearch] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(isDemoModeEnabled);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -56,6 +57,7 @@ export function OrganizationManagementPage({ user }: { user: AuthUser }) {
   }, []);
 
   useEffect(() => {
+    if (!isDemoModeEnabled) return;
     void Promise.resolve().then(loadActivities);
   }, [loadActivities]);
 
@@ -107,7 +109,7 @@ export function OrganizationManagementPage({ user }: { user: AuthUser }) {
   }
 
   async function applyAttendance(participants: Array<ActivityParticipant>, status: AttendanceStatus) {
-    if (!activeActivity || participants.length === 0) {
+    if (!activeActivity || activeActivity.certificatesDispatched || isSaving || participants.length === 0) {
       return;
     }
 
@@ -116,10 +118,8 @@ export function OrganizationManagementPage({ user }: { user: AuthUser }) {
     setNotice(null);
 
     try {
-      const updatedParticipants = await Promise.all(
-        participants.map((participant) =>
-          updateParticipantAttendance(activeActivity.id, participant.id, status),
-        ),
+      const { updated: updatedParticipants, failedIds } = await updateParticipantsAttendance(
+        activeActivity.id, participants.map((participant) => participant.id), status,
       );
       const updatedIds = new Set(updatedParticipants.map(({ id }) => id));
       setActivities((currentActivities) =>
@@ -128,9 +128,7 @@ export function OrganizationManagementPage({ user }: { user: AuthUser }) {
             ? {
                 ...activity,
                 participants: activity.participants.map((participant) =>
-                  updatedIds.has(participant.id)
-                    ? { ...participant, status }
-                    : participant,
+                  updatedParticipants.find((updated) => updated.id === participant.id) ?? participant,
                 ),
               }
             : activity,
@@ -141,11 +139,8 @@ export function OrganizationManagementPage({ user }: { user: AuthUser }) {
         updatedIds.forEach((id) => nextIds.delete(id));
         return nextIds;
       });
-      setNotice(
-        participants.length === 1
-          ? `Presença de ${participants[0]?.name ?? "participante"} atualizada para ${status.toLocaleLowerCase()}.`
-          : `Presença atualizada para ${participants.length} participantes.`,
-      );
+      setNotice(updatedParticipants.length > 0 ? `Presença atualizada para ${updatedParticipants.length} participante(s).` : null);
+      if (failedIds.length > 0) setError(`Não foi possível atualizar ${failedIds.length} participante(s). As alterações concluídas foram mantidas; tente novamente os selecionados.`);
     } catch (cause: unknown) {
       setError(
         cause instanceof OrganizationActivitiesError
@@ -158,7 +153,7 @@ export function OrganizationManagementPage({ user }: { user: AuthUser }) {
   }
 
   async function handleDispatchCertificates() {
-    if (!activeActivity || presentCount === 0) {
+    if (!activeActivity || activeActivity.certificatesDispatched || isSaving || presentCount === 0) {
       return;
     }
 
@@ -175,7 +170,7 @@ export function OrganizationManagementPage({ user }: { user: AuthUser }) {
             : activity,
         ),
       );
-      setNotice(`Despacho simulado: ${receipt.sentCount} certificado(s) enviados por e-mail.`);
+      setNotice(`Despacho simulado para ${receipt.sentCount} participante(s). Nenhum e-mail foi enviado. As presenças foram encerradas.`);
     } catch (cause: unknown) {
       setError(
         cause instanceof OrganizationActivitiesError
@@ -194,7 +189,9 @@ export function OrganizationManagementPage({ user }: { user: AuthUser }) {
       title="Gestão de atividades"
       user={user}
     >
-      {isLoading ? (
+      {!isDemoModeEnabled ? (
+        <Card><CardContent className="p-6">A gestão de atividades está disponível somente na demonstração. O serviço ainda não está integrado.</CardContent></Card>
+      ) : isLoading ? (
         <OrganizationDataSkeleton />
       ) : error && activities.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-destructive/40 bg-white p-12 text-center" role="alert">
@@ -218,6 +215,7 @@ export function OrganizationManagementPage({ user }: { user: AuthUser }) {
               <Label className="sr-only" htmlFor="managed-activity">Atividade para gerenciar</Label>
               <select
                 className="w-full rounded-lg border border-input bg-white px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40"
+                disabled={isSaving}
                 id="managed-activity"
                 onChange={(event) => {
                   setActiveActivityId(event.target.value);
@@ -277,10 +275,10 @@ export function OrganizationManagementPage({ user }: { user: AuthUser }) {
                 <CardContent className="space-y-4">
                   <div className="flex flex-col gap-3 rounded-xl bg-muted/70 p-3 sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex flex-wrap gap-2">
-                      <Button disabled={isSaving || selectedVisibleIds.length === 0} onClick={() => void applyAttendance(visibleParticipants.filter(({ id }) => selectedIds.has(id)), "Presente")} size="sm">
+                      <Button disabled={isSaving || activeActivity.certificatesDispatched || selectedVisibleIds.length === 0} onClick={() => void applyAttendance(visibleParticipants.filter(({ id }) => selectedIds.has(id)), "Presente")} size="sm">
                         Marcar selecionados presentes
                       </Button>
-                      <Button disabled={isSaving || selectedVisibleIds.length === 0} onClick={() => void applyAttendance(visibleParticipants.filter(({ id }) => selectedIds.has(id)), "Ausente")} size="sm" variant="outline">
+                      <Button disabled={isSaving || activeActivity.certificatesDispatched || selectedVisibleIds.length === 0} onClick={() => void applyAttendance(visibleParticipants.filter(({ id }) => selectedIds.has(id)), "Ausente")} size="sm" variant="outline">
                         Marcar selecionados ausentes
                       </Button>
                     </div>
@@ -336,8 +334,8 @@ export function OrganizationManagementPage({ user }: { user: AuthUser }) {
                               <td className="px-3 py-4"><Badge className={statusStyles[participant.status]} variant="outline">{participant.status}</Badge></td>
                               <td className="px-3 py-4">
                                 <div className="flex gap-2">
-                                  <Button disabled={isSaving || participant.status === "Presente"} onClick={() => void applyAttendance([participant], "Presente")} size="sm" variant="outline">Presente</Button>
-                                  <Button disabled={isSaving || participant.status === "Ausente"} onClick={() => void applyAttendance([participant], "Ausente")} size="sm" variant="outline">Ausente</Button>
+                                  <Button disabled={isSaving || activeActivity.certificatesDispatched || participant.status === "Presente"} onClick={() => void applyAttendance([participant], "Presente")} size="sm" variant="outline">Presente</Button>
+                                  <Button disabled={isSaving || activeActivity.certificatesDispatched || participant.status === "Ausente"} onClick={() => void applyAttendance([participant], "Ausente")} size="sm" variant="outline">Ausente</Button>
                                 </div>
                               </td>
                             </tr>

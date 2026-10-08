@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
 
 import { PublicRouteSkeleton } from "@/components/layout/route-loading-skeletons";
+import { isDemoModeEnabled } from "@/lib/demo-mode";
 
 type MswProviderProps = {
   children: ReactNode;
@@ -11,7 +12,7 @@ type MswProviderProps = {
 
 type StartupState = "starting" | "ready" | "error";
 
-const shouldMockApi = process.env.NEXT_PUBLIC_API_MOCKING !== "disabled";
+const shouldMockApi = isDemoModeEnabled;
 
 let startupPromise: Promise<void> | undefined;
 

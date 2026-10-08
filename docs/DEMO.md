@@ -27,3 +27,10 @@ direta com os Route Handlers.
 
 As rotas `/api/auth/*` passam pelo navegador até os Route Handlers reais do Next.js. O MSW não cria
 credenciais, sessões nem cookies de demonstração.
+
+Em produção, configure também `PORTAL_ORIGIN` com a origem externa e `SESSION_SECRET`.
+Não existe conta embutida: cadastre uma conta e entre no portal. O cadastro cria somente voluntários.
+A gestão exige papel de organização verificado no servidor; seu provisionamento não é público.
+Os certificados locais continuam em IndexedDB por conta e não concedem horas homologadas.
+Sem mocks, registro de certificados e gestão informam indisponibilidade em vez de iniciar chamadas
+sem integração. Veja [os controles e limites do adaptador local](AUTH.md).

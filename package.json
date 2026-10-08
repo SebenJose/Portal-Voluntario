@@ -7,8 +7,9 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
+    "test": "node --experimental-strip-types scripts/test-security.mts",
     "typecheck": "next typegen --webpack && tsc --noEmit",
-    "check": "pnpm lint && pnpm typecheck && pnpm build"
+    "check": "pnpm lint && pnpm test && pnpm typecheck && pnpm build"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

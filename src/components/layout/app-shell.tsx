@@ -124,6 +124,7 @@ export function AppShell({ active, children, description, title, user: initialUs
   }
 
   const displayName = user?.name ?? "Visitante";
+  const allowedNavigation = navigationItems.filter((item) => item.value !== "organization" || user?.role === "organization");
   const initials = user?.name
     .split(" ")
     .filter((part) => part.length > 0)
@@ -151,7 +152,7 @@ export function AppShell({ active, children, description, title, user: initialUs
               <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/45">
                 Principal
               </p>
-              {navigationItems.map((item) => (
+              {allowedNavigation.map((item) => (
                 <NavigationLink
                   href={item.href}
                   icon={item.icon}
@@ -212,7 +213,7 @@ export function AppShell({ active, children, description, title, user: initialUs
             )}
           </div>
           <nav aria-label="Navegação mobile" className="flex gap-1 overflow-x-auto px-4 pb-3">
-            {navigationItems.map((item) => (
+            {allowedNavigation.map((item) => (
               <NavigationLink
                 href={item.href}
                 icon={item.icon}
