@@ -17,17 +17,17 @@ import {
   ExternalSubmissionError,
   submitExternalCertificate,
   type ExternalSubmissionReceipt,
-} from "../services/external-submissions";
+} from "@/features/certificates/services/submissions";
 import {
   externalSubmissionSchema,
   type ExternalSubmissionFormInput,
   type ExternalSubmissionFormValues,
-} from "../schemas/external-submission-schema";
+} from "@/features/certificates/schemas/submission-schema";
 
 const fieldClassName =
   "w-full rounded-lg border border-input bg-white px-3 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/40";
 
-export function ExternalCertificateForm() {
+export function CertificateSubmissionForm({ onSubmitted }: { onSubmitted?: () => void }) {
   const [receipt, setReceipt] = useState<ExternalSubmissionReceipt | null>(null);
   const [requestError, setRequestError] = useState<string | null>(null);
   const form = useForm<ExternalSubmissionFormInput, unknown, ExternalSubmissionFormValues>({
@@ -47,6 +47,7 @@ export function ExternalCertificateForm() {
     try {
       const submittedReceipt = await submitExternalCertificate(values);
       setReceipt(submittedReceipt);
+      onSubmitted?.();
       form.reset({ title: "", category: "Extensão", hours: "1", description: "" });
     } catch (error: unknown) {
       setRequestError(
@@ -59,24 +60,24 @@ export function ExternalCertificateForm() {
 
   if (receipt) {
     return (
-      <Card className="mt-5 border-brand-yellow/40 bg-brand-yellow/10" id="certificados">
+      <Card aria-labelledby="certificate-submission-success" as="section" className="mt-5 border-brand-yellow/40 bg-brand-yellow/10" id="registrar-certificado">
         <CardContent className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
             <div className="rounded-lg bg-white p-2 text-brand-black">
               <FileCheck2 aria-hidden="true" className="size-5" />
             </div>
             <div>
-              <p className="font-semibold text-brand-black" role="status">
+              <h2 className="font-semibold text-brand-black" id="certificate-submission-success">
                 Certificado registrado
-              </p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                “{receipt.title}” foi salvo. Consulte os dados e o comprovante na página de certificados.
+              </h2>
+              <p className="mt-1 text-sm text-muted-foreground" role="status">
+                “{receipt.title}” foi salvo. Consulte os dados e o comprovante na lista acima.
               </p>
               <p className="mt-1 text-xs text-muted-foreground">Protocolo {receipt.id}</p>
             </div>
           </div>
           <div className="flex shrink-0 flex-col gap-2">
-            <Button nativeButton={false} render={<Link href="/certificados" />}>Ver meus certificados</Button>
+            <Button nativeButton={false} render={<Link href="#certificados-registrados" />}>Ver registros</Button>
             <Button onClick={() => setReceipt(null)} variant="outline">Registrar outro certificado</Button>
           </div>
         </CardContent>
@@ -85,9 +86,9 @@ export function ExternalCertificateForm() {
   }
 
   return (
-    <Card className="mt-5 border-brand-yellow/50" id="certificados">
+    <Card aria-labelledby="certificate-submission-title" as="section" className="mt-5 border-brand-yellow/50" id="registrar-certificado">
       <CardHeader>
-        <CardTitle>Submeter certificado externo</CardTitle>
+        <CardTitle id="certificate-submission-title">Registrar certificado externo</CardTitle>
         <CardDescription>
           Registre uma atividade realizada fora do portal. Nesta demonstração, o arquivo fica neste navegador e a análise é simulada.
         </CardDescription>

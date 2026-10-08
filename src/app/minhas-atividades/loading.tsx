@@ -1,5 +1,5 @@
 import { AppRouteSkeleton } from "@/components/layout/route-loading-skeletons";
 
 export default function Loading() {
-  return <AppRouteSkeleton kind="table" title="Protótipo de gestão" />;
+  return <AppRouteSkeleton kind="cards" title="Minhas atividades" />;
 }

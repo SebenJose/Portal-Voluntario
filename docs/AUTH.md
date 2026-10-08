@@ -73,10 +73,14 @@ de aprovação. Certificados locais em análise não concedem horas.
 `/organizacao` exige papel `organization` no servidor. As APIs de gestão também verificam
 sessão e papel: visitante recebe `401`, voluntário `403`. Para organizações, respondem
 `501` quando atingidas diretamente, pois não há backend real de gestão/emissão.
+
+`/demonstracao/gestao` é uma tela pública com participantes fictícios. Seus handlers MSW usam
+`/api/demo/organizations/activities`, sem sessão e com estado separado de cada organização.
+Não há mudança de papel, gravação de contas ou emissão real de certificados nesse fluxo.
 O MSW pode simular esse contrato com autorização por sessão e estado separado por conta,
 mas controles de mock não substituem autorização, tenant e persistência no backend futuro.
 
-`/painel` e `/certificados` exigem sessão no Proxy e na página. Certificados em IndexedDB
+`/painel`, `/certificados` e `/minhas-atividades` exigem sessão no Proxy e na página. Certificados em IndexedDB
 e gestão simulada são habilitados apenas no modo de demonstração. Sem esse modo, as telas
 informam indisponibilidade e não iniciam operações sem integração.
 
@@ -86,3 +90,6 @@ Use Node.js 22.12 ou superior e `pnpm test`. A suíte gera dados e chave aleató
 diretórios temporários, testa rotas, revogação, isolamento, autorização, CSRF, limites e
 reconciliação de lote, e remove somente seus próprios artefatos. Não usa contas existentes,
 não instala dependências e não acessa serviços externos.
+
+O cancelamento usa `DELETE /api/opportunities/:id/registrations`, com a mesma proteção de origem e
+sessão da inscrição. Ele remove apenas o vínculo da conta autenticada; ausência retorna `404`.

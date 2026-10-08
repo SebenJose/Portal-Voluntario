@@ -1,136 +1,99 @@
+"use client";
+
 import Link from "next/link";
 import { ArrowUpRight, CalendarDays, CheckCircle2, Clock3 } from "lucide-react";
+import { useState } from "react";
 
 import { AppShell } from "@/components/layout/app-shell";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
 import type { AuthUser } from "@/features/auth/schemas/session-schema";
-import { activityCategoryStyles } from "@/lib/activity-categories";
-
+import { DashboardCertificates } from "@/features/dashboard/components/dashboard-certificates";
 import type { DashboardSummary } from "@/features/dashboard/services/dashboard-summary";
 import { isDemoModeEnabled } from "@/lib/demo-mode";
-import { ExternalCertificateForm } from "./external-certificate-form";
+import { ActivityAgenda } from "@/features/opportunities/components/activity-agenda";
+import { useOpportunityCatalog } from "@/features/opportunities/hooks/use-opportunity-catalog";
+import { formatSessionDate, getAgendaEntries, getNextSessions } from "@/features/opportunities/lib/agenda";
+import { activityCategoryStyles } from "@/lib/activity-categories";
 
 export function DashboardPage({ user, summary }: { user: AuthUser; summary: DashboardSummary }) {
-  const { hoursSummary, upcomingActivities } = summary;
+  const { hoursSummary } = summary;
+  const catalog = useOpportunityCatalog(user.id, "/painel");
+  const [now] = useState(() => new Date());
+  const nextSessions = getNextSessions(getAgendaEntries(catalog.registeredActivities), now).slice(0, 3);
   const totalCompleted = hoursSummary.reduce((total, item) => total + item.completed, 0);
 
   return (
-    <AppShell
-      active="dashboard"
-      description="Acompanhe seu progresso e encontre os próximos passos da sua jornada."
-      title="Meu painel"
-      user={user}
-    >
+    <AppShell active="dashboard" description="Acompanhe suas inscrições, seus certificados e os próximos encontros." title="Meu painel" user={user}>
       <div className="grid gap-5 xl:grid-cols-[1.4fr_0.6fr]">
-        <Card className="overflow-hidden border-brand-black bg-brand-black text-white shadow-sm">
+        <Card aria-labelledby="hours-bank-title" as="section" className="overflow-hidden border-brand-black bg-brand-black text-white shadow-sm">
           <CardContent className="p-6 sm:p-8">
             <div className="flex flex-col justify-between gap-8 sm:flex-row sm:items-end">
               <div>
-                <p className="text-sm font-medium text-white/70">Banco de horas</p>
+                <h2 className="text-sm font-medium text-white/70" id="hours-bank-title">Banco de horas</h2>
                 <p className="mt-2 text-5xl font-semibold tracking-tight">{totalCompleted}h</p>
-                <p className="mt-2 text-sm text-white/70">
-                  Horas homologadas no portal. Envios em análise não entram neste total.
-                </p>
+                <p className="mt-2 text-sm text-white/70">Horas homologadas no portal. Envios em análise não entram neste total.</p>
               </div>
               <div className="rounded-2xl border border-brand-yellow/30 bg-brand-yellow px-4 py-3 text-brand-black">
                 <CheckCircle2 aria-hidden="true" className="size-7" />
-                <p className="mt-3 text-sm font-medium">Você está no caminho certo!</p>
+                <p className="mt-3 text-sm font-medium">Acompanhe sua jornada</p>
               </div>
             </div>
           </CardContent>
         </Card>
-
-        <Card className="border-brand-yellow/40 bg-brand-yellow/10">
+        <Card aria-labelledby="participations-title" as="section" className="border-brand-yellow/40 bg-brand-yellow/10">
           <CardContent className="flex h-full flex-col justify-between gap-6 p-6">
             <div>
-              <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">Inscrições</p>
-                <CalendarDays aria-hidden="true" className="size-5 text-brand-black" />
-              </div>
-              <p className="mt-3 text-3xl font-semibold">{summary.registrations}</p>
+              <div className="flex items-center justify-between"><h2 className="text-sm text-muted-foreground" id="participations-title">Inscrições ativas</h2><CalendarDays aria-hidden="true" className="size-5 text-brand-black" /></div>
+              <p className="mt-3 text-3xl font-semibold">{catalog.isLoading ? "…" : catalog.loadError ? "—" : catalog.registeredActivities.length}</p>
             </div>
-            <Button nativeButton={false} render={<Link href="/oportunidades" />} variant="outline">
-              Encontrar oportunidade
-              <ArrowUpRight aria-hidden="true" />
-            </Button>
+            <Button nativeButton={false} render={<Link href="/minhas-atividades" />} variant="outline">Ver minhas atividades<ArrowUpRight aria-hidden="true" /></Button>
           </CardContent>
         </Card>
       </div>
 
-      <div className="mt-5 grid gap-5 lg:grid-cols-[1.15fr_0.85fr]">
-        <Card className="border-brand-yellow/30">
-          <CardHeader className="flex-row items-center justify-between space-y-0">
-            <div>
-              <CardTitle>Horas por eixo</CardTitle>
-              <p className="mt-1 text-sm text-muted-foreground">Seu progresso em cada categoria.</p>
-            </div>
+      <div className="mt-5 grid gap-5 lg:grid-cols-2">
+        <Card aria-labelledby="hours-categories-title" as="section" className="border-brand-yellow/30">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0">
+            <div><CardTitle id="hours-categories-title">Horas por eixo</CardTitle><p className="mt-1 text-sm text-muted-foreground">Horas homologadas em cada categoria.</p></div>
             <Clock3 aria-hidden="true" className="size-5 text-brand-black" />
           </CardHeader>
-          <CardContent className="space-y-6">
-            {hoursSummary.map((item) => {
-              return (
-                <div className="space-y-2" key={item.category}>
-                  <div className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className={`size-2.5 rounded-full ${activityCategoryStyles[item.category].indicator}`} />
-                      <span className="font-medium">{item.category}</span>
-                    </div>
-                    <span className="text-muted-foreground">
-                      {item.completed}h homologadas
-                    </span>
-                  </div>
-                </div>
-              );
-            })}
-          </CardContent>
+          <CardContent><ul className="space-y-6">{hoursSummary.map((item) => (
+            <li className="space-y-2" key={item.category}>
+              <div className="flex items-center justify-between text-sm"><span className="flex items-center gap-2 font-medium"><span aria-hidden="true" className={`size-2.5 rounded-full ${activityCategoryStyles[item.category].indicator}`} />{item.category}</span><span className="text-muted-foreground">{item.completed}h homologadas</span></div>
+            </li>
+          ))}</ul></CardContent>
         </Card>
-
-        <Card className="scroll-mt-24 border-brand-yellow/30" id="minhas-atividades">
-          <CardHeader className="flex-row items-center justify-between space-y-0">
-            <div>
-              <CardTitle>Próximas atividades</CardTitle>
-              <p className="mt-1 text-sm text-muted-foreground">O que vem pela frente.</p>
-            </div>
-            <CalendarDays aria-hidden="true" className="size-5 text-brand-black" />
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {upcomingActivities.length === 0 ? <p className="text-sm text-muted-foreground">Você ainda não se inscreveu em atividades.</p> : null}
-              {upcomingActivities.map((activity, index) => (
-                <div key={activity.id}>
-                  {index > 0 ? <Separator className="mb-4" /> : null}
-                  <div className="flex gap-3">
-                    <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-brand-yellow/20 text-brand-black ring-1 ring-brand-yellow/40">
-                      <CalendarDays aria-hidden="true" className="size-5" />
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-medium leading-5">{activity.title}</p>
-                      <p className="mt-1 truncate text-sm text-muted-foreground">
-                        {activity.organization}
-                      </p>
-                      <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                        <span className="text-muted-foreground">{activity.dateLabel}</span>
-                        <Badge variant={activity.status === "Inscrito" ? "secondary" : "outline"}>
-                          {activity.status}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        {isDemoModeEnabled ? <DashboardCertificates userId={user.id} /> : (
+          <Card aria-labelledby="dashboard-certificates-title" as="section">
+            <CardHeader><CardTitle id="dashboard-certificates-title">Certificados lançados</CardTitle></CardHeader>
+            <CardContent className="space-y-4"><p className="text-sm text-muted-foreground">O registro de certificados está disponível somente na demonstração. O serviço de homologação ainda não está integrado.</p><Button nativeButton={false} render={<Link href="/certificados" />} variant="outline">Ver certificados</Button></CardContent>
+          </Card>
+        )}
       </div>
 
-      {isDemoModeEnabled ? <ExternalCertificateForm /> : (
-        <Card className="mt-5" id="certificados"><CardContent className="p-6">
-          O envio de certificados está disponível somente na demonstração. O serviço de homologação ainda não está integrado.
-        </CardContent></Card>
-      )}
+      <div className="mt-5 space-y-5" id="minhas-atividades">
+        {catalog.isLoading ? <p className="rounded-xl border p-5 text-sm text-muted-foreground" role="status">Carregando suas inscrições e agenda...</p> : catalog.loadError ? <section aria-label="Erro ao carregar agenda" className="space-y-4 rounded-xl border p-5"><p className="text-sm text-destructive" role="alert">{catalog.loadError}</p><Button onClick={catalog.retry} variant="outline">Tentar novamente</Button></section> : (
+          <div className="grid items-start gap-5 xl:grid-cols-[0.7fr_1.3fr]">
+            <Card aria-labelledby="upcoming-activities-title" as="section" className="border-brand-yellow/30">
+              <CardHeader><CardTitle id="upcoming-activities-title">Próximas atividades</CardTitle><p className="text-sm text-muted-foreground">Os próximos encontros das suas inscrições.</p></CardHeader>
+              <CardContent className="space-y-5">
+                {nextSessions.length === 0 ? <p className="text-sm text-muted-foreground">Você não tem próximos encontros agendados.</p> : <ul className="space-y-4">{nextSessions.map((entry) => <li className="rounded-xl border p-4" key={`${entry.opportunity.id}-${entry.date}-${entry.startsAt}`}>
+                  <span aria-hidden="true" className={`mb-2 block h-1 w-10 rounded-full ${activityCategoryStyles[entry.opportunity.category].indicator}`} />
+                  <h3 className="font-medium">{entry.opportunity.title}</h3>
+                  <p className="mt-1 text-sm text-muted-foreground">{entry.opportunity.organization}</p>
+                  <p className="mt-2 text-sm"><time dateTime={`${entry.date}T${entry.startsAt}`}>{formatSessionDate(entry.date)} · {entry.startsAt} – {entry.endsAt}</time></p>
+                </li>)}</ul>}
+                <div className="flex flex-wrap gap-2">
+                  <Button nativeButton={false} render={<Link href="/minhas-atividades" />} variant="outline">Gerenciar inscrições</Button>
+                  <Button nativeButton={false} render={<Link href="/oportunidades" />} variant="outline">Encontrar oportunidades</Button>
+                </div>
+              </CardContent>
+            </Card>
+            <ActivityAgenda activities={catalog.registeredActivities} />
+          </div>
+        )}
+      </div>
     </AppShell>
   );
 }

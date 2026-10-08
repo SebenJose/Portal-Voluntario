@@ -105,7 +105,8 @@ O armazenamento local suporta uma única instância Node.js; não é um backend 
 
 O envio de certificados é uma simulação de frontend: os registros e arquivos ficam no armazenamento
 local do navegador, separados por conta, e podem ser consultados e baixados na página privada
-`/certificados`. A análise das horas é simulada. Veja [os contratos e limites do mock](src/mocks/README.md).
+`/certificados`, que também concentra o formulário de envio. O painel mostra a quantidade e as
+horas declaradas dos certificados, separadas do saldo homologado. A análise das horas é simulada. Veja [os contratos e limites do mock](src/mocks/README.md).
 
 Os ícones devem ser importados diretamente do `lucide-react`, por exemplo:
 
@@ -114,3 +115,8 @@ import { ArrowRight } from "lucide-react";
 
 <ArrowRight aria-hidden="true" />;
 ```
+
+A agenda em `/painel` e `/minhas-atividades` usa o Calendar do shadcn/ui e os encontros das inscrições
+da conta. É possível cancelar com confirmação pelo catálogo ou pela página privada de atividades.
+A demonstração de gestão em `/demonstracao/gestao` é pública, sem login, e utiliza participantes e
+ações simulados. A rota `/organizacao` mantém o acesso reservado a organizações.

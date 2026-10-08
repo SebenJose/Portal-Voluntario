@@ -16,21 +16,21 @@ type CertificateCardProps = {
 
 export function CertificateCard({ certificate, isDownloading, downloadDisabled, onDownload }: CertificateCardProps) {
   return (
-    <Card className="h-full">
+    <Card aria-labelledby={`certificate-${certificate.id}-title`} as="article" className="h-full">
       <CardHeader>
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <Badge className={activityCategoryStyles[certificate.category].badge} variant="outline">{certificate.category}</Badge>
           <Badge variant="secondary">{certificate.status}</Badge>
         </div>
-        <CardTitle className="break-words text-lg leading-6">{certificate.title}</CardTitle>
+        <CardTitle as="h3" className="break-words text-lg leading-6" id={`certificate-${certificate.id}-title`}>{certificate.title}</CardTitle>
       </CardHeader>
       <CardContent className="flex-1 space-y-4">
         <p className="break-words text-sm leading-6 text-muted-foreground">{certificate.description}</p>
-        <div className="space-y-2 text-sm text-muted-foreground">
-          <p className="flex items-center gap-2"><Clock3 aria-hidden="true" className="size-4 shrink-0" />{certificate.hours}h declaradas</p>
-          <p className="flex items-center gap-2"><CalendarDays aria-hidden="true" className="size-4 shrink-0" />Registrado em {formatCertificateDate(certificate.createdAt)}</p>
-          <p className="flex items-center gap-2"><FileText aria-hidden="true" className="size-4 shrink-0" /><span className="break-all">{certificate.document.name} · {formatCertificateSize(certificate.document.size)}</span></p>
-        </div>
+        <dl className="space-y-2 text-sm text-muted-foreground">
+          <div><dt className="sr-only">Horas declaradas</dt><dd className="flex items-center gap-2"><Clock3 aria-hidden="true" className="size-4 shrink-0" />{certificate.hours}h declaradas</dd></div>
+          <div><dt className="sr-only">Data do registro</dt><dd className="flex items-center gap-2"><CalendarDays aria-hidden="true" className="size-4 shrink-0" /><span>Registrado em <time dateTime={certificate.createdAt}>{formatCertificateDate(certificate.createdAt)}</time></span></dd></div>
+          <div><dt className="sr-only">Comprovante</dt><dd className="flex items-center gap-2"><FileText aria-hidden="true" className="size-4 shrink-0" /><span className="break-all">{certificate.document.name} · {formatCertificateSize(certificate.document.size)}</span></dd></div>
+        </dl>
         <p className="text-xs text-muted-foreground">Protocolo {certificate.id}</p>
       </CardContent>
       <CardFooter>

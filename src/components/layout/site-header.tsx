@@ -26,6 +26,7 @@ export function SiteHeader({ active, contentId = "conteudo" }: SiteHeaderProps) 
         <nav aria-label="Navegação principal" className="flex items-center gap-4 text-sm sm:gap-7">
           <Link aria-current={active === "home" ? "page" : undefined} className={cn("hidden sm:inline", linkClassName, active === "home" ? activeClassName : inactiveClassName)} href="/">Início</Link>
           <Link aria-current={active === "opportunities" ? "page" : undefined} className={cn(linkClassName, active === "opportunities" ? activeClassName : inactiveClassName)} href="/oportunidades">Vagas</Link>
+          <Link className={cn(linkClassName, inactiveClassName)} href="/demonstracao/gestao">Demonstração</Link>
           <Button className="h-10 rounded-full bg-brand-black px-4 text-white hover:bg-zinc-800" nativeButton={false} render={<Link href="/entrar" />}>
             Entrar <ArrowUpRight aria-hidden="true" className="size-4" />
           </Button>

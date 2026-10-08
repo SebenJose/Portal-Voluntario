@@ -1,6 +1,12 @@
 import { z } from "zod";
 
-import { attendanceStatuses } from "../types";
+import { attendanceStatuses } from "@/features/organizations/types";
+
+export type OrganizationManagementMode = "organization" | "public-demo";
+
+function activitiesEndpoint(mode: OrganizationManagementMode): string {
+  return mode === "public-demo" ? "/api/demo/organizations/activities" : "/api/organizations/activities";
+}
 
 const participantSchema = z.object({
   id: z.string(),
@@ -18,7 +24,7 @@ const managedActivitySchema = z.object({
   certificatesDispatched: z.boolean(),
 });
 
-const activityListSchema = z.array(managedActivitySchema);
+export const activityListSchema = z.array(managedActivitySchema);
 
 const attendanceUpdateSchema = z.object({
   participant: participantSchema,
@@ -57,9 +63,9 @@ async function readJson<T>(response: Response, schema: z.ZodType<T>): Promise<T>
   return parsedPayload.data;
 }
 
-export async function getManagedActivities(): Promise<Array<ManagedActivity>> {
+export async function getManagedActivities(mode: OrganizationManagementMode = "organization"): Promise<Array<ManagedActivity>> {
   try {
-    const response = await fetch("/api/organizations/activities", { cache: "no-store" });
+    const response = await fetch(activitiesEndpoint(mode), { cache: "no-store" });
     return await readJson(response, activityListSchema);
   } catch (error: unknown) {
     if (error instanceof OrganizationActivitiesError) {
@@ -73,10 +79,11 @@ export async function updateParticipantAttendance(
   activityId: string,
   participantId: string,
   status: AttendanceStatus,
+  mode: OrganizationManagementMode = "organization",
 ): Promise<ActivityParticipant> {
   try {
     const response = await fetch(
-      `/api/organizations/activities/${encodeURIComponent(activityId)}/participants/${encodeURIComponent(participantId)}`,
+      `${activitiesEndpoint(mode)}/${encodeURIComponent(activityId)}/participants/${encodeURIComponent(participantId)}`,
       {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -94,9 +101,9 @@ export async function updateParticipantAttendance(
   }
 }
 
-export async function updateParticipantsAttendance(activityId: string, participantIds: string[], status: AttendanceStatus) {
+export async function updateParticipantsAttendance(activityId: string, participantIds: string[], status: AttendanceStatus, mode: OrganizationManagementMode = "organization") {
   const results = await Promise.allSettled(
-    participantIds.map((id) => updateParticipantAttendance(activityId, id, status)),
+    participantIds.map((id) => updateParticipantAttendance(activityId, id, status, mode)),
   );
   const updated: ActivityParticipant[] = [];
   const failedIds: string[] = [];
@@ -112,10 +119,11 @@ export async function updateParticipantsAttendance(activityId: string, participa
 
 export async function dispatchActivityCertificates(
   activityId: string,
+  mode: OrganizationManagementMode = "organization",
 ): Promise<CertificateDispatchReceipt> {
   try {
     const response = await fetch(
-      `/api/organizations/activities/${encodeURIComponent(activityId)}/certificates`,
+      `${activitiesEndpoint(mode)}/${encodeURIComponent(activityId)}/certificates`,
       { method: "POST" },
     );
     return await readJson(response, certificateDispatchSchema);
