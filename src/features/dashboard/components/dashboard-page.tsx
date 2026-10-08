@@ -5,17 +5,17 @@ import { AppShell } from "@/components/layout/app-shell";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import type { AuthUser } from "@/features/auth/schemas/session-schema";
 import { activityCategoryStyles } from "@/lib/activity-categories";
 
-import { hoursSummary, upcomingActivities } from "../data/dashboard";
+import type { DashboardSummary } from "@/features/dashboard/services/dashboard-summary";
+import { isDemoModeEnabled } from "@/lib/demo-mode";
 import { ExternalCertificateForm } from "./external-certificate-form";
 
-export function DashboardPage({ user }: { user: AuthUser }) {
+export function DashboardPage({ user, summary }: { user: AuthUser; summary: DashboardSummary }) {
+  const { hoursSummary, upcomingActivities } = summary;
   const totalCompleted = hoursSummary.reduce((total, item) => total + item.completed, 0);
-  const totalLimit = hoursSummary.reduce((total, item) => total + item.limit, 0);
 
   return (
     <AppShell
@@ -32,7 +32,7 @@ export function DashboardPage({ user }: { user: AuthUser }) {
                 <p className="text-sm font-medium text-white/70">Banco de horas</p>
                 <p className="mt-2 text-5xl font-semibold tracking-tight">{totalCompleted}h</p>
                 <p className="mt-2 text-sm text-white/70">
-                  de {totalLimit}h possíveis nas atividades acompanhadas
+                  Horas homologadas no portal. Envios em análise não entram neste total.
                 </p>
               </div>
               <div className="rounded-2xl border border-brand-yellow/30 bg-brand-yellow px-4 py-3 text-brand-black">
@@ -47,10 +47,10 @@ export function DashboardPage({ user }: { user: AuthUser }) {
           <CardContent className="flex h-full flex-col justify-between gap-6 p-6">
             <div>
               <div className="flex items-center justify-between">
-                <p className="text-sm text-muted-foreground">Participações</p>
+                <p className="text-sm text-muted-foreground">Inscrições</p>
                 <CalendarDays aria-hidden="true" className="size-5 text-brand-black" />
               </div>
-              <p className="mt-3 text-3xl font-semibold">08</p>
+              <p className="mt-3 text-3xl font-semibold">{summary.registrations}</p>
             </div>
             <Button nativeButton={false} render={<Link href="/oportunidades" />} variant="outline">
               Encontrar oportunidade
@@ -71,8 +71,6 @@ export function DashboardPage({ user }: { user: AuthUser }) {
           </CardHeader>
           <CardContent className="space-y-6">
             {hoursSummary.map((item) => {
-              const percentage = Math.round((item.completed / item.limit) * 100);
-
               return (
                 <div className="space-y-2" key={item.category}>
                   <div className="flex items-center justify-between text-sm">
@@ -81,10 +79,9 @@ export function DashboardPage({ user }: { user: AuthUser }) {
                       <span className="font-medium">{item.category}</span>
                     </div>
                     <span className="text-muted-foreground">
-                      {item.completed}h / {item.limit}h
+                      {item.completed}h homologadas
                     </span>
                   </div>
-                  <Progress indicatorClassName={activityCategoryStyles[item.category].indicator} value={percentage} />
                 </div>
               );
             })}
@@ -101,6 +98,7 @@ export function DashboardPage({ user }: { user: AuthUser }) {
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
+              {upcomingActivities.length === 0 ? <p className="text-sm text-muted-foreground">Você ainda não se inscreveu em atividades.</p> : null}
               {upcomingActivities.map((activity, index) => (
                 <div key={activity.id}>
                   {index > 0 ? <Separator className="mb-4" /> : null}
@@ -128,7 +126,11 @@ export function DashboardPage({ user }: { user: AuthUser }) {
         </Card>
       </div>
 
-      <ExternalCertificateForm />
+      {isDemoModeEnabled ? <ExternalCertificateForm /> : (
+        <Card className="mt-5" id="certificados"><CardContent className="p-6">
+          O envio de certificados está disponível somente na demonstração. O serviço de homologação ainda não está integrado.
+        </CardContent></Card>
+      )}
     </AppShell>
   );
 }
