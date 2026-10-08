@@ -30,7 +30,14 @@ credenciais, sessões nem cookies de demonstração.
 
 Em produção, configure também `PORTAL_ORIGIN` com a origem externa e `SESSION_SECRET`.
 Não existe conta embutida: cadastre uma conta e entre no portal. O cadastro cria somente voluntários.
-A gestão exige papel de organização verificado no servidor; seu provisionamento não é público.
+A demonstração de gestão em `/demonstracao/gestao` pode ser acessada pelo menu sem login.
+Seus participantes e alterações ficam apenas na memória do navegador e são reiniciados ao recarregar.
+Ela usa endpoints MSW próprios em `/api/demo/organizations/activities`, sem alterar contas,
+inscrições, certificados ou os dados da gestão reservada.
+
+A rota `/organizacao` e suas APIs continuam exigindo papel de organização verificado no servidor;
+seu provisionamento não é público. A restrição veio da atualização de autenticação da `main`, que
+também removeu o login embutido antigo; por isso o menu de gestão desapareceu para voluntários.
 Os certificados locais continuam em IndexedDB por conta e não concedem horas homologadas.
 Sem mocks, registro de certificados e gestão informam indisponibilidade em vez de iniciar chamadas
 sem integração. Veja [os controles e limites do adaptador local](AUTH.md).

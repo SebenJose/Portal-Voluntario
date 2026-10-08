@@ -14,7 +14,8 @@ Para adicionar um novo endpoint:
 4. Mantenha o serviço da feature independente do mock para que a troca pelo backend real não exija
    alterações nos componentes.
 
-O catálogo usa `GET /api/opportunities` e `POST /api/opportunities/:id/registrations`. O MSW libera
+O catálogo usa `GET /api/opportunities`, `POST /api/opportunities/:id/registrations` e
+`DELETE /api/opportunities/:id/registrations`. O MSW libera
 o fluxo padrão para os Route Handlers locais, que usam fixtures validadas e persistem inscrições
 por usuário. O servidor exige sessão válida para inscrições: `401` representa sessão ausente ou
 expirada; `404` e `409` representam oportunidade inexistente, duplicidade e falta de vagas.
@@ -35,7 +36,9 @@ ao recarregar e ao sair/entrar na mesma conta, mas não são sincronizados entre
 dispositivos. Limpar os dados do site apaga os registros. Não há upload para servidor nem análise
 real de certificados; o status `Em análise` representa apenas a demonstração.
 
-A página privada `/certificados` lista os envios do usuário e permite baixar o comprovante original.
+A página privada `/certificados` concentra o formulário de registro, o histórico e o download do
+comprovante original. Ao enviar, a lista e os totais são atualizados. O painel mostra a quantidade e
+as horas declaradas por eixo. Todas permanecem em análise e não alteram o saldo homologado.
 As submissões do mock anterior não podem ser recuperadas porque ele não armazenava os dados.
 
 Os serviços consomem contratos Zod independentes da persistência do mock. Na integração futura,
@@ -54,3 +57,25 @@ a integração não existe. Autorização de mock é apenas parte da demonstraç
 Para verificar estados de listagem, consulte `/api/submissions?scenario=empty`,
 `?scenario=server-error`, `?scenario=network-error` ou `?scenario=loading` a partir do navegador
 autenticado com o MSW ativo.
+
+## Inscrições e agenda
+
+A página privada `/minhas-atividades` lista somente as inscrições da conta e permite cancelá-las
+com confirmação. O catálogo também permite cancelar. O adaptador local remove apenas o vínculo
+do usuário autenticado, libera a vaga e retorna o total atualizado; inscrição ausente retorna `404`.
+O estado da tela só muda após uma resposta válida do serviço, preservando a inscrição em caso de erro.
+
+As fixtures têm encontros explícitos (`date`, `startsAt`, `endsAt`), validados com Zod. A agenda
+usa o Calendar do shadcn/ui com React DayPicker, em português, e marca todos os encontros registrados.
+O painel e a página de atividades consomem o mesmo contrato. Datas sem fuso são interpretadas no dia
+local para evitar deslocamento de um dia. Os horários são locais do protótipo.
+
+## Protótipo de gestão
+
+`/demonstracao/gestao` é pública, identificada no menu e na página, e não exige login.
+Os handlers em `/api/demo/organizations/activities` usam uma cópia independente das fixtures;
+presença e envio são simulados pelo MSW. Nenhum e-mail ou certificado é realmente enviado.
+Recarregar reinicia os dados. As fixtures e os handlers ficam em `src/features/organizations/mocks`.
+
+`/organizacao` e `/api/organizations/activities` preservam a autorização por papel e o estado
+isolado por conta de organização. A demonstração pública não altera esse estado nem o perfil da conta.
