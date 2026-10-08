@@ -92,8 +92,13 @@ pnpm dlx shadcn@latest add <componente>
 O alias geral `@/*` aponta para `src/*`, permitindo imports como `@/features/home` e
 `@/components/ui/button`.
 
-Durante o desenvolvimento, o MSW é iniciado automaticamente no navegador e intercepta os handlers
-em `src/mocks`. Para desativá-lo localmente, use `NEXT_PUBLIC_API_MOCKING=disabled`.
+O MSW é iniciado automaticamente no navegador no desenvolvimento e no build de demonstração,
+interceptando os handlers em `src/mocks`. Para integrar serviços reais, use
+`NEXT_PUBLIC_API_MOCKING=disabled` antes de iniciar ou gerar o build.
+
+O envio de certificados é uma simulação de frontend: os registros e arquivos ficam no armazenamento
+local do navegador, separados por conta, e podem ser consultados e baixados na página privada
+`/certificados`. A análise das horas é simulada. Veja [os contratos e limites do mock](src/mocks/README.md).
 
 Os ícones devem ser importados diretamente do `lucide-react`, por exemplo:
 

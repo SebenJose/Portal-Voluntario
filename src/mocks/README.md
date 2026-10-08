@@ -1,6 +1,7 @@
 # MSW
 
-O MSW é iniciado pelo `MswProvider` somente no navegador e durante o desenvolvimento. Os handlers
+O MSW é iniciado pelo `MswProvider` somente no navegador, tanto no desenvolvimento quanto no build
+de demonstração. Use `NEXT_PUBLIC_API_MOCKING=disabled` para desativá-lo ao integrar o backend. Os handlers
 ficam centralizados aqui e devem representar os contratos que a UI consumirá. Requisições sem handler
 são liberadas para a rede (`onUnhandledFrame: "bypass"`).
 
@@ -21,3 +22,24 @@ ou `/api/opportunities?scenario=server-error`.
 
 As rotas `/api/auth/*` também passam para o servidor. Não simule cookies ou autenticação no
 navegador, pois isso permitiria contornar a proteção das inscrições.
+
+## Certificados externos
+
+A feature `src/features/certificates` simula `POST /api/submissions`, `GET /api/submissions` e
+`GET /api/submissions/:id/document`. Os handlers verificam a sessão pelo serviço de autenticação
+existente e isolam os registros pelo ID da conta. Usuários sem sessão recebem `401`.
+
+O mock guarda os dados e o arquivo original no IndexedDB do navegador. Os registros permanecem
+ao recarregar e ao sair/entrar na mesma conta, mas não são sincronizados entre navegadores ou
+dispositivos. Limpar os dados do site apaga os registros. Não há upload para servidor nem análise
+real de certificados; o status `Em análise` representa apenas a demonstração.
+
+A página privada `/certificados` lista os envios do usuário e permite baixar o comprovante original.
+As submissões do mock anterior não podem ser recuperadas porque ele não armazenava os dados.
+
+Os serviços consomem contratos Zod independentes da persistência do mock. Na integração futura,
+implemente esses endpoints no backend e desative o MSW, preservando os componentes.
+
+Para verificar estados de listagem, consulte `/api/submissions?scenario=empty`,
+`?scenario=server-error`, `?scenario=network-error` ou `?scenario=loading` a partir do navegador
+autenticado com o MSW ativo.
