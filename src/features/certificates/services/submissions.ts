@@ -1,6 +1,6 @@
 import { certificateFieldsSchema, type CertificateRecord } from "@/features/certificates/schemas/certificate-schema";
 import { CertificatesServiceError, createCertificate } from "@/features/certificates/services/certificates";
-import { externalSubmissionSchema, type ExternalSubmissionFormValues } from "@/features/dashboard/schemas/external-submission-schema";
+import { externalSubmissionSchema, type ExternalSubmissionFormValues } from "@/features/certificates/schemas/submission-schema";
 
 export { CertificatesServiceError as ExternalSubmissionError } from "@/features/certificates/services/certificates";
 export type ExternalSubmissionReceipt = CertificateRecord;

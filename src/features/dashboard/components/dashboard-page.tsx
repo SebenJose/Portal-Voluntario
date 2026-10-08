@@ -11,7 +11,7 @@ import { activityCategoryStyles } from "@/lib/activity-categories";
 
 import type { DashboardSummary } from "@/features/dashboard/services/dashboard-summary";
 import { isDemoModeEnabled } from "@/lib/demo-mode";
-import { ExternalCertificateForm } from "./external-certificate-form";
+import { DashboardCertificates } from "@/features/dashboard/components/dashboard-certificates";
 
 export function DashboardPage({ user, summary }: { user: AuthUser; summary: DashboardSummary }) {
   const { hoursSummary, upcomingActivities } = summary;
@@ -126,7 +126,7 @@ export function DashboardPage({ user, summary }: { user: AuthUser; summary: Dash
         </Card>
       </div>
 
-      {isDemoModeEnabled ? <ExternalCertificateForm /> : (
+      {isDemoModeEnabled ? <DashboardCertificates userId={user.id} /> : (
         <Card className="mt-5" id="certificados"><CardContent className="p-6">
           O envio de certificados está disponível somente na demonstração. O serviço de homologação ainda não está integrado.
         </CardContent></Card>

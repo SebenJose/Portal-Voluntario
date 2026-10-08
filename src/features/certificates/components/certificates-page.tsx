@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { AuthUser } from "@/features/auth/schemas/session-schema";
+import { CertificateSubmissionForm } from "@/features/certificates/components/certificate-submission-form";
+import { CertificateTotals } from "@/features/certificates/components/certificate-totals";
 import { CertificateCard } from "@/features/certificates/components/certificate-card";
 import { useCertificateHistory } from "@/features/certificates/hooks/use-certificate-history";
 import { isDemoModeEnabled } from "@/lib/demo-mode";
@@ -30,36 +32,40 @@ function CertificateHistory({ user }: { user: AuthUser }) {
         <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
           Nesta demonstração, os registros e arquivos ficam salvos apenas neste navegador. A análise é simulada e as horas declaradas ainda não são homologadas.
         </p>
-        <Button className="shrink-0 bg-brand-yellow text-brand-black hover:bg-brand-yellow/85" nativeButton={false} render={<Link href="/painel#certificados" />}>
+        <Button className="shrink-0 bg-brand-yellow text-brand-black hover:bg-brand-yellow/85" nativeButton={false} render={<Link href="#registrar-certificado" />}>
           <Plus aria-hidden="true" />Registrar certificado
         </Button>
       </div>
 
       {downloadError ? <p className="mb-5 rounded-lg border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive" role="alert">{downloadError}</p> : null}
 
-      {isLoading ? (
-        <div aria-label="Carregando certificados" className="grid gap-5 md:grid-cols-2" role="status">
-          {Array.from({ length: 2 }, (_, index) => <Skeleton className="h-72 rounded-2xl" key={index} />)}
-        </div>
-      ) : error ? (
-        <Card><CardContent className="space-y-4 p-6"><p className="text-sm text-destructive" role="alert">{error}</p><Button onClick={retry} variant="outline">Tentar novamente</Button></CardContent></Card>
-      ) : certificates.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center gap-4 px-6 py-12 text-center">
-            <div className="rounded-full bg-brand-yellow/15 p-4"><FileCheck2 aria-hidden="true" className="size-8 text-brand-black" /></div>
-            <h2 className="text-xl font-semibold">Nenhum certificado registrado</h2>
-            <p className="max-w-md text-sm leading-6 text-muted-foreground">Registre sua primeira atividade externa para consultar os dados e baixar o comprovante por aqui.</p>
-            <Button nativeButton={false} render={<Link href="/painel#certificados" />} variant="outline">Registrar primeiro certificado</Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <section aria-label="Certificados registrados" className="space-y-4">
-          <p className="text-sm text-muted-foreground">{certificates.length} certificado(s) registrado(s)</p>
-          <div className="grid gap-5 md:grid-cols-2">
-            {certificates.map((certificate) => <CertificateCard certificate={certificate} downloadDisabled={downloadingId !== null} isDownloading={downloadingId === certificate.id} key={certificate.id} onDownload={() => { void download(certificate); }} />)}
+      <section aria-labelledby="certificates-history-title" className="space-y-5 scroll-mt-24" id="certificados-registrados">
+        <h2 className="text-xl font-semibold" id="certificates-history-title">Certificados registrados</h2>
+        {!isLoading && !error ? <Card><CardContent className="p-6"><CertificateTotals certificates={certificates} /></CardContent></Card> : null}
+        {isLoading ? (
+          <div aria-label="Carregando certificados" className="grid gap-5 md:grid-cols-2" role="status">
+            {Array.from({ length: 2 }, (_, index) => <Skeleton className="h-72 rounded-2xl" key={index} />)}
           </div>
-        </section>
-      )}
+        ) : error ? (
+          <Card><CardContent className="space-y-4 p-6"><p className="text-sm text-destructive" role="alert">{error}</p><Button onClick={retry} variant="outline">Tentar novamente</Button></CardContent></Card>
+        ) : certificates.length === 0 ? (
+          <Card className="border-dashed">
+            <CardContent className="flex flex-col items-center gap-4 px-6 py-12 text-center">
+              <div className="rounded-full bg-brand-yellow/15 p-4"><FileCheck2 aria-hidden="true" className="size-8 text-brand-black" /></div>
+              <h3 className="text-xl font-semibold">Nenhum certificado registrado</h3>
+              <p className="max-w-md text-sm leading-6 text-muted-foreground">Registre sua primeira atividade externa para consultar os dados e baixar o comprovante por aqui.</p>
+              <Button nativeButton={false} render={<Link href="#registrar-certificado" />} variant="outline">Registrar primeiro certificado</Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-4">
+            <ul className="grid gap-5 md:grid-cols-2">
+              {certificates.map((certificate) => <li key={certificate.id}><CertificateCard certificate={certificate} downloadDisabled={downloadingId !== null} isDownloading={downloadingId === certificate.id} onDownload={() => { void download(certificate); }} /></li>)}
+            </ul>
+          </div>
+        )}
+      </section>
+      <CertificateSubmissionForm onSubmitted={retry} />
     </AppShell>
   );
 }

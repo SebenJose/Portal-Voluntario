@@ -40,7 +40,7 @@ const navigationItems: Array<NavigationItem> = [
 
 const secondaryItems = [
   { href: "/painel#minhas-atividades", icon: CalendarDays, label: "Minhas atividades" },
-  { href: "/painel#certificados", icon: Award, label: "Registrar certificado" },
+  { href: "/certificados#registrar-certificado", icon: Award, label: "Registrar certificado" },
 ];
 
 function NavigationLink({
