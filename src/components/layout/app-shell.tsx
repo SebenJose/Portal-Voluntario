@@ -17,7 +17,7 @@ import { AuthServiceError, getCurrentUser, logout } from "@/features/auth/servic
 import type { AuthUser } from "@/features/auth/schemas/session-schema";
 
 type AppShellProps = {
-  active: "dashboard" | "opportunities" | "organization" | "certificates";
+  active: "dashboard" | "opportunities" | "organization" | "certificates" | "activities";
   children: ReactNode;
   description: string;
   title: string;
@@ -35,11 +35,11 @@ const navigationItems: Array<NavigationItem> = [
   { href: "/painel", icon: LayoutDashboard, label: "Meu painel", value: "dashboard" },
   { href: "/oportunidades", icon: Compass, label: "Oportunidades", value: "opportunities" },
   { href: "/organizacao", icon: ClipboardCheck, label: "Gestão de atividades", value: "organization" },
+  { href: "/minhas-atividades", icon: CalendarDays, label: "Minhas atividades", value: "activities" },
   { href: "/certificados", icon: Award, label: "Meus certificados", value: "certificates" },
 ];
 
 const secondaryItems = [
-  { href: "/painel#minhas-atividades", icon: CalendarDays, label: "Minhas atividades" },
   { href: "/certificados#registrar-certificado", icon: Award, label: "Registrar certificado" },
 ];
 

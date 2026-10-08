@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { activityCategoryStyles } from "@/lib/activity-categories";
 
-import type { Opportunity } from "../types";
+import type { Opportunity } from "@/features/opportunities/types";
+import { CancelEnrollmentButton } from "@/features/opportunities/components/cancel-enrollment-button";
 
 type OpportunityCardProps = {
   opportunity: Opportunity;
@@ -17,6 +18,8 @@ type OpportunityCardProps = {
   isRegistering: boolean;
   onRegister: (opportunityId: string) => void;
   canRegister: boolean;
+  onCancel: () => Promise<boolean>;
+  cancellationError: string | null;
 };
 
 export function OpportunityCard({
@@ -25,11 +28,15 @@ export function OpportunityCard({
   isRegistering,
   onRegister,
   canRegister,
+  onCancel,
+  cancellationError,
 }: OpportunityCardProps) {
   const isFull = opportunity.enrolled >= opportunity.vacancies;
 
   return (
-    <motion.div
+    <motion.article
+      aria-labelledby={`opportunity-${opportunity.id}-title`}
+      className="h-full"
       layout
       animate={{ opacity: 1, y: 0 }}
       initial={{ opacity: 0, y: 12 }}
@@ -47,54 +54,54 @@ export function OpportunityCard({
           </div>
           <div>
             <p className="text-sm text-muted-foreground">{opportunity.organization}</p>
-            <CardTitle className="mt-1 text-xl leading-tight">{opportunity.title}</CardTitle>
+            <CardTitle as="h3" className="mt-1 text-xl leading-tight" id={`opportunity-${opportunity.id}-title`}>{opportunity.title}</CardTitle>
           </div>
         </CardHeader>
 
         <CardContent className="flex-1 space-y-5">
           <p className="text-sm leading-6 text-muted-foreground">{opportunity.description}</p>
 
-          <div className="grid gap-3 text-sm text-muted-foreground">
-            <span className="flex items-center gap-2">
+          <ul className="grid gap-3 text-sm text-muted-foreground">
+            <li className="flex items-center gap-2">
               <CalendarDays aria-hidden="true" className="size-4 text-brand-black" />
               {opportunity.dateLabel}
-            </span>
-            <span className="flex items-center gap-2">
+            </li>
+            <li className="flex items-center gap-2">
               <Clock3 aria-hidden="true" className="size-4 text-brand-black" />
               {opportunity.durationLabel} · {opportunity.hours}h válidas
-            </span>
-            <span className="flex items-center gap-2">
+            </li>
+            <li className="flex items-center gap-2">
               <MapPin aria-hidden="true" className="size-4 text-brand-black" />
               {opportunity.format} · {opportunity.location}
-            </span>
-            <span className="flex items-center gap-2">
+            </li>
+            <li className="flex items-center gap-2">
               <Users aria-hidden="true" className="size-4 text-brand-black" />
               {opportunity.enrolled}/{opportunity.vacancies} vagas preenchidas
-            </span>
-          </div>
+            </li>
+          </ul>
         </CardContent>
 
         <CardFooter>
-          {!canRegister && !isFull ? (
+          {isRegistered ? (
+            <CancelEnrollmentButton error={cancellationError} isPending={isRegistering} onCancel={onCancel} title={opportunity.title} />
+          ) : !canRegister && !isFull ? (
             <Button className="w-full" nativeButton={false} render={<Link href="/entrar?next=%2Foportunidades" />} variant="outline">
               Entre para participar
             </Button>
           ) : <Button
             className="w-full"
-            disabled={(isFull && !isRegistered) || isRegistered || isRegistering}
+            disabled={isFull || isRegistering}
             onClick={() => onRegister(opportunity.id)}
-            variant={isRegistered ? "secondary" : "default"}
+            variant="default"
           >
             {isRegistering
               ? "Inscrevendo..."
-              : isRegistered
-                ? "Inscrição realizada"
-                : isFull
+              : isFull
                   ? "Vagas esgotadas"
                   : "Quero participar"}
           </Button>}
         </CardFooter>
       </Card>
-    </motion.div>
+    </motion.article>
   );
 }

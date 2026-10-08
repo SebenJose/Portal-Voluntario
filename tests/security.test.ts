@@ -12,11 +12,13 @@ import { z } from "zod";
 import { POST as loginRoute } from "@/app/api/auth/login/route";
 import { POST as registerRoute } from "@/app/api/auth/register/route";
 import { POST as logoutRoute } from "@/app/api/auth/logout/route";
-import { POST as enrollRoute } from "@/app/api/opportunities/[id]/registrations/route";
+import { POST as enrollRoute, DELETE as cancelEnrollmentRoute } from "@/app/api/opportunities/[id]/registrations/route";
 import { createAccount, authenticateAccount } from "@/features/auth/services/accounts";
 import { createSessionToken, verifySessionToken, revokeSessionToken, SESSION_DURATION_SECONDS } from "@/features/auth/services/session";
 import { requireOrganizationRequest, organizationBackendUnavailable } from "@/features/organizations/services/server-authorization";
 import { getOpportunityCatalog, enrollInOpportunity } from "@/features/opportunities/services/enrollments";
+import { cancellationResponseSchema } from "@/features/opportunities/schemas/opportunity-schema";
+import { getAgendaEntries, getNextSessions, agendaDate, dateKey } from "@/features/opportunities/lib/agenda";
 import { getDashboardSummary } from "@/features/dashboard/services/dashboard-summary";
 import { updateParticipantsAttendance } from "@/features/organizations/services/organization-activities";
 import { MAX_AUTH_BODY_BYTES, readAuthJson, requireMutationOrigin, RequestSecurityError } from "@/lib/server/request-security";
@@ -34,9 +36,9 @@ function accountValues(email = `${randomUUID()}@example.test`) {
   return { name: "Pessoa de teste", email, password, passwordConfirmation: password };
 }
 
-function request(url: string, body?: unknown, cookie?: string, headers: Record<string, string> = {}): NextRequest {
+function request(url: string, body?: unknown, cookie?: string, headers: Record<string, string> = {}, method: "POST" | "DELETE" = "POST"): NextRequest {
   return new NextRequest(new URL(url, origin), {
-    method: "POST",
+    method,
     headers: { Origin: origin, ...(body === undefined ? {} : { "Content-Type": "application/json" }), ...(cookie ? { Cookie: `portal_session=${cookie}` } : {}), ...headers },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }),
   });
@@ -62,7 +64,7 @@ test("cadastro novo e duplicado têm a mesma resposta, não autenticam e não pe
   assert.equal(login.headers.get("cache-control"), "no-store");
 });
 
-test("login, cadastro, logout e inscrição rejeitam origens externas e de outra porta", async () => {
+test("login, cadastro, logout, inscrição e cancelamento rejeitam origens externas e de outra porta", async () => {
   const values = accountValues();
   for (const attacker of ["https://attacker.example", "http://localhost:3190", "null"]) {
     for (const [route, endpoint] of [[loginRoute, "/api/auth/login"], [registerRoute, "/api/auth/register"], [logoutRoute, "/api/auth/logout"]] satisfies Array<[(input: NextRequest) => Promise<Response>, string]>) {
@@ -70,6 +72,7 @@ test("login, cadastro, logout e inscrição rejeitam origens externas e de outra
       assert.equal(result.status, 403);
     }
     assert.equal((await enrollRoute(request("/api/opportunities/example/registrations", undefined, undefined, { Origin: attacker }), { params: Promise.resolve({ id: "example" }) })).status, 403);
+    assert.equal((await cancelEnrollmentRoute(request("/api/opportunities/example/registrations", undefined, undefined, { Origin: attacker }, "DELETE"), { params: Promise.resolve({ id: "example" }) })).status, 403);
   }
   assert.throws(() => requireMutationOrigin(new Request(origin, { method: "POST" })), (error: unknown) => error instanceof RequestSecurityError && error.status === 403);
 });
@@ -177,6 +180,52 @@ test("painel novo começa vazio e inscrições não atravessam usuários nem con
   assert.deepEqual(getOpportunityCatalog(second.id).registeredIds, []);
   assert.ok(getDashboardSummary(first.id).hoursSummary.every((item) => item.completed === 0));
   assert.throws(() => enrollInOpportunity(first.id, "horta-comunitaria"));
+});
+
+test("cancelamento exige sessão, preserva outras contas, libera vaga e permite reinscrição", async () => {
+  const first = await createAccount(accountValues());
+  const second = await createAccount(accountValues());
+  const firstSession = await createSessionToken(first);
+  const secondSession = await createSessionToken(second);
+  const id = "monitoria-programacao";
+  const endpoint = `/api/opportunities/${id}/registrations`;
+  const context = { params: Promise.resolve({ id }) };
+  const before = getOpportunityCatalog().items.find((item) => item.id === id);
+  assert.ok(before);
+  enrollInOpportunity(first.id, id);
+  assert.equal((await cancelEnrollmentRoute(request(endpoint, undefined, undefined, {}, "DELETE"), context)).status, 401);
+  assert.equal((await cancelEnrollmentRoute(request(endpoint, undefined, secondSession.token, {}, "DELETE"), context)).status, 404);
+  assert.deepEqual(getOpportunityCatalog(first.id).registeredIds, [id]);
+  enrollInOpportunity(second.id, id);
+
+  const response = await cancelEnrollmentRoute(request(endpoint, undefined, firstSession.token, {}, "DELETE"), context);
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  assert.deepEqual(cancellationResponseSchema.parse(await response.json()), {
+    opportunityId: id, registered: false, enrolled: before.enrolled + 1,
+  });
+  assert.deepEqual(getOpportunityCatalog(first.id).registeredIds, []);
+  assert.deepEqual(getOpportunityCatalog(second.id).registeredIds, [id]);
+  assert.equal(getDashboardSummary(first.id).registrations, 0);
+  assert.equal(getDashboardSummary(second.id).registrations, 1);
+  assert.equal((await cancelEnrollmentRoute(request(endpoint, undefined, firstSession.token, {}, "DELETE"), context)).status, 404);
+  assert.equal((await cancelEnrollmentRoute(request(endpoint, undefined, firstSession.token, {}, "DELETE"), { params: Promise.resolve({ id: "inexistente" }) })).status, 404);
+  assert.equal(enrollInOpportunity(first.id, id).enrolled, before.enrolled + 2);
+  await revokeSessionToken(firstSession.token);
+  assert.equal((await cancelEnrollmentRoute(request(endpoint, undefined, firstSession.token, {}, "DELETE"), context)).status, 401);
+  assert.deepEqual(getOpportunityCatalog(first.id).registeredIds, [id]);
+});
+
+test("agenda conserva recorrências e datas locais e exclui encontros já encerrados", () => {
+  const activity = getOpportunityCatalog().items.find((item) => item.id === "horta-comunitaria");
+  assert.ok(activity);
+  const entries = getAgendaEntries([activity]);
+  assert.deepEqual(entries.map((entry) => entry.date), ["2026-10-17", "2026-10-24", "2026-10-31", "2026-11-07", "2026-11-14"]);
+  for (const entry of entries) assert.equal(dateKey(agendaDate(entry.date)), entry.date);
+  assert.equal(getNextSessions(entries, new Date("2026-10-17T12:00:00")).length, 5);
+  assert.equal(getNextSessions(entries, new Date("2026-10-17T12:00:01")).length, 4);
+  assert.deepEqual(getNextSessions(entries, new Date("2026-11-14T12:00:01")), []);
+  assert.deepEqual(getAgendaEntries([]), []);
 });
 
 test("rate limiting devolve 429 com Retry-After para conta inexistente", async () => {

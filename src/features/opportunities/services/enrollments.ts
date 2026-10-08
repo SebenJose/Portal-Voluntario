@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { opportunities } from "@/features/opportunities/data/opportunities";
-import { opportunitySchema, opportunitiesResponseSchema, registrationResponseSchema, type OpportunitiesResponse, type RegistrationResponse } from "@/features/opportunities/schemas/opportunity-schema";
+import { opportunitySchema, opportunitiesResponseSchema, registrationResponseSchema, type OpportunitiesResponse, type RegistrationResponse, cancellationResponseSchema, type CancellationResponse } from "@/features/opportunities/schemas/opportunity-schema";
 import { readLocalData, updateLocalData } from "@/lib/server/local-store";
 
 const catalog = z.array(opportunitySchema).parse(opportunities);
@@ -40,6 +40,22 @@ export function enrollInOpportunity(userId: string, opportunityId: string): Regi
   return registrationResponseSchema.parse({
     opportunityId,
     registered: true,
+    enrolled: opportunity.enrolled + enrollments.filter((item) => item.opportunityId === opportunityId).length,
+  });
+}
+
+export function cancelEnrollment(userId: string, opportunityId: string): CancellationResponse {
+  const opportunity = catalog.find((item) => item.id === opportunityId);
+  if (!opportunity) throw new EnrollmentError("Oportunidade não encontrada.", 404);
+  const enrollments = updateLocalData(enrollmentsFile, enrollmentsSchema, [], (current) => {
+    if (!current.some((item) => item.userId === userId && item.opportunityId === opportunityId)) {
+      throw new EnrollmentError("Você não possui inscrição nesta oportunidade.", 404);
+    }
+    return current.filter((item) => item.userId !== userId || item.opportunityId !== opportunityId);
+  });
+  return cancellationResponseSchema.parse({
+    opportunityId,
+    registered: false,
     enrolled: opportunity.enrolled + enrollments.filter((item) => item.opportunityId === opportunityId).length,
   });
 }

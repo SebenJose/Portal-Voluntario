@@ -67,6 +67,7 @@ export const handlers = [
     return passthrough();
   }),
   http.post("/api/opportunities/:id/registrations", () => passthrough()),
+  http.delete("/api/opportunities/:id/registrations", () => passthrough()),
   http.get("/api/organizations/activities", async () => {
     const user = await requireMockOrganization();
     if (user instanceof Response) return user;

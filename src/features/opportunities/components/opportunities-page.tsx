@@ -1,10 +1,9 @@
 "use client";
 
 import { Search, SlidersHorizontal } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { MotionConfig } from "motion/react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 import { AppShell } from "@/components/layout/app-shell";
 import { OpportunityGridSkeleton } from "@/components/layout/route-loading-skeletons";
@@ -14,53 +13,14 @@ import { Input } from "@/components/ui/input";
 import type { AuthUser } from "@/features/auth/schemas/session-schema";
 import { activityCategoryStyles } from "@/lib/activity-categories";
 
-import {
-  getOpportunities,
-  OpportunitiesServiceError,
-  registerForOpportunity,
-} from "../services/opportunities";
-import type { Opportunity } from "../types";
-import { OpportunityCard } from "./opportunity-card";
-import { opportunityCategories, type OpportunityCategory } from "../types";
+import { useOpportunityCatalog } from "@/features/opportunities/hooks/use-opportunity-catalog";
+import { OpportunityCard } from "@/features/opportunities/components/opportunity-card";
+import { opportunityCategories, type OpportunityCategory } from "@/features/opportunities/types";
 
 export function OpportunitiesPage({ user }: { user: AuthUser | null }) {
-  const router = useRouter();
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<OpportunityCategory | "Todas">("Todas");
-  const [registeredIds, setRegisteredIds] = useState<ReadonlySet<string>>(new Set());
-  const [opportunities, setOpportunities] = useState<Array<Opportunity>>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
-  const [registeringIds, setRegisteringIds] = useState<ReadonlySet<string>>(new Set());
-  const [registrationError, setRegistrationError] = useState<string | null>(null);
-
-  const loadOpportunities = useCallback(async (signal?: AbortSignal) => {
-    try {
-      const result = await getOpportunities(signal);
-      setOpportunities(result.items);
-      setRegisteredIds(new Set(result.registeredIds));
-    } catch (error: unknown) {
-      if (error instanceof DOMException && error.name === "AbortError") {
-        return;
-      }
-      setLoadError(
-        error instanceof OpportunitiesServiceError
-          ? error.message
-          : "Ocorreu um erro inesperado ao carregar o catálogo.",
-      );
-    } finally {
-      if (!signal?.aborted) {
-        setIsLoading(false);
-      }
-    }
-  }, []);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    void Promise.resolve().then(() => loadOpportunities(controller.signal));
-
-    return () => controller.abort();
-  }, [loadOpportunities]);
+  const { opportunities, registeredIds, isLoading, loadError, mutationError: registrationError, notice, pendingIds, register, cancel, retry } = useOpportunityCatalog(user?.id, "/oportunidades");
 
   const filteredOpportunities = useMemo(() => {
     const normalizedSearch = search.trim().toLocaleLowerCase();
@@ -80,44 +40,6 @@ export function OpportunitiesPage({ user }: { user: AuthUser | null }) {
     });
   }, [category, opportunities, search]);
 
-  async function handleRegister(opportunityId: string) {
-    if (!user) {
-      router.push("/entrar?next=%2Foportunidades");
-      return;
-    }
-    if (registeringIds.has(opportunityId) || registeredIds.has(opportunityId)) return;
-    setRegistrationError(null);
-    setRegisteringIds((currentIds) => new Set(currentIds).add(opportunityId));
-
-    try {
-      const result = await registerForOpportunity(opportunityId);
-      setRegisteredIds((currentIds) => new Set(currentIds).add(result.opportunityId));
-      setOpportunities((currentOpportunities) =>
-        currentOpportunities.map((opportunity) =>
-          opportunity.id === result.opportunityId
-            ? { ...opportunity, enrolled: result.enrolled }
-            : opportunity,
-        ),
-      );
-    } catch (error: unknown) {
-      if (error instanceof OpportunitiesServiceError && error.status === 401) {
-        router.push("/entrar?next=%2Foportunidades");
-        return;
-      }
-      setRegistrationError(
-        error instanceof OpportunitiesServiceError
-          ? error.message
-          : "Ocorreu um erro inesperado ao realizar a inscrição.",
-      );
-    } finally {
-      setRegisteringIds((currentIds) => {
-        const nextIds = new Set(currentIds);
-        nextIds.delete(opportunityId);
-        return nextIds;
-      });
-    }
-  }
-
   return (
     <AppShell
       active="opportunities"
@@ -125,11 +47,12 @@ export function OpportunitiesPage({ user }: { user: AuthUser | null }) {
       title="Oportunidades"
       user={user}
     >
-      <section className="space-y-6">
+      <section aria-labelledby="opportunities-catalog-title" className="space-y-6">
+        <h2 className="sr-only" id="opportunities-catalog-title">Catálogo de oportunidades</h2>
         {!user ? (
           <div className="flex flex-col justify-between gap-4 rounded-2xl border border-border bg-white p-5 sm:flex-row sm:items-center">
             <div>
-              <h2 className="font-semibold">Encontre sua causa. Participe com sua conta.</h2>
+              <h3 className="font-semibold">Encontre sua causa. Participe com sua conta.</h3>
               <p className="mt-1 text-sm text-muted-foreground">Você pode explorar as oportunidades. Para se inscrever, entre ou crie uma conta.</p>
             </div>
             <div className="flex shrink-0 flex-wrap gap-2">
@@ -189,6 +112,7 @@ export function OpportunitiesPage({ user }: { user: AuthUser | null }) {
           ) : null}
         </div>
 
+        {notice ? <p className="text-sm" role="status">{notice}</p> : null}
         {registrationError ? (
           <p className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive" role="alert">
             {registrationError}
@@ -199,15 +123,11 @@ export function OpportunitiesPage({ user }: { user: AuthUser | null }) {
           <OpportunityGridSkeleton />
         ) : loadError ? (
           <div className="rounded-2xl border border-dashed border-destructive/40 bg-white p-12 text-center" role="alert">
-            <h2 className="font-semibold">Não foi possível carregar o catálogo</h2>
+            <h3 className="font-semibold">Não foi possível carregar o catálogo</h3>
             <p className="mt-2 text-sm text-muted-foreground">{loadError}</p>
             <Button
               className="mt-5"
-              onClick={() => {
-                setIsLoading(true);
-                setLoadError(null);
-                void loadOpportunities();
-              }}
+              onClick={retry}
               variant="outline"
             >
               Tentar novamente
@@ -215,22 +135,25 @@ export function OpportunitiesPage({ user }: { user: AuthUser | null }) {
           </div>
         ) : filteredOpportunities.length > 0 ? (
           <MotionConfig reducedMotion="user">
-            <div className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">
+            <ul className="grid gap-5 lg:grid-cols-2 2xl:grid-cols-3">
               {filteredOpportunities.map((opportunity) => (
-                <OpportunityCard
-                  canRegister={Boolean(user)}
-                  isRegistered={registeredIds.has(opportunity.id)}
-                  isRegistering={registeringIds.has(opportunity.id)}
-                  key={opportunity.id}
-                  onRegister={handleRegister}
-                  opportunity={opportunity}
-                />
+                <li key={opportunity.id}>
+                  <OpportunityCard
+                    canRegister={Boolean(user)}
+                    isRegistered={registeredIds.has(opportunity.id)}
+                    isRegistering={pendingIds.has(opportunity.id)}
+                    onCancel={() => cancel(opportunity.id)}
+                    cancellationError={registrationError}
+                    onRegister={(id) => { void register(id); }}
+                    opportunity={opportunity}
+                  />
+                </li>
               ))}
-            </div>
+            </ul>
           </MotionConfig>
         ) : (
           <div className="rounded-2xl border border-dashed border-brand-yellow/50 bg-brand-yellow/5 p-12 text-center">
-            <h2 className="font-semibold">Nenhuma oportunidade encontrada</h2>
+            <h3 className="font-semibold">Nenhuma oportunidade encontrada</h3>
             <p className="mt-2 text-sm text-muted-foreground">
               Tente ajustar sua busca ou selecionar outro eixo temático.
             </p>
