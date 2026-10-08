@@ -1,7 +1,8 @@
 # MSW
 
-O MSW é iniciado pelo `MswProvider` somente no navegador, tanto no desenvolvimento quanto no build
-de demonstração. Use `NEXT_PUBLIC_API_MOCKING=disabled` para desativá-lo ao integrar o backend. Os handlers
+O MSW é iniciado pelo `MswProvider` somente no navegador, por padrão no desenvolvimento e
+em produção apenas com `NEXT_PUBLIC_API_MOCKING=enabled` definido no build.
+Use `NEXT_PUBLIC_API_MOCKING=disabled` para desativá-lo também no desenvolvimento. Os handlers
 ficam centralizados aqui e devem representar os contratos que a UI consumirá. Requisições sem handler
 são liberadas para a rede (`onUnhandledFrame: "bypass"`).
 
@@ -39,6 +40,16 @@ As submissões do mock anterior não podem ser recuperadas porque ele não armaz
 
 Os serviços consomem contratos Zod independentes da persistência do mock. Na integração futura,
 implemente esses endpoints no backend e desative o MSW, preservando os componentes.
+Enquanto essa integração não existe, a interface desabilita envio/histórico fora da demonstração.
+
+## Gestão de organizações
+
+Os handlers exigem sessão real com papel `organization` e criam cópias das atividades fictícias
+separadas por conta. O cadastro público não concede esse papel. Nenhum certificado real ou e-mail
+é emitido. Depois do despacho simulado, presença fica encerrada (`409` para alterações e novo despacho).
+Os lotes esperam todas as requisições, aplicam os sucessos e preservam falhas para retry.
+No servidor real, as APIs verificam sessão e papel e respondem `501` a organizações enquanto
+a integração não existe. Autorização de mock é apenas parte da demonstração, nunca controle de backend.
 
 Para verificar estados de listagem, consulte `/api/submissions?scenario=empty`,
 `?scenario=server-error`, `?scenario=network-error` ou `?scenario=loading` a partir do navegador
