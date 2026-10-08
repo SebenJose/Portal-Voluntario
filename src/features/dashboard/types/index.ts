@@ -1,5 +1,7 @@
+import type { ActivityCategory } from "@/lib/activity-categories";
+
 export type HoursCategory = {
-  category: "Ensino" | "Pesquisa" | "Extensão";
+  category: ActivityCategory;
   completed: number;
   limit: number;
 };

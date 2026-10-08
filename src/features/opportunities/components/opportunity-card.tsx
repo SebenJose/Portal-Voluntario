@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { activityCategoryStyles } from "@/lib/activity-categories";
 
 import type { Opportunity } from "../types";
 
@@ -16,12 +17,6 @@ type OpportunityCardProps = {
   isRegistering: boolean;
   onRegister: (opportunityId: string) => void;
   canRegister: boolean;
-};
-
-const categoryStyles: Record<Opportunity["category"], string> = {
-  Ensino: "border-brand-yellow/60 bg-brand-yellow/20 text-brand-black",
-  Pesquisa: "border-brand-black/25 bg-brand-black/5 text-brand-black",
-  Extensão: "border-brand-yellow/40 bg-brand-yellow/10 text-brand-black",
 };
 
 export function OpportunityCard({
@@ -43,7 +38,7 @@ export function OpportunityCard({
       <Card className="flex h-full flex-col overflow-hidden border-brand-yellow/30 transition-[border-color,box-shadow] hover:border-brand-yellow hover:shadow-md">
         <CardHeader className="gap-4">
           <div className="flex items-center justify-between gap-3">
-            <Badge className={categoryStyles[opportunity.category]} variant="outline">
+            <Badge className={activityCategoryStyles[opportunity.category].badge} variant="outline">
               {opportunity.category}
             </Badge>
             {opportunity.featured ? (
