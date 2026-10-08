@@ -1,6 +1,7 @@
 import { http, HttpResponse, passthrough, type RequestHandler } from "msw";
 
 import { certificateHandlers } from "@/features/certificates/mocks/handlers";
+import { dashboardPresentationHandlers } from "@/features/dashboard/mocks/handlers";
 import { organizationHandlers } from "@/features/organizations/mocks/handlers";
 
 type HealthResponse = {
@@ -30,5 +31,6 @@ export const handlers = [
   http.post("/api/opportunities/:id/registrations", () => passthrough()),
   http.delete("/api/opportunities/:id/registrations", () => passthrough()),
   ...organizationHandlers,
+  ...dashboardPresentationHandlers,
   ...certificateHandlers,
 ] satisfies Array<RequestHandler>;

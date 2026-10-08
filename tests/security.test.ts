@@ -21,6 +21,7 @@ import { getOpportunityCatalog, enrollInOpportunity } from "@/features/opportuni
 import { cancellationResponseSchema } from "@/features/opportunities/schemas/opportunity-schema";
 import { getAgendaEntries, getNextSessions, agendaDate, dateKey } from "@/features/opportunities/lib/agenda";
 import { getDashboardSummary } from "@/features/dashboard/services/dashboard-summary";
+import { dashboardPresentationSchema } from "@/features/dashboard/schemas/presentation-schema";
 import { updateParticipantsAttendance } from "@/features/organizations/services/organization-activities";
 import { MAX_AUTH_BODY_BYTES, readAuthJson, requireMutationOrigin, RequestSecurityError } from "@/lib/server/request-security";
 import { handlers } from "@/mocks/handlers";
@@ -307,6 +308,22 @@ test("MSW permite demo pública isolada e exige papel na gestão de organizaçõ
   const interceptedFetch = globalThis.fetch;
   globalThis.fetch = (input, init) => interceptedFetch(typeof input === "string" ? new URL(input, origin) : input, init);
   try {
+    const presentationResponse = await fetch("/api/demo/dashboard");
+    assert.equal(presentationResponse.status, 200);
+    const presentation = dashboardPresentationSchema.parse(await presentationResponse.json());
+    assert.equal(presentation.completedActivities.length, 3);
+    assert.equal(presentation.registeredActivities.length, 2);
+    assert.equal(presentation.hoursSummary.reduce((total, item) => total + item.completed, 0), 74);
+    for (const category of presentation.hoursSummary) {
+      assert.equal(category.completed, presentation.completedActivities.filter((activity) => activity.category === category.category).reduce((total, activity) => total + activity.hours, 0));
+    }
+    const presentationUser = await createAccount(accountValues());
+    assert.equal(getDashboardSummary(presentationUser.id).registrations, 0);
+    assert.ok(getDashboardSummary(presentationUser.id).hoursSummary.every((item) => item.completed === 0));
+    const emptyPresentation = await fetch("/api/demo/dashboard?scenario=empty");
+    assert.equal(dashboardPresentationSchema.parse(await emptyPresentation.json()).completedActivities.length, 0);
+    assert.equal((await fetch("/api/demo/dashboard?scenario=server-error")).status, 500);
+    await assert.rejects(fetch("/api/demo/dashboard?scenario=network-error"));
     const demoEndpoint = "/api/demo/organizations/activities";
     assert.equal((await fetch(demoEndpoint)).status, 200);
     assert.equal((await fetch(`${demoEndpoint}/horta-comunitaria/participants/p-002`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "Presente" }) })).status, 200);
