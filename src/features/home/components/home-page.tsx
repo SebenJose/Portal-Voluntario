@@ -2,6 +2,7 @@ import { ArrowRight, Compass, GraduationCap, Users } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 
+import { SectionLink } from "@/components/section-link";
 import { Button } from "@/components/ui/button";
 import { AnimatedBlock } from "@/features/home/components/home-motion";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -50,7 +51,7 @@ export function HomePage() {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <VolunteerCta />
-              <Button className="h-12 rounded-full border-zinc-300 bg-transparent px-6 text-sm font-semibold text-brand-black hover:bg-white" nativeButton={false} render={<Link href="#beneficios" />} size="lg" variant="outline">
+              <Button className="h-12 rounded-full border-zinc-300 bg-transparent px-6 text-sm font-semibold text-brand-black hover:bg-white" nativeButton={false} render={<SectionLink sectionId="beneficios" />} size="lg" variant="outline">
                 Conhecer o portal
               </Button>
             </div>

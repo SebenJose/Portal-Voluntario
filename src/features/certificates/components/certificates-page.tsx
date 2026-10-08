@@ -1,9 +1,9 @@
 "use client";
 
 import { FileCheck2, Plus } from "lucide-react";
-import Link from "next/link";
 
 import { AppShell } from "@/components/layout/app-shell";
+import { SectionLink } from "@/components/section-link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -32,7 +32,7 @@ function CertificateHistory({ user }: { user: AuthUser }) {
         <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
           Nesta demonstração, os registros e arquivos ficam salvos apenas neste navegador. A análise é simulada e as horas declaradas ainda não são homologadas.
         </p>
-        <Button className="shrink-0 bg-brand-yellow text-brand-black hover:bg-brand-yellow/85" nativeButton={false} render={<Link href="#registrar-certificado" />}>
+        <Button className="shrink-0 bg-brand-yellow text-brand-black hover:bg-brand-yellow/85" nativeButton={false} render={<SectionLink sectionId="registrar-certificado" />}>
           <Plus aria-hidden="true" />Registrar certificado
         </Button>
       </div>
@@ -54,7 +54,7 @@ function CertificateHistory({ user }: { user: AuthUser }) {
               <div className="rounded-full bg-brand-yellow/15 p-4"><FileCheck2 aria-hidden="true" className="size-8 text-brand-black" /></div>
               <h3 className="text-xl font-semibold">Nenhum certificado registrado</h3>
               <p className="max-w-md text-sm leading-6 text-muted-foreground">Registre sua primeira atividade externa para consultar os dados e baixar o comprovante por aqui.</p>
-              <Button nativeButton={false} render={<Link href="#registrar-certificado" />} variant="outline">Registrar primeiro certificado</Button>
+              <Button nativeButton={false} render={<SectionLink sectionId="registrar-certificado" />} variant="outline">Registrar primeiro certificado</Button>
             </CardContent>
           </Card>
         ) : (

@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portal Voluntário — Apresentação</title>
+<!--
+  Apresentação do trabalho de Front-end (Portal Voluntário · UTFPR).
+  Estrutura: um bloco por requisito do professor (01 Homepage · 02 Páginas públicas · 03 Área privada ·
+  04 Login · 05 Controle de acesso), cada um com "o que se pede" e "como funciona" no portal.
+  Arquivo único: abra no navegador e navegue com ← →, espaço ou rolagem. F alterna tela cheia.
+  Identidade: preto #111111 + amarelo #ffcc00 da UTFPR, fundo #f7f7f2 da homepage do portal.
+  Sem imagens geradas (surf indisponível): fundos em CSS e acentos em SVG.
+  Sem Mermaid/CDN de scripts para funcionar offline; só as fontes vêm do Google Fonts (com fallback local).
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Fragment+Mono&display=swap" rel="stylesheet">
+<script>document.documentElement.classList.add('js');</script>
+<style>
+  /* ============ TEMA ============ */
+  :root {
+    --font-body: 'Bricolage Grotesque', 'Segoe UI', system-ui, sans-serif;
+    --font-mono: 'Fragment Mono', 'Cascadia Mono', Consolas, monospace;
+    --bg: #f7f7f2;
+    --surface: #ffffff;
+    --surface2: #efeee6;
+    --border: rgba(17, 17, 17, 0.10);
+    --border-bright: rgba(17, 17, 17, 0.22);
+    --text: #111111;
+    --text-dim: #4f4e48;
+    --yellow: #ffcc00;
+    --yellow-dim: rgba(255, 204, 0, 0.24);
+    --prep-text: #6b5200;
+    --ink: #111111;
+    --ink-2: #1d1d1b;
+    --on-ink: #f7f7f2;
+    --on-ink-dim: rgba(247, 247, 242, 0.68);
+    --ok: #1d7a3e;
+    --ok-dim: rgba(29, 122, 62, 0.12);
+    --warn: #a14a06;
+    --warn-dim: rgba(180, 83, 9, 0.12);
+    --code-bg: #111111;
+    --code-text: #ecebe4;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #151513;
+      --surface: #1e1e1b;
+      --surface2: #272723;
+      --border: rgba(247, 247, 242, 0.10);
+      --border-bright: rgba(247, 247, 242, 0.22);
+      --text: #f2f1ea;
+      --text-dim: #b6b5ab;
+      --prep-text: #ffcc00;
+      --ink: #0b0b0a;
+      --ink-2: #1a1a18;
+      --ok: #5fd68a;
+      --ok-dim: rgba(95, 214, 138, 0.14);
+      --warn: #fbbf24;
+      --warn-dim: rgba(251, 191, 36, 0.14);
+      --code-bg: #0b0b0a;
+    }
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    font-family: var(--font-body);
+    color: var(--text);
+    background: var(--bg);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ============ MOTOR DOS SLIDES ============ */
+  .deck {
+    height: 100dvh;
+    overflow-y: auto;
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+    scrollbar-width: none;
+  }
+  .deck::-webkit-scrollbar { display: none; }
+
+  .slide {
+    height: 100dvh;
+    scroll-snap-align: start;
+    overflow: hidden;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: clamp(28px, 7vh, 84px) clamp(32px, 7vw, 120px);
+    isolation: isolate;
+    background-color: var(--bg);
+  }
+
+  .js .slide {
+    opacity: 0;
+    transform: translateY(32px) scale(0.985);
+    transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .js .slide.visible { opacity: 1; transform: none; }
+  .js .slide .reveal {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .js .slide.visible .reveal { opacity: 1; transform: none; }
+  .slide.visible .reveal:nth-child(1) { transition-delay: 0.08s; }
+  .slide.visible .reveal:nth-child(2) { transition-delay: 0.16s; }
+  .slide.visible .reveal:nth-child(3) { transition-delay: 0.24s; }
+  .slide.visible .reveal:nth-child(4) { transition-delay: 0.32s; }
+  .slide.visible .reveal:nth-child(5) { transition-delay: 0.40s; }
+  .slide.visible .reveal:nth-child(6) { transition-delay: 0.48s; }
+  .slide.visible .reveal:nth-child(7) { transition-delay: 0.56s; }
+  .slide.visible .reveal:nth-child(8) { transition-delay: 0.64s; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .js .slide, .js .slide .reveal { opacity: 1 !important; transform: none !important; transition: none !important; }
+    .deck { scroll-behavior: auto; }
+  }
+
+  /* ============ NAVEGAÇÃO ============ */
+  .deck-progress {
+    position: fixed; top: 0; left: 0; height: 4px; width: 0;
+    background: var(--yellow); z-index: 100;
+    transition: width 0.3s ease; pointer-events: none;
+  }
+  .deck-dots {
+    position: fixed; right: clamp(10px, 1.6vw, 22px); top: 50%;
+    transform: translateY(-50%); display: flex; flex-direction: column;
+    gap: 7px; z-index: 100; padding: 8px 6px;
+    background: color-mix(in srgb, var(--bg) 72%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  }
+  .deck-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--text); opacity: 0.25; border: none; padding: 0;
+    cursor: pointer; transition: opacity 0.2s ease, transform 0.2s ease;
+  }
+  .deck-dot:hover { opacity: 0.6; }
+  .deck-dot:focus-visible { outline: 2px solid var(--yellow); outline-offset: 2px; }
+  .deck-dot.active { opacity: 1; transform: scale(1.5); background: var(--yellow); box-shadow: 0 0 0 1px rgba(17, 17, 17, 0.45); }
+  .deck-counter, .deck-brand {
+    position: fixed; bottom: clamp(10px, 1.8vh, 20px);
+    font-family: var(--font-mono); font-size: 12px; color: var(--text-dim);
+    z-index: 100; font-variant-numeric: tabular-nums;
+    padding: 4px 10px; border-radius: 999px;
+    background: color-mix(in srgb, var(--bg) 72%, transparent);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+  }
+  .deck-counter { right: clamp(10px, 1.6vw, 22px); }
+  .deck-brand { left: clamp(10px, 1.6vw, 22px); display: inline-flex; align-items: center; gap: 8px; }
+  .deck-brand::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: var(--yellow); }
+  .deck-hints {
+    position: fixed; bottom: clamp(10px, 1.8vh, 20px); left: 50%;
+    transform: translateX(-50%); font-family: var(--font-mono);
+    font-size: 11px; color: var(--text-dim); z-index: 100;
+    padding: 4px 12px; border-radius: 999px;
+    background: color-mix(in srgb, var(--bg) 80%, transparent);
+    border: 1px solid var(--border);
+    transition: opacity 0.5s ease; white-space: nowrap;
+  }
+  .deck-hints.faded { opacity: 0; pointer-events: none; }
+
+  /* ============ TIPOGRAFIA ============ */
+  .display {
+    font-size: clamp(52px, min(8.4vw, 15vh), 140px);
+    font-weight: 800;
+    letter-spacing: -0.045em;
+    line-height: 0.9;
+    text-wrap: balance;
+  }
+  .heading {
+    font-size: clamp(28px, min(4vw, 7.2vh), 62px);
+    font-weight: 760;
+    letter-spacing: -0.035em;
+    line-height: 1.02;
+    text-wrap: balance;
+  }
+  .heading--sm { font-size: clamp(24px, min(3.2vw, 6vh), 50px); }
+  .lead {
+    font-size: clamp(17px, min(1.75vw, 3.1vh), 27px);
+    line-height: 1.45;
+    color: var(--text-dim);
+    text-wrap: pretty;
+    max-width: 46ch;
+  }
+  .body {
+    font-size: clamp(15px, min(1.45vw, 2.6vh), 22px);
+    line-height: 1.5;
+    color: var(--text-dim);
+    text-wrap: pretty;
+  }
+  .label {
+    font-family: var(--font-mono);
+    font-size: clamp(11px, 1vw, 14px);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: clamp(10px, 1.8vh, 20px);
+  }
+  .label::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: var(--yellow); flex-shrink: 0; }
+  .hl {
+    background: linear-gradient(to top, transparent 0.06em, var(--yellow) 0.06em, var(--yellow) 0.3em, transparent 0.3em);
+    padding: 0 0.04em;
+    -webkit-box-decoration-break: clone;
+    box-decoration-break: clone;
+  }
+  .mono, .route, .code, .tree, .chip, code { font-variant-ligatures: none; font-feature-settings: "liga" 0, "calt" 0; }
+  .mono { font-family: var(--font-mono); }
+  .route {
+    font-family: var(--font-mono);
+    font-size: 0.84em;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    padding: 0.08em 0.45em;
+    border-radius: 6px;
+    white-space: nowrap;
+  }
+  .foot {
+    font-family: var(--font-mono);
+    font-size: clamp(11px, 0.95vw, 13px);
+    color: var(--text-dim);
+    margin-top: clamp(12px, 2.4vh, 26px);
+  }
+
+  .bullets { list-style: none; }
+  .bullets li {
+    position: relative;
+    padding: clamp(5px, 1vh, 11px) 0 clamp(5px, 1vh, 11px) 26px;
+    font-size: clamp(15px, min(1.5vw, 2.7vh), 23px);
+    line-height: 1.42;
+    color: var(--text-dim);
+  }
+  .bullets li::before {
+    content: '';
+    position: absolute; left: 0; top: calc(clamp(5px, 1vh, 11px) + 0.52em);
+    width: 10px; height: 4px; background: var(--yellow);
+    box-shadow: 0 0 0 1px rgba(17, 17, 17, 0.12);
+  }
+  .bullets strong { color: var(--text); font-weight: 650; }
+
+  /* ============ VARIANTES ============ */
+  .slide--ink { background-color: var(--ink); color: var(--on-ink); }
+  .slide--ink .label, .slide--ink .body, .slide--ink .lead, .slide--ink .foot, .slide--ink .bullets li { color: var(--on-ink-dim); }
+  .slide--ink .bullets strong { color: var(--on-ink); }
+  .slide--ink .hl, .panel--ink .hl { background: none; color: var(--yellow); }
+  .slide--ink .route, .panel--ink .route { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.16); color: var(--on-ink); }
+  .slide--dots::before {
+    content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+    background-image: radial-gradient(circle, var(--border-bright) 1px, transparent 1.2px);
+    background-size: 28px 28px;
+    mask-image: linear-gradient(to bottom right, rgba(0,0,0,0.9), transparent 70%);
+    -webkit-mask-image: linear-gradient(to bottom right, rgba(0,0,0,0.9), transparent 70%);
+  }
+  .decor { position: absolute; pointer-events: none; z-index: -1; }
+
+  .cols { display: grid; gap: clamp(24px, 4.4vw, 80px); align-items: center; width: 100%; }
+  .cols > * { min-width: 0; }
+  .cols--3-2 { grid-template-columns: 3fr 2fr; }
+  .cols--2-3 { grid-template-columns: 2fr 3fr; }
+  .cols--1-1 { grid-template-columns: 1fr 1fr; }
+  .cols--5-4 { grid-template-columns: 5fr 4fr; }
+  .cols--6-5 { grid-template-columns: 6fr 5fr; }
+
+  /* Split */
+  .slide--split { padding: 0; }
+  .panels { display: grid; grid-template-columns: 1fr 1fr; height: 100%; }
+  .panels--3-2 { grid-template-columns: 3fr 2fr; }
+  .panels--2-3 { grid-template-columns: 2fr 3fr; }
+  .panel {
+    padding: clamp(28px, 7vh, 84px) clamp(28px, 4.4vw, 76px);
+    display: flex; flex-direction: column; justify-content: center;
+    min-width: 0; position: relative;
+  }
+  .panel--surface { background: var(--surface); }
+  .panel--ink { background: var(--ink); color: var(--on-ink); }
+  .panel--ink .label, .panel--ink .bullets li, .panel--ink .body, .panel--ink .foot { color: var(--on-ink-dim); }
+  .panel--ink .bullets strong { color: var(--on-ink); }
+
+  /* ============ CAPA ============ */
+  .slide--title { justify-content: center; }
+  .title-wrap { max-width: min(62vw, 980px); position: relative; z-index: 1; }
+  .logo-badge {
+    display: flex; width: fit-content; background: #ffffff; border-radius: 14px;
+    padding: clamp(8px, 1.4vh, 14px) clamp(12px, 1.4vw, 20px);
+    border: 1px solid rgba(17, 17, 17, 0.08);
+    margin-bottom: clamp(18px, 4vh, 44px);
+  }
+  .logo-badge img { height: clamp(34px, 6.4vh, 64px); width: auto; display: block; }
+  .slide--title .lead { margin-top: clamp(16px, 3vh, 32px); }
+  .team {
+    font-family: var(--font-mono);
+    font-size: clamp(12px, 1.15vw, 16px);
+    margin-top: clamp(20px, 4.4vh, 52px);
+    display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center;
+  }
+  .team span { padding: 6px 12px; border: 1px solid var(--border-bright); border-radius: 999px; background: var(--surface); }
+  .prof { font-family: var(--font-mono); font-size: clamp(12px, 1.15vw, 16px); color: var(--text-dim); margin-top: clamp(12px, 2.2vh, 22px); }
+  .prof strong { color: var(--text); font-weight: 400; }
+  .title-art {
+    position: absolute; right: clamp(-40px, -2vw, 0px); top: 50%;
+    transform: translateY(-50%);
+    height: min(78vh, 46vw); width: auto; z-index: 0;
+  }
+
+  /* ============ CITAÇÃO DA HOME ============ */
+  .quote-card {
+    background: var(--ink); color: var(--on-ink);
+    border-radius: 22px;
+    padding: clamp(24px, 5vh, 56px) clamp(22px, 2.8vw, 48px);
+    position: relative; overflow: hidden;
+  }
+  .quote-card .label { color: var(--on-ink-dim); }
+  .quote-card__text {
+    font-size: clamp(30px, min(3.8vw, 7vh), 64px);
+    font-weight: 780; letter-spacing: -0.045em; line-height: 1;
+  }
+  .quote-card__text .hl { background: linear-gradient(to top, transparent 0.06em, var(--yellow) 0.06em, var(--yellow) 0.3em, transparent 0.3em); color: var(--on-ink); }
+  .quote-card__bar { position: absolute; right: 0; bottom: 0; width: 38%; height: 12px; background: var(--yellow); }
+
+  /* ============ KPIs ============ */
+  .kpis {
+    display: grid;
+    grid-template-columns: 1.3fr repeat(3, 1fr);
+    grid-template-rows: 1fr 1fr;
+    gap: clamp(10px, 1.3vw, 20px);
+    margin-top: clamp(16px, 3.4vh, 40px);
+    height: min(58vh, 560px);
+  }
+  .kpi {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: clamp(14px, 2.4vh, 28px) clamp(14px, 1.5vw, 24px);
+    display: flex; flex-direction: column; justify-content: space-between;
+    min-width: 0; overflow: hidden;
+  }
+  .kpi--hero { grid-row: span 2; background: var(--yellow); color: #111111; border-color: transparent; }
+  .kpi__val {
+    font-size: clamp(38px, min(5vw, 9vh), 88px);
+    font-weight: 800; letter-spacing: -0.045em; line-height: 0.95;
+    font-variant-numeric: tabular-nums;
+  }
+  .kpi--hero .kpi__val { font-size: clamp(90px, min(13vw, 26vh), 240px); }
+  .kpi__label {
+    font-family: var(--font-mono); font-size: clamp(11px, 1vw, 14px);
+    text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-dim);
+  }
+  .kpi--hero .kpi__label { color: #111111; font-size: clamp(13px, 1.25vw, 18px); }
+  .kpi__note { font-size: clamp(12px, 1.05vw, 16px); color: var(--text-dim); margin-top: 4px; line-height: 1.35; }
+  .kpi--hero .kpi__note { color: rgba(17, 17, 17, 0.78); }
+
+  /* ============ TABELA ============ */
+  .table-wrap {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 16px; overflow: hidden;
+    margin-top: clamp(14px, 2.6vh, 30px);
+  }
+  .data-table { width: 100%; border-collapse: collapse; }
+  .data-table th {
+    font-family: var(--font-mono); font-weight: 400;
+    font-size: clamp(10px, 0.9vw, 13px);
+    text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-dim);
+    text-align: left;
+    padding: clamp(8px, 1.4vh, 14px) clamp(12px, 1.4vw, 22px);
+    background: var(--surface2);
+    border-bottom: 2px solid var(--border-bright);
+  }
+  .data-table td {
+    padding: clamp(7px, 1.4vh, 15px) clamp(12px, 1.4vw, 22px);
+    border-bottom: 1px solid var(--border);
+    font-size: clamp(13px, min(1.22vw, 2.2vh), 19px);
+    line-height: 1.38;
+    vertical-align: top;
+    color: var(--text-dim);
+  }
+  .data-table td:first-child { font-weight: 700; color: var(--text); white-space: nowrap; }
+  .data-table td:last-child { white-space: nowrap; }
+  .data-table tbody tr:last-child td { border-bottom: none; }
+  .data-table tbody tr:nth-child(even) { background: color-mix(in srgb, var(--surface2) 55%, transparent); }
+  .status {
+    display: inline-flex; align-items: center; gap: 7px;
+    font-family: var(--font-mono); font-size: 0.8em;
+    padding: 3px 11px; border-radius: 999px;
+    background: var(--ok-dim); color: var(--ok);
+  }
+  .status::before { content: ''; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+  .status--prep { background: var(--yellow-dim); color: var(--prep-text); }
+
+  /* ============ DIVISORES ============ */
+  .slide--divider { justify-content: flex-end; }
+  .divider__num {
+    position: absolute; top: 50%;
+    transform: translateY(-54%);
+    font-size: clamp(170px, min(30vw, 66vh), 560px);
+    font-weight: 800; line-height: 0.8; letter-spacing: -0.07em;
+    color: transparent;
+    -webkit-text-stroke: 2px var(--yellow);
+    pointer-events: none; z-index: -1;
+    font-variant-numeric: tabular-nums;
+  }
+  .divider__num--right { right: clamp(24px, 6vw, 110px); }
+  .divider__num--left { left: clamp(24px, 6vw, 110px); }
+  .divider__text { max-width: 62%; }
+  .divider__text--right { margin-left: auto; text-align: right; }
+  .divider__text--right .label { flex-direction: row-reverse; }
+  .slide--divider .heading { font-size: clamp(38px, min(5.6vw, 10vh), 92px); }
+  .divider__rule { width: 72px; height: 8px; background: var(--yellow); margin-bottom: clamp(16px, 3vh, 30px); }
+  .divider__text--right .divider__rule { margin-left: auto; }
+
+  /* ============ MAPA DE ROTAS ============ */
+  .routes { list-style: none; display: flex; flex-direction: column; gap: clamp(6px, 1.3vh, 14px); margin-top: clamp(12px, 2.4vh, 26px); }
+  .routes li {
+    display: grid; grid-template-columns: 12.5rem 1fr; gap: 16px; align-items: baseline;
+    padding-bottom: clamp(6px, 1.3vh, 14px); border-bottom: 1px solid var(--border);
+  }
+  .panel--ink .routes li { border-bottom-color: rgba(255, 255, 255, 0.10); }
+  .routes li:last-child { border-bottom: none; }
+  .routes .route { font-size: clamp(11px, min(1vw, 1.8vh), 15px); justify-self: start; }
+  .routes__desc { font-size: clamp(14px, min(1.35vw, 2.5vh), 21px); line-height: 1.35; }
+  .routes__desc small { display: block; font-size: 0.78em; opacity: 0.72; margin-top: 2px; }
+  .lock { display: inline-flex; align-items: center; gap: 6px; font-family: var(--font-mono); font-size: 12px; color: var(--yellow); margin-left: 8px; }
+
+  /* ============ MOCKUPS ============ */
+  /* Mockups reproduzem a interface real (clara) em qualquer tema */
+  .mock {
+    background: #ffffff; border: 1px solid var(--border-bright);
+    border-radius: 18px; overflow: hidden;
+    box-shadow: 0 24px 60px -30px rgba(17, 17, 17, 0.35);
+    font-size: clamp(10px, min(0.95vw, 1.7vh), 14px);
+    color: #111111;
+  }
+  .mock--home { background: #f7f7f2; }
+  .mock__bar {
+    display: flex; align-items: center; gap: 1.6em;
+    padding: 1em 1.4em; background: #ffffff; border-bottom: 1px solid rgba(17, 17, 17, 0.1);
+    color: #55554f;
+  }
+  .mock__logo { width: 4.6em; height: 1.4em; background: #111111; border-radius: 3px; position: relative; margin-right: auto; }
+  .mock__logo::after { content: ''; position: absolute; right: 0.6em; top: 0.25em; width: 0.9em; height: 0.9em; background: var(--yellow); }
+  .mock__btn { display: inline-flex; align-items: center; gap: 0.5em; padding: 0.7em 1.2em; border-radius: 999px; font-weight: 650; white-space: nowrap; }
+  .mock__btn--ink { background: #111111; color: #ffffff; }
+  .mock__btn--yellow { background: var(--yellow); color: #111111; }
+  .mock__btn--outline { border: 1px solid rgba(17, 17, 17, 0.25); }
+  .mock__hero { padding: 2.2em 1.6em 1.6em; }
+  .mock__eyebrow { font-size: 0.8em; letter-spacing: 0.14em; text-transform: uppercase; color: #55554f; display: flex; align-items: center; gap: 0.6em; }
+  .mock__eyebrow::before { content: ''; width: 0.6em; height: 0.6em; border-radius: 50%; background: var(--yellow); }
+  .mock__h1 { font-size: 3.3em; font-weight: 700; letter-spacing: -0.05em; line-height: 1; margin: 0.4em 0 0.6em; }
+  .mock__ctas { display: flex; gap: 0.8em; flex-wrap: wrap; }
+  .mock__cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1em; padding: 1.4em 1.6em 1.8em; background: #ffffff; border-top: 1px solid rgba(17, 17, 17, 0.1); }
+  .mock__card { display: flex; flex-direction: column; gap: 0.5em; }
+  .mock__card i { display: block; width: 2.2em; height: 2.2em; border-radius: 0.6em; background: #f7f7f2; }
+  .mock__card b { display: block; height: 0.8em; width: 85%; background: #111111; border-radius: 2px; }
+  .mock__card span { display: block; height: 0.5em; width: 100%; background: rgba(17, 17, 17, 0.14); border-radius: 2px; }
+
+  .mock--login { max-width: 440px; width: 100%; padding: 2.4em 2.2em; border-radius: 20px; font-size: clamp(11px, min(1vw, 1.75vh), 15px); }
+  .mock--login .mock__eyebrow { margin-bottom: 0.8em; }
+  .mock__title { font-size: 2.3em; font-weight: 700; letter-spacing: -0.04em; line-height: 1.05; }
+  .mock__sub { color: #55554f; margin: 0.5em 0 1.6em; }
+  .mock__field { margin-bottom: 1.1em; }
+  .mock__field label { display: block; font-weight: 600; margin-bottom: 0.4em; }
+  .mock__input { border: 1px solid rgba(17, 17, 17, 0.2); border-radius: 0.6em; padding: 0.75em 0.9em; color: #55554f; }
+  .mock__input--error { border-color: #c0262d; box-shadow: 0 0 0 3px rgba(192, 38, 45, 0.12); color: #111111; }
+  .mock__error { color: #b42318; font-size: 0.9em; margin-top: 0.4em; }
+  .mock__submit { margin-top: 1.4em; display: flex; justify-content: space-between; align-items: center; background: var(--yellow); border-radius: 0.8em; padding: 1em 1.2em; font-weight: 650; }
+
+  /* ============ CARDS ============ */
+  .cards { display: grid; gap: clamp(12px, 1.6vw, 24px); margin-top: clamp(18px, 3.6vh, 42px); }
+  .cards--3 { grid-template-columns: 1.25fr 1fr 1fr; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 18px;
+    padding: clamp(16px, 3vh, 34px) clamp(16px, 1.7vw, 28px);
+    min-width: 0; display: flex; flex-direction: column; gap: clamp(8px, 1.4vh, 14px);
+  }
+  .card--hero { background: var(--ink); color: var(--on-ink); border-color: transparent; }
+  .card--hero .body { color: var(--on-ink-dim); }
+  .card--hero .route { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.16); color: var(--yellow); }
+  .card__title { font-size: clamp(19px, min(1.9vw, 3.4vh), 30px); font-weight: 720; letter-spacing: -0.03em; line-height: 1.1; }
+  .card .route { align-self: flex-start; }
+  .card__tag { font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); margin-top: auto; padding-top: 6px; }
+  .card--hero .card__tag { color: var(--yellow); }
+
+  /* ============ FLUXO DE ACESSO ============ */
+  .flow { display: flex; flex-direction: column; gap: clamp(12px, 2.4vh, 26px); margin-top: clamp(14px, 3vh, 34px); }
+  .flow__row { display: flex; align-items: stretch; }
+  .step {
+    flex: 1; min-width: 0;
+    background: var(--surface); border: 1px solid var(--border);
+    border-top: 4px solid var(--text);
+    border-radius: 12px;
+    padding: clamp(10px, 2vh, 22px) clamp(12px, 1.3vw, 20px);
+  }
+  .step__num { font-family: var(--font-mono); font-size: clamp(10px, 0.9vw, 12px); color: var(--text-dim); letter-spacing: 0.12em; }
+  .step__title { font-weight: 720; font-size: clamp(15px, min(1.45vw, 2.6vh), 23px); margin: 4px 0; line-height: 1.2; letter-spacing: -0.02em; }
+  .step__desc { font-size: clamp(12px, min(1.05vw, 1.95vh), 16px); color: var(--text-dim); line-height: 1.4; }
+  .step--decision { background: var(--yellow); color: #111111; border: none; border-top: 4px solid #111111; }
+  .step--decision .step__num, .step--decision .step__desc { color: rgba(17, 17, 17, 0.75); }
+  .step--ok { border-top-color: var(--ok); }
+  .step--no { border-top-color: var(--warn); }
+  .arrow { display: flex; align-items: center; padding: 0 clamp(4px, 0.6vw, 10px); color: var(--text-dim); flex-shrink: 0; }
+  .lane { display: flex; align-items: stretch; }
+  .lane__tag {
+    flex: 0 0 auto; width: clamp(64px, 6.4vw, 96px);
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--font-mono); font-size: clamp(11px, 1vw, 14px); letter-spacing: 0.1em;
+    border-radius: 12px; margin-right: clamp(6px, 0.8vw, 12px);
+  }
+  .lane__tag--ok { background: var(--ok-dim); color: var(--ok); }
+  .lane__tag--no { background: var(--warn-dim); color: var(--warn); }
+
+  /* ============ CÓDIGO ============ */
+  .code {
+    background: var(--code-bg); color: var(--code-text);
+    border-radius: 16px;
+    padding: clamp(20px, 3.6vh, 38px) clamp(16px, 1.8vw, 30px) clamp(16px, 3vh, 32px);
+    position: relative; min-width: 0;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+  }
+  .code__file {
+    position: absolute; top: -12px; left: 20px;
+    font-family: var(--font-mono); font-size: 12px;
+    padding: 4px 10px; border-radius: 6px;
+    background: var(--yellow); color: #111111;
+  }
+  /* --cols = maior linha do bloco; a fonte encolhe para caber na largura disponível */
+  .code { container-type: inline-size; }
+  .code pre {
+    font-family: var(--font-mono);
+    font-size: min(clamp(10.5px, min(1.08vw, 1.95vh), 17px), calc(150cqi / var(--cols, 60)));
+    line-height: 1.6; white-space: pre; overflow: hidden;
+  }
+  .code--sm pre { font-size: min(clamp(10px, min(0.98vw, 1.85vh), 16px), calc(150cqi / var(--cols, 60))); }
+  .code .k { color: #ffcc00; }
+  .code .s { color: #b6e2b0; }
+  .code .c { color: #8f8e85; }
+  .code .f { color: #ffffff; font-weight: 600; }
+  .mk {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.55em; height: 1.55em; border-radius: 50%;
+    background: var(--yellow); color: #111111;
+    font-family: var(--font-body); font-size: 0.78em; font-weight: 800;
+    vertical-align: 0.08em;
+  }
+  .notes { list-style: none; display: flex; flex-direction: column; gap: clamp(10px, 2.2vh, 24px); }
+  .notes li { display: grid; grid-template-columns: auto 1fr; gap: 14px; align-items: start; }
+  .notes .mk { font-size: clamp(13px, 1.2vw, 17px); margin-top: 0.15em; }
+  .notes p { font-size: clamp(15px, min(1.45vw, 2.6vh), 22px); line-height: 1.4; color: var(--text-dim); }
+  .notes strong { color: var(--text); }
+
+  /* ============ SEGURANÇA ============ */
+  .grid-6 { display: grid; grid-template-columns: repeat(3, 1fr); gap: clamp(10px, 1.4vw, 20px); margin-top: clamp(16px, 3vh, 36px); }
+  .fact {
+    background: var(--surface); border: 1px solid var(--border);
+    border-left: 5px solid var(--yellow);
+    border-radius: 14px;
+    padding: clamp(12px, 2.4vh, 26px) clamp(14px, 1.5vw, 24px);
+    min-width: 0;
+  }
+  .fact__k { font-family: var(--font-mono); font-size: clamp(11px, 0.95vw, 13px); color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.1em; }
+  .fact__v { font-size: clamp(16px, min(1.6vw, 2.9vh), 25px); font-weight: 720; letter-spacing: -0.02em; line-height: 1.15; margin: 6px 0 4px; }
+  .fact__d { font-size: clamp(12px, min(1.08vw, 2vh), 16px); color: var(--text-dim); line-height: 1.4; }
+
+  /* ============ ÁRVORE ============ */
+  .tree {
+    font-family: var(--font-mono);
+    font-size: clamp(11px, min(1.12vw, 2.05vh), 17px);
+    line-height: 1.62; white-space: pre; color: var(--on-ink);
+  }
+  .tree .d { color: var(--yellow); }
+  .tree .c { color: rgba(247, 247, 242, 0.5); }
+  .anatomy { display: flex; flex-direction: column; gap: 8px; margin-top: clamp(14px, 3vh, 32px); }
+  .anatomy__row { display: grid; grid-template-columns: minmax(0, 11ch) 1fr; gap: 14px; align-items: baseline; padding: clamp(6px, 1.2vh, 12px) 0; border-bottom: 1px solid var(--border); }
+  .anatomy__row:last-child { border-bottom: none; }
+  .anatomy__row code { font-family: var(--font-mono); font-size: clamp(12px, 1.1vw, 16px); font-weight: 600; }
+  .anatomy__row span { font-size: clamp(14px, min(1.3vw, 2.4vh), 20px); color: var(--text-dim); }
+
+  /* ============ COMPOSIÇÃO ============ */
+  .nest {
+    border: 2px solid var(--text); border-radius: 14px;
+    padding: clamp(28px, 4.2vh, 42px) clamp(10px, 1vw, 16px) clamp(10px, 1.6vh, 16px);
+    position: relative; min-width: 0;
+  }
+  .nest__name {
+    position: absolute; top: 8px; left: 12px;
+    font-family: var(--font-mono); font-size: clamp(11px, 1vw, 14px); font-weight: 600;
+  }
+  .nest--app { background: var(--surface); }
+  .nest__cols { display: grid; grid-template-columns: 0.8fr 1.6fr; gap: clamp(8px, 1vw, 14px); }
+  .nest--nav { background: var(--ink); color: var(--on-ink); border-color: var(--ink); }
+  .nest--nav .nest__name { color: var(--yellow); }
+  .nest__link { height: clamp(14px, 2.4vh, 22px); border-radius: 6px; background: rgba(255, 255, 255, 0.12); margin-bottom: 6px; }
+  .nest__link--active { background: var(--yellow); }
+  .nest--main { border-style: dashed; }
+  .nest--card { border-color: var(--border-bright); border-width: 1.5px; background: var(--bg); margin-top: 8px; }
+  .nest__chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    font-family: var(--font-mono); font-size: clamp(10px, 0.95vw, 13px);
+    padding: 4px 9px; border-radius: 999px; border: 1px solid var(--border-bright);
+    background: var(--surface); white-space: nowrap;
+  }
+  .chip--yellow { background: var(--yellow); border-color: transparent; color: #111111; }
+  .chip--ink { background: var(--ink); border-color: transparent; color: var(--on-ink); }
+
+  /* ============ JORNADA ============ */
+  .journey-wrap { margin-top: clamp(28px, 8vh, 96px); }
+  .journey {
+    display: flex; align-items: stretch;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 18px;
+    padding: clamp(16px, 3vh, 34px) clamp(16px, 1.8vw, 30px);
+  }
+  .journey__step { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+  .journey__step .route { align-self: flex-start; white-space: normal; overflow-wrap: anywhere; font-size: clamp(12px, min(1.3vw, 2.3vh), 19px); padding: 0.3em 0.6em; }
+  .journey__step span { font-size: clamp(13px, min(1.3vw, 2.3vh), 19px); color: var(--text-dim); line-height: 1.3; }
+  .journey__step--accent .route { background: var(--yellow); border-color: transparent; color: #111111; }
+  .journey .arrow { align-items: flex-start; padding-top: 4px; }
+
+  /* ============ PIPELINE ============ */
+  .pipeline { display: flex; align-items: stretch; margin-top: clamp(16px, 3.4vh, 40px); }
+  .pipe {
+    flex: 1; min-width: 0;
+    background: var(--surface); border: 1px solid var(--border);
+    border-top: 4px solid var(--text);
+    border-radius: 14px;
+    padding: clamp(14px, 2.6vh, 28px) clamp(12px, 1.3vw, 20px);
+    display: flex; flex-direction: column;
+  }
+  .pipe--accent { background: var(--yellow); color: #111111; border-color: transparent; border-top-color: #111111; }
+  .pipe__num { font-family: var(--font-mono); font-size: clamp(10px, 0.9vw, 12px); letter-spacing: 0.12em; color: var(--text-dim); }
+  .pipe--accent .pipe__num { color: rgba(17, 17, 17, 0.7); }
+  .pipe__name { font-size: clamp(17px, min(1.8vw, 3.2vh), 28px); font-weight: 760; letter-spacing: -0.03em; margin: 6px 0; }
+  .pipe__desc { font-size: clamp(12px, min(1.1vw, 2.05vh), 17px); line-height: 1.42; color: var(--text-dim); flex: 1; }
+  .pipe--accent .pipe__desc { color: rgba(17, 17, 17, 0.8); }
+  .pipe__file {
+    margin-top: clamp(10px, 2vh, 20px); align-self: flex-start;
+    font-family: var(--font-mono); font-size: clamp(10px, 0.88vw, 12px);
+    padding: 3px 8px; border-radius: 5px; background: var(--surface2); color: var(--text);
+    max-width: 100%; overflow-wrap: anywhere;
+  }
+  .pipe--accent .pipe__file { background: rgba(17, 17, 17, 0.1); }
+  .pipeline__cap { display: flex; align-items: center; gap: 14px; margin-top: clamp(14px, 3vh, 34px); font-size: clamp(15px, min(1.5vw, 2.7vh), 23px); font-weight: 650; letter-spacing: -0.01em; }
+  .pipeline__cap::before { content: ''; width: 34px; height: 8px; background: var(--yellow); flex-shrink: 0; }
+
+  /* ============ CI ============ */
+  .ci { display: flex; align-items: stretch; margin-top: clamp(14px, 2.8vh, 32px); }
+  .ci__step {
+    flex: 1; min-width: 0;
+    background: var(--ink); color: var(--on-ink);
+    border-radius: 12px; padding: clamp(10px, 2vh, 20px) clamp(10px, 1.1vw, 18px);
+  }
+  .ci__step b { display: block; font-size: clamp(15px, min(1.45vw, 2.6vh), 22px); letter-spacing: -0.02em; }
+  .ci__step code { display: block; font-family: var(--font-mono); font-size: clamp(10px, 0.9vw, 13px); color: var(--yellow); margin-top: 6px; overflow-wrap: anywhere; }
+  .ci__step--ok { box-shadow: inset 0 -4px 0 var(--yellow); }
+  .quality { display: grid; grid-template-columns: 1.2fr 1fr 1fr 1fr; gap: clamp(10px, 1.3vw, 18px); margin-top: clamp(14px, 3vh, 34px); }
+  .quality__item { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: clamp(12px, 2.2vh, 24px) clamp(12px, 1.3vw, 20px); min-width: 0; }
+  .quality__item--hero { background: var(--yellow); border-color: transparent; color: #111111; }
+  .quality__val { font-size: clamp(30px, min(3.8vw, 7vh), 64px); font-weight: 800; letter-spacing: -0.045em; line-height: 1; }
+  .quality__k { font-weight: 720; font-size: clamp(15px, min(1.4vw, 2.5vh), 21px); letter-spacing: -0.02em; line-height: 1.15; }
+  .quality__d { font-size: clamp(12px, min(1.05vw, 1.95vh), 16px); color: var(--text-dim); line-height: 1.4; margin-top: 6px; }
+  .quality__item--hero .quality__d { color: rgba(17, 17, 17, 0.8); }
+
+  /* ============ STACK ============ */
+  .stack { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(8px, 1.1vw, 14px); }
+  .tech {
+    display: grid; grid-template-columns: auto 1fr; gap: 4px 14px; align-items: baseline;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: clamp(9px, 1.7vh, 18px) clamp(12px, 1.2vw, 18px); min-width: 0;
+  }
+  .tech__n { font-family: var(--font-mono); font-size: 12px; color: var(--text-dim); }
+  .tech b { font-size: clamp(15px, min(1.45vw, 2.6vh), 22px); letter-spacing: -0.02em; }
+  .tech span { grid-column: 2; font-size: clamp(12px, min(1.05vw, 1.95vh), 16px); color: var(--text-dim); line-height: 1.35; }
+  .tech--key { background: var(--ink); border-color: transparent; color: var(--on-ink); }
+  .tech--key span, .tech--key .tech__n { color: var(--on-ink-dim); }
+
+  /* ============ ROTEIRO ============ */
+  .timeline { list-style: none; position: relative; display: flex; flex-direction: column; gap: clamp(6px, 1.25vh, 14px); }
+  .timeline::before { content: ''; position: absolute; left: calc(clamp(28px, 2.6vw, 38px) / 2 - 1px); top: 10px; bottom: 10px; width: 2px; background: var(--border-bright); }
+  .timeline li { display: grid; grid-template-columns: auto 1fr; gap: clamp(12px, 1.4vw, 20px); align-items: center; position: relative; }
+  .timeline__n {
+    width: clamp(28px, 2.6vw, 38px); height: clamp(28px, 2.6vw, 38px); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--surface); border: 2px solid var(--text);
+    font-family: var(--font-mono); font-size: clamp(12px, 1.1vw, 15px); font-weight: 600;
+  }
+  .timeline li:nth-child(3) .timeline__n, .timeline li:nth-child(6) .timeline__n { background: var(--yellow); border-color: #111111; color: #111111; }
+  .timeline p { font-size: clamp(15px, min(1.5vw, 2.7vh), 23px); line-height: 1.3; color: var(--text-dim); }
+  .timeline p strong { color: var(--text); }
+  .checklist { background: var(--ink); color: var(--on-ink); border-radius: 20px; padding: clamp(20px, 4vh, 44px) clamp(18px, 2.2vw, 36px); }
+  .checklist .label { color: var(--on-ink-dim); }
+  .checklist ul { list-style: none; display: flex; flex-direction: column; gap: clamp(8px, 1.6vh, 16px); }
+  .checklist li { display: grid; grid-template-columns: auto 1fr; gap: 12px; font-size: clamp(14px, min(1.3vw, 2.4vh), 20px); line-height: 1.35; color: var(--on-ink-dim); }
+  .checklist li::before { content: ''; width: 16px; height: 16px; margin-top: 0.15em; border-radius: 4px; background: var(--yellow); }
+  .checklist li strong { color: var(--on-ink); }
+
+  /* ============ ENCERRAMENTO ============ */
+  .slide--closing { justify-content: flex-end; }
+  .closing__slab { position: absolute; right: 0; top: 0; width: 34%; height: 100%; background: var(--yellow); z-index: -1; }
+  .closing__slab::after { content: ''; position: absolute; left: -14vw; bottom: 14vh; width: 14vw; height: 14px; background: var(--yellow); }
+  .closing__text { max-width: 60%; }
+  .closing__text .display { color: var(--on-ink); }
+  .closing__links { display: flex; flex-wrap: wrap; gap: 10px 14px; margin-top: clamp(18px, 3.6vh, 40px); }
+  .closing__links .route { font-size: clamp(12px, 1.1vw, 16px); padding: 0.4em 0.8em; }
+
+  /* ============ ROTEIRO DOS REQUISITOS ============ */
+  .agenda { list-style: none; margin-top: clamp(14px, 3vh, 34px); border-top: 2px solid var(--text); }
+  .agenda li {
+    display: grid; grid-template-columns: auto minmax(0, 15rem) minmax(0, 1fr) minmax(0, 30%);
+    gap: clamp(12px, 1.8vw, 30px); align-items: center;
+    padding: clamp(9px, 1.9vh, 20px) 0; border-bottom: 1px solid var(--border-bright);
+  }
+  .agenda__n {
+    width: clamp(36px, min(3.4vw, 6.4vh), 56px); aspect-ratio: 1; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--yellow); color: #111111;
+    font-weight: 800; font-size: clamp(15px, min(1.5vw, 2.8vh), 24px); letter-spacing: -0.03em;
+  }
+  .agenda__name { font-size: clamp(18px, min(1.9vw, 3.4vh), 30px); font-weight: 760; letter-spacing: -0.03em; line-height: 1.1; }
+  .agenda__how { font-size: clamp(13px, min(1.25vw, 2.3vh), 19px); color: var(--text-dim); line-height: 1.38; }
+  .agenda__where { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+  .agenda__where .route { font-size: clamp(11px, min(0.95vw, 1.75vh), 14px); }
+
+  /* ============ CABEÇALHO DE REQUISITO ============ */
+  .slide--req { padding-top: clamp(22px, 4.6vh, 56px); padding-bottom: clamp(44px, 7vh, 72px); }
+  .req {
+    display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+    gap: clamp(14px, 2vw, 32px); align-items: center;
+    padding-bottom: clamp(12px, 2.4vh, 26px);
+    border-bottom: 2px solid var(--text);
+    margin-bottom: clamp(16px, 3.4vh, 40px);
+  }
+  .req__num {
+    width: clamp(56px, min(6vw, 11vh), 104px); aspect-ratio: 1; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--yellow); color: #111111;
+    font-size: clamp(26px, min(3vw, 5.4vh), 50px); font-weight: 800; letter-spacing: -0.05em;
+    font-variant-numeric: tabular-nums;
+  }
+  .req__head { min-width: 0; }
+  .req__kicker {
+    font-family: var(--font-mono); font-size: clamp(11px, 1vw, 14px);
+    letter-spacing: 0.14em; text-transform: uppercase; color: var(--text-dim);
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .req__track { display: inline-flex; gap: 4px; }
+  .req__track i { width: 18px; height: 5px; border-radius: 2px; background: var(--border-bright); }
+  .req__track i.on { background: var(--yellow); box-shadow: 0 0 0 1px rgba(17, 17, 17, 0.25); }
+  .req__title { font-size: clamp(30px, min(4.2vw, 7.6vh), 66px); font-weight: 780; letter-spacing: -0.04em; line-height: 1; margin-top: 4px; text-wrap: balance; }
+  .req__sum { font-size: clamp(15px, min(1.45vw, 2.6vh), 22px); color: var(--text-dim); line-height: 1.35; margin-top: clamp(6px, 1.2vh, 12px); text-wrap: pretty; }
+  .req__sum .route { font-size: 0.8em; }
+  .req__ask {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: clamp(10px, 1.8vh, 18px) clamp(14px, 1.4vw, 22px); max-width: 30vw;
+  }
+  .req__ask-label { font-family: var(--font-mono); font-size: clamp(10px, 0.85vw, 12px); letter-spacing: 0.12em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 6px; }
+  .req__ask ul { list-style: none; display: flex; flex-direction: column; gap: 5px; }
+  .req__ask li { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: baseline; font-size: clamp(13px, min(1.15vw, 2.1vh), 17px); line-height: 1.3; font-weight: 600; }
+  .req__ask li::before {
+    content: ''; width: 0.38em; height: 0.72em; margin-left: 0.15em;
+    border: solid var(--ok); border-width: 0 3px 3px 0; transform: rotate(45deg) translateY(-0.1em);
+  }
+
+  /* ============ CARTÃO ESCURO ============ */
+  .ink-card { background: var(--ink); color: var(--on-ink); border-radius: 20px; padding: clamp(18px, 3.4vh, 38px) clamp(18px, 2vw, 34px); min-width: 0; }
+  .ink-card .label, .ink-card .routes__desc small { color: var(--on-ink-dim); }
+  .ink-card .routes li { border-bottom-color: rgba(255, 255, 255, 0.10); }
+  .ink-card .route { background: rgba(255, 255, 255, 0.08); border-color: rgba(255, 255, 255, 0.16); color: var(--on-ink); }
+
+  /* ============ MOCKUP DA HOME ============ */
+  .mock__url { display: flex; align-items: center; gap: 0.45em; padding: 0.6em 1em; background: #ecebe4; border-bottom: 1px solid rgba(17, 17, 17, 0.1); }
+  .mock__url i { width: 0.7em; height: 0.7em; border-radius: 50%; background: rgba(17, 17, 17, 0.18); }
+  .mock__addr { flex: 1; margin: 0 0.6em; background: #ffffff; border-radius: 999px; padding: 0.3em 0.9em; font-family: var(--font-mono); color: #55554f; }
+  .mock__addr b { color: #111111; }
+  .mock__link--active { font-weight: 700; color: #111111; text-decoration: underline; text-decoration-color: var(--yellow); text-decoration-thickness: 2px; text-underline-offset: 6px; }
+  .mock__ctas { align-items: center; }
+  .mock .mk { font-size: 1.05em; flex-shrink: 0; box-shadow: 0 0 0 2px #111111; }
+  .timeline__req { font-family: var(--font-mono); font-size: 0.7em; padding: 1px 7px; margin-left: 6px; border-radius: 999px; border: 1px solid var(--border-bright); color: var(--text-dim); vertical-align: 0.12em; white-space: nowrap; }
+
+  /* ============ RESPONSIVO ============ */
+  @media (max-height: 640px) {
+    .decor, .title-art { display: none; }
+    .title-wrap { max-width: 100%; }
+  }
+  @media (max-height: 500px) {
+    .deck-dots, .deck-brand { display: none; }
+  }
+  @media (max-width: 860px) {
+    .cols--3-2, .cols--2-3, .cols--1-1, .cols--5-4, .cols--6-5 { grid-template-columns: 1fr; }
+    .panels, .panels--3-2, .panels--2-3 { grid-template-columns: 1fr; }
+    .kpis { grid-template-columns: repeat(2, 1fr); grid-template-rows: none; height: auto; }
+    .kpi--hero { grid-row: auto; grid-column: span 2; }
+    .cards--3, .grid-6, .quality, .stack { grid-template-columns: 1fr; }
+    .flow__row, .lane, .pipeline, .ci, .journey { flex-direction: column; }
+    .arrow { transform: rotate(90deg); justify-content: center; padding: 2px 0; }
+    .title-art, .hide-sm, .deck-brand { display: none; }
+    .title-wrap, .divider__text, .closing__text { max-width: 100%; }
+    .deck-hints { display: none; }
+    .agenda li { grid-template-columns: auto minmax(0, 1fr); }
+    .agenda__how, .agenda__where { grid-column: 2; }
+    .agenda__where { justify-content: flex-start; }
+    .req { grid-template-columns: auto minmax(0, 1fr); }
+    .req__ask { grid-column: 1 / -1; max-width: none; }
+    .routes li { grid-template-columns: 1fr; gap: 4px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="deck">
+
+  <!-- 1 · CAPA -->
+  <section class="slide slide--title slide--dots" aria-label="Capa">
+    <svg class="title-art" viewBox="0 0 420 520" aria-hidden="true">
+      <rect x="130" y="40" width="290" height="70" fill="#ffcc00"/>
+      <rect x="130" y="40" width="70" height="440" fill="#ffcc00"/>
+      <rect x="250" y="170" width="170" height="70" fill="currentColor"/>
+      <rect x="250" y="170" width="70" height="310" fill="currentColor"/>
+    </svg>
+    <div class="title-wrap">
+      <div class="logo-badge reveal"><img alt="UTFPR" src="data:image/png;base64,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"></div>
+      <p class="label reveal">Trabalho de Front-end · Projeto e Desenvolvimento de Sistemas Web</p>
+      <h1 class="display reveal">Portal <span class="hl">Voluntário</span></h1>
+      <p class="lead reveal">Conectando a comunidade da UTFPR a oportunidades de voluntariado.</p>
+      <div class="team reveal"><span>José C. Seben</span><span>Fernando Buligon</span><span>Bruno E. S. Alcantara</span></div>
+      <p class="prof reveal">Professor: <strong>Wellington de Souza Ferreira</strong></p>
+    </div>
+  </section>
+
+  <!-- 2 · PROPOSTA + STACK -->
+  <section class="slide" aria-label="A proposta" style="background-image:radial-gradient(ellipse at 85% 90%, var(--yellow-dim) 0%, transparent 45%);">
+    <div class="cols cols--2-3">
+      <div class="quote-card reveal">
+        <p class="label">Mensagem da homepage</p>
+        <p class="quote-card__text">Seu tempo.<br>Um mundo de<br><span class="hl">possibilidades.</span></p>
+        <span class="quote-card__bar" aria-hidden="true"></span>
+      </div>
+      <div>
+        <p class="label reveal">A proposta</p>
+        <h2 class="heading reveal">Quem quer ajudar encontra quem precisa de ajuda</h2>
+        <ul class="bullets reveal" style="margin-top:clamp(12px,2.4vh,26px);">
+          <li>Vagas de <strong>Ensino, Pesquisa e Extensão</strong> num catálogo público</li>
+          <li>Inscrição, agenda dos encontros e painel com <strong>banco de horas</strong></li>
+          <li>Registro de certificados e protótipo de gestão para organizações</li>
+        </ul>
+        <div class="nest__chips reveal" style="margin-top:clamp(14px,2.8vh,30px);gap:8px;">
+          <span class="chip chip--ink">Next.js 16</span><span class="chip chip--ink">React 19</span><span class="chip">TypeScript</span><span class="chip">Tailwind CSS</span><span class="chip">shadcn/ui</span><span class="chip">React Hook Form + Zod</span><span class="chip">MSW</span><span class="chip">pnpm</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 · ROTEIRO DOS REQUISITOS -->
+  <section class="slide" aria-label="Os cinco requisitos" style="padding-top:clamp(24px,5vh,60px);padding-bottom:clamp(40px,7vh,72px);">
+    <p class="label reveal">Requisitos da disciplina</p>
+    <h2 class="heading heading--sm reveal">Os cinco requisitos e onde estão no portal</h2>
+    <ol class="agenda reveal">
+      <li><span class="agenda__n">01</span><span class="agenda__name">Homepage</span><span class="agenda__how">A vitrine do voluntariado, com atalhos para vagas, demonstração e login</span><span class="agenda__where"><span class="route">/</span></span></li>
+      <li><span class="agenda__n">02</span><span class="agenda__name">Páginas públicas</span><span class="agenda__how">Catálogo de vagas e demonstração de gestão abertos a qualquer visitante</span><span class="agenda__where"><span class="route">/oportunidades</span><span class="route">/demonstracao/gestao</span></span></li>
+      <li><span class="agenda__n">03</span><span class="agenda__name">Área privada</span><span class="agenda__how">Painel com banco de horas, agenda de atividades e certificados</span><span class="agenda__where"><span class="route">/painel</span><span class="route">/minhas-atividades</span><span class="route">/certificados</span><span class="route">/organizacao</span></span></li>
+      <li><span class="agenda__n">04</span><span class="agenda__name">Sistema de login</span><span class="agenda__how">Formulário validado que cria uma sessão em cookie HttpOnly</span><span class="agenda__where"><span class="route">/entrar</span></span></li>
+      <li><span class="agenda__n">05</span><span class="agenda__name">Controle de acesso</span><span class="agenda__how">Verifica a sessão, libera ou bloqueia e redireciona ao login</span><span class="agenda__where"><span class="route">src/proxy.ts</span></span></li>
+    </ol>
+  </section>
+
+  <!-- 4 · REQUISITO 01 · HOMEPAGE -->
+  <section class="slide slide--req" aria-label="Requisito 1 · Homepage">
+    <header class="req reveal">
+      <span class="req__num">01</span>
+      <div class="req__head">
+        <p class="req__kicker">Requisito 1 de 5 <span class="req__track" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i></span></p>
+        <h2 class="req__title">Homepage</h2>
+        <p class="req__sum">A rota <span class="route">/</span> apresenta o portal e leva o estudante a todas as áreas.</p>
+      </div>
+      <div class="req__ask">
+        <p class="req__ask-label">O que se pede</p>
+        <ul><li>Ponto de entrada da aplicação</li><li>Navegação clara para as demais áreas</li></ul>
+      </div>
+    </header>
+    <div class="cols cols--1-1">
+      <div class="mock mock--home reveal" aria-hidden="true">
+        <div class="mock__url"><i></i><i></i><i></i><span class="mock__addr">localhost:3000<b>/</b></span><span class="mk">1</span></div>
+        <div class="mock__bar">
+          <span class="mock__logo"></span>
+          <span class="mk">2</span>
+          <span class="mock__link mock__link--active">Início</span><span class="mock__link">Vagas</span><span class="mock__link">Demonstração</span>
+          <span class="mock__btn mock__btn--ink">Entrar ↗</span>
+        </div>
+        <div class="mock__hero">
+          <p class="mock__eyebrow">Portal Voluntário · UTFPR</p>
+          <p class="mock__h1">Seu tempo.<br>Um mundo de<br><span class="hl">possibilidades.</span></p>
+          <div class="mock__ctas"><span class="mock__btn mock__btn--yellow">Quero ser voluntário →</span><span class="mock__btn mock__btn--outline">Conhecer o portal</span><span class="mk">3</span></div>
+        </div>
+        <div class="mock__cards">
+          <div class="mock__card"><i></i><b></b><span></span></div>
+          <div class="mock__card"><i></i><b></b><span></span></div>
+          <div class="mock__card"><i></i><b></b><span></span></div>
+        </div>
+      </div>
+      <div>
+        <p class="label reveal">Como funciona</p>
+        <ol class="notes reveal">
+          <li><span class="mk">1</span><p><strong>A porta de entrada.</strong> <span class="mono" style="font-size:0.85em;">src/app/page.tsx</span> é a rota <span class="mono" style="font-size:0.85em;">/</span> e renderiza a <span class="mono" style="font-size:0.85em;">HomePage</span> da feature <span class="mono" style="font-size:0.85em;">home</span>.</p></li>
+          <li><span class="mk">2</span><p><strong>Navegação sempre visível.</strong> O <span class="mono" style="font-size:0.85em;">SiteHeader</span> usa <span class="mono" style="font-size:0.85em;">next/link</span> para Início, Vagas, Demonstração e Entrar, e marca a página atual em amarelo.</p></li>
+          <li><span class="mk">3</span><p><strong>Chamadas para a ação.</strong> “Quero ser voluntário” abre o catálogo; “Conhecer o portal” desce até os benefícios.</p></li>
+        </ol>
+        <p class="foot reveal">Acessível: atalho “Ir para o conteúdo” e navegação completa pelo teclado.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 · REQUISITO 02 · PÁGINAS PÚBLICAS -->
+  <section class="slide slide--req" aria-label="Requisito 2 · Páginas públicas">
+    <header class="req reveal">
+      <span class="req__num">02</span>
+      <div class="req__head">
+        <p class="req__kicker">Requisito 2 de 5 <span class="req__track" aria-hidden="true"><i class="on"></i><i class="on"></i><i></i><i></i><i></i></span></p>
+        <h2 class="req__title">Páginas públicas</h2>
+        <p class="req__sum">Qualquer pessoa explora as vagas antes de criar uma conta.</p>
+      </div>
+      <div class="req__ask">
+        <p class="req__ask-label">O que se pede</p>
+        <ul><li>Pelo menos duas páginas</li><li>Acessíveis sem autenticação</li></ul>
+      </div>
+    </header>
+    <div class="cards cards--3 reveal" style="margin-top:0;">
+      <div class="card card--hero"><span class="route">/oportunidades</span><p class="card__title">Catálogo de vagas</p><p class="body">Vagas de Ensino, Pesquisa e Extensão com local, encontros e vagas preenchidas.</p><p class="card__tag">GET /api/opportunities</p></div>
+      <div class="card"><span class="route">/demonstracao/gestao</span><p class="card__title">Demonstração de gestão</p><p class="body">A visão da organização, com presenças e certificados, usando dados fictícios.</p><p class="card__tag">dados simulados com MSW</p></div>
+      <div class="card"><span class="route">/entrar · /criar-conta</span><p class="card__title">Entrar e criar conta</p><p class="body">As portas para a área privada: login e cadastro de voluntário.</p><p class="card__tag">sempre abertas</p></div>
+    </div>
+    <div class="grid-6 reveal">
+      <div class="fact"><p class="fact__k">Por que ficam abertas</p><p class="fact__v">Fora do matcher do proxy</p><p class="fact__d">O proxy só roda nas rotas privadas; estas páginas nem passam por ele.</p></div>
+      <div class="fact"><p class="fact__k">Mesma página, dois estados</p><p class="fact__v">Visitante ou logado</p><p class="fact__d">O visitante vê “Entre para participar”; quem tem sessão vê “Inscrever-se”.</p></div>
+      <div class="fact"><p class="fact__k">Página aberta, ação protegida</p><p class="fact__v">Inscrição pede login</p><p class="fact__d">O botão leva a <span class="mono">/entrar?next=/oportunidades</span> e, após o login, volta ao catálogo.</p></div>
+    </div>
+  </section>
+
+  <!-- 6 · REQUISITO 03 · ÁREA PRIVADA -->
+  <section class="slide slide--req" aria-label="Requisito 3 · Área privada">
+    <header class="req reveal">
+      <span class="req__num">03</span>
+      <div class="req__head">
+        <p class="req__kicker">Requisito 3 de 5 <span class="req__track" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i></i><i></i></span></p>
+        <h2 class="req__title">Área privada</h2>
+        <p class="req__sum">Cada voluntário acompanha horas, agenda e certificados.</p>
+      </div>
+      <div class="req__ask">
+        <p class="req__ask-label">O que se pede</p>
+        <ul><li>Só para usuários autenticados</li><li>Acesso protegido</li></ul>
+      </div>
+    </header>
+    <div class="cols cols--1-1" style="align-items:start;">
+      <div class="ink-card reveal">
+        <p class="label">Rotas privadas · exigem sessão</p>
+        <ul class="routes" style="margin-top:0;">
+          <li><span class="route">/painel</span><span class="routes__desc">Meu painel<small>banco de horas, inscrições e próximas atividades</small></span></li>
+          <li><span class="route">/minhas-atividades</span><span class="routes__desc">Agenda e inscrições<small>calendário e cancelamento com confirmação</small></span></li>
+          <li><span class="route">/certificados</span><span class="routes__desc">Meus certificados<small>registro, histórico e download</small></span></li>
+          <li><span class="route">/organizacao</span><span class="routes__desc">Gestão de atividades<span class="lock">papel organização</span><small>presença e envio de certificados</small></span></li>
+        </ul>
+      </div>
+      <div>
+        <p class="label reveal">Como é protegida</p>
+        <ul class="bullets reveal">
+          <li><strong>Barrada antes de abrir:</strong> as quatro rotas estão no <span class="mono" style="font-size:0.85em;">matcher</span> do proxy (requisito 05)</li>
+          <li><strong>Conferida de novo no servidor:</strong> a própria página exige a sessão antes de buscar dados</li>
+        </ul>
+        <div class="code code--sm reveal" style="--cols:46;margin:clamp(18px,3vh,28px) 0 clamp(8px,1.6vh,16px);">
+          <span class="code__file">src/app/painel/page.tsx</span>
+<pre><span class="k">export default async function</span> <span class="f">Page</span>() {
+  <span class="k">const</span> user =
+    <span class="k">await</span> <span class="f">requireAuthenticatedUser</span>(<span class="s">"/painel"</span>);
+  <span class="k">return</span> &lt;<span class="f">DashboardPage</span> user={user}
+    summary={<span class="f">getDashboardSummary</span>(user.id)} /&gt;;
+}</pre>
+        </div>
+        <ul class="bullets reveal">
+          <li><strong>Dados só da conta logada</strong>, e <span class="mono" style="font-size:0.85em;">/organizacao</span> exige o papel de organização</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 · REQUISITO 04 · LOGIN -->
+  <section class="slide slide--req" aria-label="Requisito 4 · Sistema de login">
+    <header class="req reveal">
+      <span class="req__num">04</span>
+      <div class="req__head">
+        <p class="req__kicker">Requisito 4 de 5 <span class="req__track" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i></i></span></p>
+        <h2 class="req__title">Sistema de login</h2>
+        <p class="req__sum">Em <span class="route">/entrar</span>, um formulário validado abre uma sessão segura.</p>
+      </div>
+      <div class="req__ask">
+        <p class="req__ask-label">O que se pede</p>
+        <ul><li>Tela de login funcional</li><li>Controla o acesso à área privada</li></ul>
+      </div>
+    </header>
+    <div class="cols cols--2-3">
+      <div class="ink-card reveal" style="display:flex;justify-content:center;">
+        <div class="mock mock--login" aria-hidden="true">
+          <p class="mock__eyebrow">Seu espaço no portal</p>
+          <p class="mock__title">Bem-vindo de volta.</p>
+          <p class="mock__sub">Entre na sua conta e continue sua jornada de impacto.</p>
+          <div class="mock__field"><label>E-mail</label><div class="mock__input mock__input--error">ana@utfpr</div><p class="mock__error">Digite um e-mail válido.</p></div>
+          <div class="mock__field"><label>Senha</label><div class="mock__input">••••••••</div></div>
+          <div class="mock__submit"><span>Entrar no portal</span><span>→</span></div>
+        </div>
+      </div>
+      <div>
+        <p class="label reveal">Do clique à sessão</p>
+        <ol class="notes reveal">
+          <li><span class="mk">1</span><p><strong>Formulário validado.</strong> React Hook Form + Zod exigem e-mail válido e senha com 6 ou mais caracteres; o erro aparece no próprio campo.</p></li>
+          <li><span class="mk">2</span><p><strong><span class="mono" style="font-size:0.85em;">POST /api/auth/login</span>.</strong> O servidor valida de novo com o mesmo schema, confere a senha (hash scrypt) e limita tentativas.</p></li>
+          <li><span class="mk">3</span><p><strong>Sessão em cookie HttpOnly.</strong> Token assinado (HMAC-SHA256) válido por 8 h, que o JavaScript da página não consegue ler.</p></li>
+          <li><span class="mk">4</span><p><strong>Volta para onde parou.</strong> Segue para o <span class="mono" style="font-size:0.85em;">?next</span> (só caminhos internos) ou para o <span class="mono" style="font-size:0.85em;">/painel</span>.</p></li>
+        </ol>
+        <p class="foot reveal">Sair: diálogo de confirmação e sessão revogada no servidor.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 8 · REQUISITO 05 · CONTROLE DE ACESSO (código) -->
+  <section class="slide slide--req" aria-label="Requisito 5 · Controle de acesso">
+    <header class="req reveal">
+      <span class="req__num">05</span>
+      <div class="req__head">
+        <p class="req__kicker">Requisito 5 de 5 <span class="req__track" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></p>
+        <h2 class="req__title">Controle de acesso</h2>
+        <p class="req__sum"><span class="route">src/proxy.ts</span> decide, antes da página, quem pode entrar.</p>
+      </div>
+      <div class="req__ask">
+        <p class="req__ask-label">O que se pede</p>
+        <ul><li>Verificar se está autenticado</li><li>Permitir ou bloquear rotas privadas</li><li>Redirecionar ao login</li></ul>
+      </div>
+    </header>
+    <div class="cols cols--6-5">
+      <div class="code reveal" style="--cols:72;">
+        <span class="code__file">src/proxy.ts</span>
+<pre><span class="k">export async function</span> <span class="f">proxy</span>(request: NextRequest) {
+  <span class="k">const</span> user = <span class="k">await</span> <span class="f">verifySessionToken</span>(                  <span class="mk">1</span>
+    request.cookies.<span class="f">get</span>(SESSION_COOKIE_NAME)?.value);
+  <span class="k">if</span> (user) {                                             <span class="mk">2</span>
+    <span class="k">if</span> (request.nextUrl.pathname.<span class="f">startsWith</span>(<span class="s">"/organizacao"</span>)
+        &amp;&amp; user.role !== <span class="s">"organization"</span>) {
+      <span class="k">return</span> NextResponse.<span class="f">redirect</span>(<span class="k">new</span> URL(<span class="s">"/painel"</span>, request.url));
+    }
+    <span class="k">return</span> NextResponse.<span class="f">next</span>();
+  }
+  <span class="k">const</span> loginUrl = <span class="k">new</span> URL(<span class="s">"/entrar"</span>, request.url);       <span class="mk">3</span>
+  loginUrl.searchParams.<span class="f">set</span>(<span class="s">"next"</span>,
+    <span class="s">`${request.nextUrl.pathname}${request.nextUrl.search}`</span>);
+  <span class="k">return</span> NextResponse.<span class="f">redirect</span>(loginUrl);
+}
+
+<span class="k">export const</span> config = {                                   <span class="mk">4</span>
+  matcher: [<span class="s">"/painel/:path*"</span>, <span class="s">"/organizacao/:path*"</span>,
+    <span class="s">"/certificados/:path*"</span>, <span class="s">"/minhas-atividades/:path*"</span>],
+};</pre>
+      </div>
+      <div>
+        <ol class="notes reveal">
+          <li><span class="mk">1</span><p><strong>Verifica se está autenticado.</strong> Lê o cookie e confere assinatura, validade e se a sessão não foi revogada.</p></li>
+          <li><span class="mk">2</span><p><strong>Permite ou bloqueia.</strong> Sessão válida segue com <span class="mono" style="font-size:0.85em;">next()</span>; voluntário em <span class="mono" style="font-size:0.85em;">/organizacao</span> volta ao painel.</p></li>
+          <li><span class="mk">3</span><p><strong>Redireciona ao login.</strong> Sem sessão, vai para <span class="mono" style="font-size:0.85em;">/entrar</span> guardando o destino em <span class="mono" style="font-size:0.85em;">?next</span>.</p></li>
+          <li><span class="mk">4</span><p><strong>Define o que é privado.</strong> O <span class="mono" style="font-size:0.85em;">matcher</span> lista as rotas protegidas; as públicas nem passam aqui.</p></li>
+        </ol>
+        <p class="foot reveal">No Next.js 16, o antigo <span class="mono">middleware.ts</span> passou a se chamar <span class="mono">proxy.ts</span>.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9 · REQUISITO 05 · CONTROLE DE ACESSO NA PRÁTICA (fluxo) -->
+  <section class="slide slide--req" aria-label="Requisito 5 · Controle de acesso na prática">
+    <header class="req reveal">
+      <span class="req__num">05</span>
+      <div class="req__head">
+        <p class="req__kicker">Requisito 5 de 5 · na prática <span class="req__track" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></p>
+        <h2 class="req__title">O que acontece ao abrir <span class="route" style="font-size:0.62em;">/painel</span></h2>
+      </div>
+    </header>
+    <div class="flow reveal" style="margin-top:0;">
+      <div class="flow__row">
+        <div class="step"><div class="step__num">01</div><div class="step__title">Pedido da página</div><div class="step__desc">O navegador envia o cookie de sessão, se existir</div></div>
+        <div class="arrow"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="step"><div class="step__num">02</div><div class="step__title">proxy.ts intercepta</div><div class="step__desc">Roda antes da página, só nas rotas privadas</div></div>
+        <div class="arrow"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="step step--decision"><div class="step__num">DECISÃO</div><div class="step__title">Sessão válida?</div><div class="step__desc">E o papel permite a rota?</div></div>
+      </div>
+      <div class="lane">
+        <div class="lane__tag lane__tag--ok">SIM</div>
+        <div class="step step--ok"><div class="step__title">A página confere de novo</div><div class="step__desc">Defesa em duas camadas, no servidor</div></div>
+        <div class="arrow"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="step step--ok"><div class="step__title">Renderiza o painel</div><div class="step__desc">Com os dados apenas da conta logada</div></div>
+      </div>
+      <div class="lane">
+        <div class="lane__tag lane__tag--no">NÃO</div>
+        <div class="step step--no"><div class="step__title">Redireciona ao login</div><div class="step__desc"><span class="mono">/entrar?next=/painel</span> guarda o destino</div></div>
+        <div class="arrow"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="step step--no"><div class="step__title">Login aceito</div><div class="step__desc">Volta automaticamente para o destino</div></div>
+      </div>
+    </div>
+    <p class="foot reveal">Voluntário que tenta abrir /organizacao → redirecionado para /painel.</p>
+  </section>
+
+  <!-- 10 · ALÉM DO ESCOPO MÍNIMO (pipeline) -->
+  <section class="slide" aria-label="Pronto para o back-end" style="background-image:radial-gradient(ellipse at 50% 100%, var(--yellow-dim) 0%, transparent 45%);">
+    <p class="label reveal">Além do escopo mínimo</p>
+    <h2 class="heading reveal">A tela não sabe de onde vêm os dados</h2>
+    <div class="pipeline reveal">
+      <div class="pipe"><div class="pipe__num">01</div><div class="pipe__name">Componente</div><div class="pipe__desc">Só exibe estados: carregando, vazio, erro e sucesso</div></div>
+      <div class="arrow"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="pipe"><div class="pipe__num">02</div><div class="pipe__name">Hook</div><div class="pipe__desc">Guarda o estado e as ações da tela</div></div>
+      <div class="arrow"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="pipe"><div class="pipe__num">03</div><div class="pipe__name">Serviço</div><div class="pipe__desc">Faz o fetch e valida a resposta com Zod</div></div>
+      <div class="arrow"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="pipe pipe--accent"><div class="pipe__num">04</div><div class="pipe__name">Fonte de dados</div><div class="pipe__desc">Hoje: Route Handlers e MSW. Amanhã: o back-end da disciplina</div></div>
+    </div>
+    <p class="pipeline__cap reveal">Cada domínio fica em src/features: trocar a fonte de dados não exige refatorar a interface.</p>
+  </section>
+
+  <!-- 11 · ROTEIRO DA DEMONSTRAÇÃO -->
+  <section class="slide" aria-label="Roteiro da demonstração" style="background-image:radial-gradient(ellipse at 100% 0%, var(--yellow-dim) 0%, transparent 40%);">
+    <div class="cols cols--3-2">
+      <div>
+        <p class="label reveal">Demonstração ao vivo</p>
+        <h2 class="heading heading--sm reveal" style="margin-bottom:clamp(14px,2.8vh,30px);">Roteiro</h2>
+        <ol class="timeline reveal">
+          <li><span class="timeline__n">1</span><p><strong>Homepage</strong> → “Quero ser voluntário” <span class="timeline__req">01</span></p></li>
+          <li><span class="timeline__n">2</span><p>Catálogo público em <strong>/oportunidades</strong> <span class="timeline__req">02</span></p></li>
+          <li><span class="timeline__n">3</span><p>Inscrever-se sem login → <strong>/entrar?next=/oportunidades</strong> <span class="timeline__req">02</span></p></li>
+          <li><span class="timeline__n">4</span><p>Criar conta, entrar e <strong>voltar ao catálogo</strong> para concluir <span class="timeline__req">04</span></p></li>
+          <li><span class="timeline__n">5</span><p><strong>/painel</strong> e <strong>/minhas-atividades</strong>: encontros na agenda <span class="timeline__req">03</span></p></li>
+          <li><span class="timeline__n">6</span><p>Voluntário abre <strong>/organizacao</strong> → volta para /painel <span class="timeline__req">05</span></p></li>
+          <li><span class="timeline__n">7</span><p><strong>Sair</strong> e tentar /painel → login de novo <span class="timeline__req">05</span></p></li>
+        </ol>
+      </div>
+      <div class="checklist reveal">
+        <p class="label">O que a demo comprova</p>
+        <ul>
+          <li><span><strong>01 · Homepage</strong> com navegação clara</span></li>
+          <li><span><strong>02 · Páginas públicas</strong> sem autenticação</span></li>
+          <li><span><strong>03 · Área privada</strong> só com sessão</span></li>
+          <li><span><strong>04 · Login</strong> funcional com validação</span></li>
+          <li><span><strong>05 · Proxy</strong> bloqueia e redireciona</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12 · ENCERRAMENTO -->
+  <section class="slide slide--ink slide--closing" aria-label="Encerramento">
+    <div class="closing__slab" aria-hidden="true"></div>
+    <div class="closing__text">
+      <p class="label reveal">Portal Voluntário · UTFPR</p>
+      <h2 class="display reveal">Obrigado!</h2>
+      <p class="lead reveal" style="margin-top:clamp(12px,2.4vh,26px);">Perguntas?</p>
+      <p class="foot reveal">Próxima etapa: back-end com banco de dados, mantendo as mesmas telas.</p>
+      <div class="closing__links reveal">
+        <span class="route">github.com/SebenJose/Portal-Voluntario</span>
+        <span class="route">pnpm install · pnpm dev → localhost:3000</span>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="deck-brand" aria-hidden="true">Portal Voluntário · UTFPR</div>
+
+<script>
+  function SlideEngine() {
+    this.deck = document.querySelector('.deck');
+    this.slides = [].slice.call(document.querySelectorAll('.slide'));
+    this.current = 0;
+    this.total = this.slides.length;
+    this.buildChrome();
+    this.bindEvents();
+    this.observe();
+    this.update();
+  }
+  SlideEngine.prototype.buildChrome = function () {
+    var self = this;
+    var bar = document.createElement('div'); bar.className = 'deck-progress'; document.body.appendChild(bar); this.bar = bar;
+    var dots = document.createElement('nav'); dots.className = 'deck-dots'; dots.setAttribute('aria-label', 'Slides');
+    this.slides.forEach(function (slide, i) {
+      var d = document.createElement('button');
+      d.className = 'deck-dot'; d.type = 'button';
+      d.title = (i + 1) + '. ' + (slide.getAttribute('aria-label') || 'Slide');
+      d.setAttribute('aria-label', d.title);
+      d.onclick = function () { self.goTo(i); };
+      dots.appendChild(d);
+    });
+    document.body.appendChild(dots); this.dots = [].slice.call(dots.children);
+    var ctr = document.createElement('div'); ctr.className = 'deck-counter'; ctr.setAttribute('aria-live', 'polite'); document.body.appendChild(ctr); this.counter = ctr;
+    var hints = document.createElement('div'); hints.className = 'deck-hints';
+    hints.textContent = '← → ou role para navegar · F para tela cheia';
+    document.body.appendChild(hints); this.hints = hints;
+    this.hintTimer = setTimeout(function () { hints.classList.add('faded'); }, 5000);
+  };
+  SlideEngine.prototype.bindEvents = function () {
+    var self = this;
+    document.addEventListener('keydown', function (e) {
+      if (e.target.closest && e.target.closest('input, textarea, [contenteditable]')) return;
+      if (['ArrowDown', 'ArrowRight', ' ', 'PageDown'].indexOf(e.key) > -1) { e.preventDefault(); self.next(); }
+      else if (['ArrowUp', 'ArrowLeft', 'PageUp'].indexOf(e.key) > -1) { e.preventDefault(); self.prev(); }
+      else if (e.key === 'Home') { e.preventDefault(); self.goTo(0); }
+      else if (e.key === 'End') { e.preventDefault(); self.goTo(self.total - 1); }
+      else if (e.key === 'f' || e.key === 'F') { self.toggleFullscreen(); }
+      self.fadeHints();
+    });
+    var touchY;
+    this.deck.addEventListener('touchstart', function (e) { touchY = e.touches[0].clientY; }, { passive: true });
+    this.deck.addEventListener('touchend', function (e) {
+      var dy = touchY - e.changedTouches[0].clientY;
+      if (Math.abs(dy) > 50) { if (dy > 0) self.next(); else self.prev(); }
+    });
+  };
+  SlideEngine.prototype.observe = function () {
+    var self = this;
+    var obs = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          self.current = self.slides.indexOf(entry.target);
+          self.update();
+        }
+      });
+    }, { threshold: 0.5 });
+    this.slides.forEach(function (s) { obs.observe(s); });
+  };
+  SlideEngine.prototype.goTo = function (i) {
+    this.slides[Math.max(0, Math.min(i, this.total - 1))].scrollIntoView({ behavior: 'smooth' });
+  };
+  SlideEngine.prototype.next = function () { if (this.current < this.total - 1) this.goTo(this.current + 1); };
+  SlideEngine.prototype.prev = function () { if (this.current > 0) this.goTo(this.current - 1); };
+  SlideEngine.prototype.update = function () {
+    this.bar.style.width = ((this.current + 1) / this.total * 100) + '%';
+    var c = this.current;
+    this.dots.forEach(function (d, i) {
+      d.classList.toggle('active', i === c);
+      if (i === c) d.setAttribute('aria-current', 'step'); else d.removeAttribute('aria-current');
+    });
+    this.counter.textContent = (this.current + 1) + ' / ' + this.total;
+  };
+  SlideEngine.prototype.fadeHints = function () { clearTimeout(this.hintTimer); this.hints.classList.add('faded'); };
+  SlideEngine.prototype.toggleFullscreen = function () {
+    if (!document.fullscreenElement) { if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen(); }
+    else if (document.exitFullscreen) { document.exitFullscreen(); }
+  };
+
+  document.addEventListener('DOMContentLoaded', function () { new SlideEngine(); });
+</script>
+
+</body>
+</html>
