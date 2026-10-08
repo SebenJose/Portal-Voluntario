@@ -19,7 +19,7 @@ import { useLogoutConfirmation } from "@/features/auth/hooks/use-logout-confirma
 import type { AuthUser } from "@/features/auth/schemas/session-schema";
 
 type AppShellProps = {
-  active: "dashboard" | "opportunities" | "organization" | "certificates" | "activities";
+  active: "dashboard" | "opportunities" | "organization" | "certificates" | "activities" | "demo";
   children: ReactNode;
   description: string;
   title: string;
@@ -40,6 +40,7 @@ const navigationItems: Array<NavigationItem> = [
   { href: "/certificados", icon: Award, label: "Meus certificados", value: "certificates" },
 ];
 
+const prototypeItem: NavigationItem = { href: "/demonstracao/gestao", icon: ClipboardCheck, label: "Demonstração de gestão", value: "demo" };
 const organizationItem: NavigationItem = { href: "/organizacao", icon: ClipboardCheck, label: "Gestão de atividades", value: "organization" };
 
 const secondaryItems = [
@@ -167,6 +168,10 @@ export function AppShell({ active, children, description, title, user: initialUs
                   ))}
                 </ul>
               </nav>
+              <nav aria-label="Protótipos" className="space-y-1">
+                <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Protótipos</p>
+                <ul><li><NavigationLink href={prototypeItem.href} icon={prototypeItem.icon} isActive={active === prototypeItem.value} label={prototypeItem.label} /></li></ul>
+              </nav>
             </div>
 
             <footer aria-label="Perfil da conta" className="rounded-2xl border border-white/10 bg-white/5 p-3">
@@ -210,7 +215,7 @@ export function AppShell({ active, children, description, title, user: initialUs
             </div>
             <nav aria-label="Navegação mobile" className="overflow-x-auto px-4 pb-3">
               <ul className="flex min-w-max gap-1">
-                {[...navigationItems, ...(user?.role === "organization" ? [organizationItem] : [])].map((item) => (
+                {[...navigationItems, prototypeItem, ...(user?.role === "organization" ? [organizationItem] : [])].map((item) => (
                   <li key={item.value}>
                     <NavigationLink
                       href={item.href}

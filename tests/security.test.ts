@@ -279,24 +279,41 @@ test("lote aguarda todos, mantém sucessos e identifica falhas para retry", asyn
   }
 });
 
-test("MSW exige papel, isola organizações e encerra presença após despacho", async () => {
+test("MSW permite demo pública isolada e exige papel na gestão de organizações", async () => {
   let identity: { id: string; name: string; email: string; role: "organization" | "volunteer" } | null = null;
+  let sessionRequests = 0;
   const server = setupServer(...handlers);
   const locationDescriptor = Object.getOwnPropertyDescriptor(globalThis, "location");
   Object.defineProperty(globalThis, "location", { value: new URL(origin), configurable: true });
   server.listen({ onUnhandledFrame: "error" });
   // Override passthrough only in this test: the real session endpoint is tested separately.
-  server.use(http.get(`${origin}/api/auth/session`, () => identity ? HttpResponse.json({ user: identity }) : new HttpResponse(null, { status: 401 })));
+  server.use(http.get(`${origin}/api/auth/session`, () => {
+    sessionRequests += 1;
+    return identity ? HttpResponse.json({ user: identity }) : new HttpResponse(null, { status: 401 });
+  }));
   const interceptedFetch = globalThis.fetch;
   globalThis.fetch = (input, init) => interceptedFetch(typeof input === "string" ? new URL(input, origin) : input, init);
   try {
+    const demoEndpoint = "/api/demo/organizations/activities";
+    assert.equal((await fetch(demoEndpoint)).status, 200);
+    assert.equal((await fetch(`${demoEndpoint}/horta-comunitaria/participants/p-002`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "Presente" }) })).status, 200);
+    assert.equal((await fetch(`${demoEndpoint}/horta-comunitaria/participants/p-002`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "Inválido" }) })).status, 400);
+    assert.equal((await fetch(`${demoEndpoint}/horta-comunitaria/certificates`, { method: "POST" })).status, 201);
+    assert.equal((await fetch(`${demoEndpoint}/horta-comunitaria/participants/p-001`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "Ausente" }) })).status, 409);
+    assert.equal(sessionRequests, 0);
     assert.equal((await fetch("/api/organizations/activities")).status, 401);
     identity = { id: randomUUID(), name: "Teste", email: "test@example.test", role: "volunteer" };
     assert.equal((await fetch("/api/organizations/activities")).status, 403);
     assert.equal((await fetch("/api/organizations/activities/horta-comunitaria/certificates", { method: "POST" })).status, 403);
     assert.equal((await fetch("/api/organizations/activities/horta-comunitaria/participants/p-001", { method: "PATCH", body: JSON.stringify({ status: "Presente" }) })).status, 403);
     identity.role = "organization";
-    assert.equal((await fetch("/api/organizations/activities")).status, 200);
+    const organizationResponse = await fetch("/api/organizations/activities");
+    assert.equal(organizationResponse.status, 200);
+    const organizationActivities = z.array(z.object({ id: z.string(), certificatesDispatched: z.boolean(), participants: z.array(z.object({ id: z.string(), status: z.string() })) })).parse(await organizationResponse.json());
+    const organizationActivity = organizationActivities.find((activity) => activity.id === "horta-comunitaria");
+    assert.ok(organizationActivity);
+    assert.equal(organizationActivity.certificatesDispatched, false);
+    assert.equal(organizationActivity.participants.find((participant) => participant.id === "p-002")?.status, "Inscrito");
     assert.equal((await fetch("/api/organizations/activities/horta-comunitaria/certificates", { method: "POST" })).status, 201);
     assert.equal((await fetch("/api/organizations/activities/horta-comunitaria/participants/p-001", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "Ausente" }) })).status, 409);
     assert.equal((await fetch("/api/organizations/activities/horta-comunitaria/certificates", { method: "POST" })).status, 409);

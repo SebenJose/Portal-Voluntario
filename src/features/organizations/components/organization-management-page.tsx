@@ -20,7 +20,8 @@ import {
   type ActivityParticipant,
   type AttendanceStatus,
   type ManagedActivity,
-} from "../services/organization-activities";
+  type OrganizationManagementMode,
+} from "@/features/organizations/services/organization-activities";
 
 const statusStyles: Record<AttendanceStatus, string> = {
   Inscrito: "border-brand-black/20 bg-brand-black/5 text-brand-black",
@@ -28,7 +29,12 @@ const statusStyles: Record<AttendanceStatus, string> = {
   Ausente: "border-red-800/20 bg-red-50 text-red-900",
 };
 
-export function OrganizationManagementPage({ user }: { user: AuthUser }) {
+type OrganizationManagementPageProps = {
+  user: AuthUser | null;
+  mode?: OrganizationManagementMode;
+};
+
+export function OrganizationManagementPage({ user, mode = "organization" }: OrganizationManagementPageProps) {
   const [activities, setActivities] = useState<Array<ManagedActivity>>([]);
   const [activeActivityId, setActiveActivityId] = useState("");
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set());
@@ -41,7 +47,7 @@ export function OrganizationManagementPage({ user }: { user: AuthUser }) {
 
   const loadActivities = useCallback(async () => {
     try {
-      const result = await getManagedActivities();
+      const result = await getManagedActivities(mode);
       setActivities(result);
       setActiveActivityId((currentId) => currentId || result[0]?.id || "");
       setError(null);
@@ -54,7 +60,7 @@ export function OrganizationManagementPage({ user }: { user: AuthUser }) {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
     if (!isDemoModeEnabled) return;
@@ -119,7 +125,7 @@ export function OrganizationManagementPage({ user }: { user: AuthUser }) {
 
     try {
       const { updated: updatedParticipants, failedIds } = await updateParticipantsAttendance(
-        activeActivity.id, participants.map((participant) => participant.id), status,
+        activeActivity.id, participants.map((participant) => participant.id), status, mode,
       );
       const updatedIds = new Set(updatedParticipants.map(({ id }) => id));
       setActivities((currentActivities) =>
@@ -139,7 +145,7 @@ export function OrganizationManagementPage({ user }: { user: AuthUser }) {
         updatedIds.forEach((id) => nextIds.delete(id));
         return nextIds;
       });
-      setNotice(updatedParticipants.length > 0 ? `Presença atualizada para ${updatedParticipants.length} participante(s).` : null);
+      setNotice(updatedParticipants.length > 0 ? `Simulação: presença atualizada para ${updatedParticipants.length} participante(s).` : null);
       if (failedIds.length > 0) setError(`Não foi possível atualizar ${failedIds.length} participante(s). As alterações concluídas foram mantidas; tente novamente os selecionados.`);
     } catch (cause: unknown) {
       setError(
@@ -162,7 +168,7 @@ export function OrganizationManagementPage({ user }: { user: AuthUser }) {
     setNotice(null);
 
     try {
-      const receipt = await dispatchActivityCertificates(activeActivity.id);
+      const receipt = await dispatchActivityCertificates(activeActivity.id, mode);
       setActivities((currentActivities) =>
         currentActivities.map((activity) =>
           activity.id === receipt.activityId
@@ -184,11 +190,15 @@ export function OrganizationManagementPage({ user }: { user: AuthUser }) {
 
   return (
     <AppShell
-      active="organization"
-      description="Confirme a frequência e prepare os certificados de quem participou."
-      title="Gestão de atividades"
+      active={mode === "public-demo" ? "demo" : "organization"}
+      description="Explore uma demonstração da área de organizações com atividades e participantes fictícios."
+      title="Protótipo de gestão"
       user={user}
     >
+      <aside aria-labelledby="organization-prototype-title" className="mb-6 rounded-2xl border border-brand-yellow/40 bg-brand-yellow/10 p-5">
+        <h2 className="font-semibold" id="organization-prototype-title">Demonstração da área de organizações</h2>
+        <p className="mt-2 text-sm leading-6 text-muted-foreground">{mode === "public-demo" ? "Esta demonstração é pública e não exige login." : "Esta área é restrita a contas de organizações."} Os participantes são fictícios e nenhuma mensagem ou certificado é enviado. As alterações simuladas são reiniciadas ao recarregar a página.</p>
+      </aside>
       {!isDemoModeEnabled ? (
         <Card><CardContent className="p-6">A gestão de atividades está disponível somente na demonstração. O serviço ainda não está integrado.</CardContent></Card>
       ) : isLoading ? (
@@ -206,9 +216,9 @@ export function OrganizationManagementPage({ user }: { user: AuthUser }) {
         </div>
       ) : (
         <div className="space-y-5">
-          <Card className="border-brand-yellow/40">
+          <Card aria-labelledby="managed-activity-title" as="section" className="border-brand-yellow/40">
             <CardHeader>
-              <CardTitle>Atividade</CardTitle>
+              <CardTitle id="managed-activity-title">Atividade</CardTitle>
               <CardDescription>Selecione o evento para acompanhar participantes e certificados.</CardDescription>
             </CardHeader>
             <CardContent>
@@ -233,16 +243,16 @@ export function OrganizationManagementPage({ user }: { user: AuthUser }) {
 
           {activeActivity ? (
             <>
-              <div className="grid gap-4 sm:grid-cols-3">
-                <Card><CardContent className="flex items-center gap-3 p-5"><Users aria-hidden="true" className="size-5 text-brand-black" /><div><p className="text-sm text-muted-foreground">Inscritos</p><p className="text-2xl font-semibold">{activeActivity.participants.length}</p></div></CardContent></Card>
-                <Card><CardContent className="flex items-center gap-3 p-5"><CheckCheck aria-hidden="true" className="size-5 text-emerald-800" /><div><p className="text-sm text-muted-foreground">Presenças confirmadas</p><p className="text-2xl font-semibold">{presentCount}</p></div></CardContent></Card>
-                <Card><CardContent className="flex items-center gap-3 p-5"><Mail aria-hidden="true" className="size-5 text-brand-black" /><div><p className="text-sm text-muted-foreground">Certificados</p><p className="text-base font-semibold">{activeActivity.certificatesDispatched ? "Despachados" : "Aguardando envio"}</p></div></CardContent></Card>
-              </div>
+              <section aria-label="Resumo da atividade" className="grid gap-4 sm:grid-cols-3">
+                <Card><CardContent className="flex items-center gap-3 p-5"><Users aria-hidden="true" className="size-5 text-brand-black" /><dl><dt className="text-sm text-muted-foreground">Inscritos</dt><dd className="text-2xl font-semibold">{activeActivity.participants.length}</dd></dl></CardContent></Card>
+                <Card><CardContent className="flex items-center gap-3 p-5"><CheckCheck aria-hidden="true" className="size-5 text-emerald-800" /><dl><dt className="text-sm text-muted-foreground">Presenças confirmadas</dt><dd className="text-2xl font-semibold">{presentCount}</dd></dl></CardContent></Card>
+                <Card><CardContent className="flex items-center gap-3 p-5"><Mail aria-hidden="true" className="size-5 text-brand-black" /><dl><dt className="text-sm text-muted-foreground">Certificados</dt><dd className="text-base font-semibold">{activeActivity.certificatesDispatched ? "Envio simulado" : "Aguardando simulação"}</dd></dl></CardContent></Card>
+              </section>
 
-              <Card className="border-brand-yellow/30">
+              <Card aria-labelledby="participants-title" as="section" className="border-brand-yellow/30">
                 <CardHeader className="gap-4 lg:flex-row lg:items-end lg:justify-between">
                   <div>
-                    <CardTitle>Participantes</CardTitle>
+                    <CardTitle id="participants-title">Participantes</CardTitle>
                     <CardDescription className="mt-1">{activeActivity.dateLabel} · {visibleParticipants.length} exibidos</CardDescription>
                   </div>
                   <div className="flex flex-col gap-3 sm:flex-row">
@@ -289,7 +299,7 @@ export function OrganizationManagementPage({ user }: { user: AuthUser }) {
                       variant="outline"
                     >
                       <Mail aria-hidden="true" />
-                      {activeActivity.certificatesDispatched ? "Certificados despachados" : "Enviar certificados dos presentes"}
+                      {activeActivity.certificatesDispatched ? "Envio já simulado" : "Simular envio de certificados"}
                     </Button>
                   </div>
 
@@ -299,9 +309,10 @@ export function OrganizationManagementPage({ user }: { user: AuthUser }) {
                   {visibleParticipants.length > 0 ? (
                     <div className="overflow-x-auto">
                       <table className="w-full min-w-[680px] text-left text-sm">
+                        <caption className="sr-only">Participantes de {activeActivity.title}</caption>
                         <thead className="border-b text-xs uppercase text-muted-foreground">
                           <tr>
-                            <th className="w-10 px-3 py-3">
+                            <th aria-label="Seleção de participantes" className="w-10 px-3 py-3" scope="col">
                               <input
                                 aria-label="Selecionar todos os participantes visíveis"
                                 checked={allVisibleSelected}
@@ -309,10 +320,10 @@ export function OrganizationManagementPage({ user }: { user: AuthUser }) {
                                 type="checkbox"
                               />
                             </th>
-                            <th className="px-3 py-3">Participante</th>
-                            <th className="px-3 py-3">Inscrição</th>
-                            <th className="px-3 py-3">Presença</th>
-                            <th className="px-3 py-3">Ações</th>
+                            <th className="px-3 py-3" scope="col">Participante</th>
+                            <th className="px-3 py-3" scope="col">Inscrição</th>
+                            <th className="px-3 py-3" scope="col">Presença</th>
+                            <th className="px-3 py-3" scope="col">Ações</th>
                           </tr>
                         </thead>
                         <tbody className="divide-y">
@@ -326,10 +337,10 @@ export function OrganizationManagementPage({ user }: { user: AuthUser }) {
                                   type="checkbox"
                                 />
                               </td>
-                              <td className="px-3 py-4">
+                              <th className="px-3 py-4 font-normal" scope="row">
                                 <p className="font-medium">{participant.name}</p>
                                 <p className="mt-1 text-xs text-muted-foreground">{participant.email}</p>
-                              </td>
+                              </th>
                               <td className="px-3 py-4 text-muted-foreground">{participant.registeredAt}</td>
                               <td className="px-3 py-4"><Badge className={statusStyles[participant.status]} variant="outline">{participant.status}</Badge></td>
                               <td className="px-3 py-4">
