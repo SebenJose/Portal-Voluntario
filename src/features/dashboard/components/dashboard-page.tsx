@@ -8,15 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import type { AuthUser } from "@/features/auth/schemas/session-schema";
+import { activityCategoryStyles } from "@/lib/activity-categories";
 
 import { hoursSummary, upcomingActivities } from "../data/dashboard";
 import { ExternalCertificateForm } from "./external-certificate-form";
-
-const categoryColors: Record<(typeof hoursSummary)[number]["category"], string> = {
-  Ensino: "bg-brand-yellow",
-  Pesquisa: "bg-brand-black",
-  Extensão: "bg-emerald-600",
-};
 
 export function DashboardPage({ user }: { user: AuthUser }) {
   const totalCompleted = hoursSummary.reduce((total, item) => total + item.completed, 0);
@@ -82,14 +77,14 @@ export function DashboardPage({ user }: { user: AuthUser }) {
                 <div className="space-y-2" key={item.category}>
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
-                      <span className={`size-2.5 rounded-full ${categoryColors[item.category]}`} />
+                      <span className={`size-2.5 rounded-full ${activityCategoryStyles[item.category].indicator}`} />
                       <span className="font-medium">{item.category}</span>
                     </div>
                     <span className="text-muted-foreground">
                       {item.completed}h / {item.limit}h
                     </span>
                   </div>
-                  <Progress indicatorClassName={categoryColors[item.category]} value={percentage} />
+                  <Progress indicatorClassName={activityCategoryStyles[item.category].indicator} value={percentage} />
                 </div>
               );
             })}

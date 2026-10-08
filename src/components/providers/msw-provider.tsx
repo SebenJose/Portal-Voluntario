@@ -11,9 +11,7 @@ type MswProviderProps = {
 
 type StartupState = "starting" | "ready" | "error";
 
-const shouldMockApi =
-  (process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_API_MOCKING !== "disabled") ||
-  (process.env.NODE_ENV === "production" && process.env.NEXT_PUBLIC_API_MOCKING === "enabled");
+const shouldMockApi = process.env.NEXT_PUBLIC_API_MOCKING !== "disabled";
 
 let startupPromise: Promise<void> | undefined;
 

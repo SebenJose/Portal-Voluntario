@@ -17,6 +17,7 @@ export function RegistrationForm({ nextPath }: { nextPath?: string }) {
   const router = useRouter();
   const destination = getSafeRedirectPath(nextPath);
   const form = useForm<RegistrationValues>({
+    mode: "onTouched",
     defaultValues: { name: "", email: "", password: "", passwordConfirmation: "" },
     resolver: zodResolver(registrationSchema),
   });
@@ -76,7 +77,7 @@ export function RegistrationForm({ nextPath }: { nextPath?: string }) {
             label="Senha"
             placeholder="Pelo menos 8 caracteres"
             type="password"
-            {...form.register("password")}
+            {...form.register("password", { deps: ["passwordConfirmation"] })}
           />
           <AuthField
             autoComplete="new-password"

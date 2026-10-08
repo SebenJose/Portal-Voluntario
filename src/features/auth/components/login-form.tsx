@@ -18,6 +18,7 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
   const router = useRouter();
   const destination = getSafeRedirectPath(nextPath);
   const form = useForm<LoginFormValues>({
+    mode: "onTouched",
     defaultValues: {
       email: "",
       password: "",

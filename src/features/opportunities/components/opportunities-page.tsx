@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { AuthUser } from "@/features/auth/schemas/session-schema";
+import { activityCategoryStyles } from "@/lib/activity-categories";
 
 import {
   getOpportunities,
@@ -166,12 +167,13 @@ export function OpportunitiesPage({ user }: { user: AuthUser | null }) {
             </Button>
             {opportunityCategories.map((option) => (
               <Button
-                className={category === option ? "bg-brand-yellow text-brand-black hover:bg-brand-yellow/85" : "border-brand-black/20"}
+                className={category === option ? activityCategoryStyles[option].badge : "border-brand-black/20"}
                 key={option}
                 onClick={() => setCategory(option)}
                 size="sm"
                 variant={category === option ? "default" : "outline"}
               >
+                <span aria-hidden="true" className={`size-2 rounded-full ${activityCategoryStyles[option].indicator}`} />
                 {option}
               </Button>
             ))}
