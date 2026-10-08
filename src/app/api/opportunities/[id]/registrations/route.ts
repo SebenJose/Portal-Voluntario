@@ -2,8 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { SESSION_COOKIE_NAME, verifySessionToken } from "@/features/auth/services/session";
 import { EnrollmentError, enrollInOpportunity } from "@/features/opportunities/services/enrollments";
+import { requireMutationOrigin, securityErrorResponse } from "@/lib/server/request-security";
 
 export async function POST(request: NextRequest, context: { params: Promise<{ id: string }> }) {
+  try {
+    requireMutationOrigin(request);
+  } catch (error: unknown) {
+    return securityErrorResponse(error, "Não foi possível concluir a inscrição.");
+  }
   const user = await verifySessionToken(request.cookies.get(SESSION_COOKIE_NAME)?.value);
   if (!user) {
     return NextResponse.json({ message: "Entre na sua conta para se inscrever." }, { status: 401 });

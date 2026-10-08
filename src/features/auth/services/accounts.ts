@@ -1,11 +1,12 @@
+import "server-only";
+
 import { randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 
 import { authUserSchema, loginRequestSchema, type AuthUser, type LoginRequest } from "@/features/auth/schemas/session-schema";
 import { registrationSchema, type RegistrationValues } from "@/features/auth/schemas/registration-schema";
 import { readLocalData, updateLocalData } from "@/lib/server/local-store";
-import { authenticateDemoUser, isDemoEmail } from "@/features/auth/services/demo-credentials";
-import { createSessionToken } from "@/features/auth/services/session";
+import { RequestSecurityError } from "@/lib/server/request-security";
 
 const accountSchema = z.object({
   user: authUserSchema,
@@ -22,7 +23,20 @@ export class AccountAlreadyExistsError extends Error {
   }
 }
 
-function hashPassword(password: string, salt: string): Promise<Buffer> {
+let activeHashes = 0;
+const dummySalt = randomBytes(16).toString("hex");
+
+async function hashPassword(password: string, salt: string): Promise<Buffer> {
+  if (activeHashes >= 2) throw new RequestSecurityError("Muitas tentativas. Aguarde e tente novamente.", 429, 5);
+  activeHashes += 1;
+  try {
+    return await derivePassword(password, salt);
+  } finally {
+    activeHashes -= 1;
+  }
+}
+
+function derivePassword(password: string, salt: string): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     scrypt(password, salt, 64, { N: 32768, r: 8, p: 1, maxmem: 64 * 1024 * 1024 }, (error, key) => {
       if (error) reject(error);
@@ -39,27 +53,27 @@ export async function createAccount(input: RegistrationValues) {
     name: values.name,
     role: "volunteer",
   };
-  // Validate the session configuration before persisting a new account.
-  const session = await createSessionToken(user);
   const salt = randomBytes(16).toString("hex");
   const passwordHash = (await hashPassword(values.password, salt)).toString("hex");
   updateLocalData(accountsFile, accountsSchema, [], (accounts) => {
-    if (isDemoEmail(values.email) || accounts.some((account) => account.user.email === values.email)) {
+    if (accounts.some((account) => account.user.email === values.email)) {
       throw new AccountAlreadyExistsError();
     }
     return [...accounts, { user, salt, passwordHash }];
   });
-  return { user, session };
+  return user;
 }
 
 export async function authenticateAccount(input: LoginRequest): Promise<AuthUser | null> {
   const credentials = loginRequestSchema.parse(input);
-  const demoUser = authenticateDemoUser(credentials);
-  if (demoUser) return demoUser;
   const email = credentials.email.trim().toLowerCase();
   const account = readLocalData(accountsFile, accountsSchema, []).find((item) => item.user.email === email);
+  const actualHash = await hashPassword(credentials.password, account?.salt ?? dummySalt);
   if (!account) return null;
-  const actualHash = await hashPassword(credentials.password, account.salt);
   const expectedHash = Buffer.from(account.passwordHash, "hex");
   return timingSafeEqual(actualHash, expectedHash) ? account.user : null;
+}
+
+export function getAccountUser(userId: string): AuthUser | null {
+  return readLocalData(accountsFile, accountsSchema, []).find((account) => account.user.id === userId)?.user ?? null;
 }

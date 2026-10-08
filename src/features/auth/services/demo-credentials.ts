@@ -1,26 +1,3 @@
-import type { LoginRequest, AuthUser } from "@/features/auth/schemas/session-schema";
-
-const demoCredential = {
-  email: "rh@portalvoluntario.dev",
-  password: "Voluntario2026!",
-  user: {
-    id: "demo-voluntario-001",
-    email: "rh@portalvoluntario.dev",
-    name: "João Seben",
-    role: "volunteer",
-  } satisfies AuthUser,
-};
-
-export function isDemoEmail(email: string): boolean {
-  return email.trim().toLowerCase() === demoCredential.email;
-}
-
-export function authenticateDemoUser(credentials: LoginRequest): AuthUser | null {
-  if (
-    credentials.email.trim().toLocaleLowerCase("pt-BR") !== demoCredential.email ||
-    credentials.password !== demoCredential.password
-  ) {
-    return null;
-  }
-  return demoCredential.user;
-}
+// Legacy module retained to document the migration. Authentication only accepts persisted accounts.
+// There are no built-in credentials or privileged demonstration identities.
+export {};

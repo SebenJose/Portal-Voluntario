@@ -1,3 +1,5 @@
+import "server-only";
+
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -11,5 +13,11 @@ export async function requireAuthenticatedUser(nextPath: string) {
     redirect(`/entrar?next=${encodeURIComponent(nextPath)}`);
   }
 
+  return user;
+}
+
+export async function requireOrganizationUser() {
+  const user = await requireAuthenticatedUser("/organizacao");
+  if (user.role !== "organization") redirect("/painel");
   return user;
 }
