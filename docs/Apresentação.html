@@ -835,7 +835,7 @@
     </div>
   </section>
 
-  <!-- 2 · PROPOSTA + STACK -->
+  <!-- 2 · PROPOSTA -->
   <section class="slide" aria-label="A proposta" style="background-image:radial-gradient(ellipse at 85% 90%, var(--yellow-dim) 0%, transparent 45%);">
     <div class="cols cols--2-3">
       <div class="quote-card reveal">
@@ -851,14 +851,28 @@
           <li>Inscrição, agenda dos encontros e painel com <strong>banco de horas</strong></li>
           <li>Registro de certificados e protótipo de gestão para organizações</li>
         </ul>
-        <div class="nest__chips reveal" style="margin-top:clamp(14px,2.8vh,30px);gap:8px;">
-          <span class="chip chip--ink">Next.js 16</span><span class="chip chip--ink">React 19</span><span class="chip">TypeScript</span><span class="chip">Tailwind CSS</span><span class="chip">shadcn/ui</span><span class="chip">React Hook Form + Zod</span><span class="chip">MSW</span><span class="chip">pnpm</span>
-        </div>
       </div>
     </div>
   </section>
 
-  <!-- 3 · ROTEIRO DOS REQUISITOS -->
+  <!-- 3 · TECNOLOGIAS UTILIZADAS -->
+  <section class="slide" aria-label="Tecnologias utilizadas" style="background-image:radial-gradient(ellipse at 15% 10%, var(--yellow-dim) 0%, transparent 45%);">
+    <p class="label reveal">Tecnologias utilizadas</p>
+    <h2 class="heading heading--sm reveal">O stack por trás do Portal Voluntário</h2>
+    <div class="stack reveal" style="margin-top:clamp(18px,3.4vh,40px);">
+      <div class="tech tech--key"><span class="tech__n">01</span><b>Next.js 16</b><span>App Router, Route Handlers e Server Components</span></div>
+      <div class="tech"><span class="tech__n">02</span><b>React 19</b><span>Components e hooks que compõem toda a interface</span></div>
+      <div class="tech"><span class="tech__n">03</span><b>TypeScript</b><span>Tipagem estática em todo o front-end</span></div>
+      <div class="tech"><span class="tech__n">04</span><b>Tailwind CSS</b><span>Estilização utilitária com tema claro/escuro</span></div>
+      <div class="tech"><span class="tech__n">05</span><b>shadcn/ui</b><span>Componentes acessíveis construídos sobre Radix UI</span></div>
+      <div class="tech"><span class="tech__n">06</span><b>React Hook Form + Zod</b><span>Formulários controlados com validação de schema</span></div>
+      <div class="tech tech--key"><span class="tech__n">07</span><b>MSW</b><span>Simula o back-end enquanto a API real não existe</span></div>
+      <div class="tech"><span class="tech__n">08</span><b>pnpm</b><span>Gerenciador de pacotes com workspace único</span></div>
+    </div>
+    <p class="foot reveal">Mesmo stack usado em todos os requisitos apresentados a seguir.</p>
+  </section>
+
+  <!-- 4 · ROTEIRO DOS REQUISITOS -->
   <section class="slide" aria-label="Os cinco requisitos" style="padding-top:clamp(24px,5vh,60px);padding-bottom:clamp(40px,7vh,72px);">
     <p class="label reveal">Requisitos da disciplina</p>
     <h2 class="heading heading--sm reveal">Os cinco requisitos e onde estão no portal</h2>
@@ -871,7 +885,7 @@
     </ol>
   </section>
 
-  <!-- 4 · REQUISITO 01 · HOMEPAGE -->
+  <!-- 5 · REQUISITO 01 · HOMEPAGE -->
   <section class="slide slide--req" aria-label="Requisito 1 · Homepage">
     <header class="req reveal">
       <span class="req__num">01</span>
@@ -917,7 +931,7 @@
     </div>
   </section>
 
-  <!-- 5 · REQUISITO 02 · PÁGINAS PÚBLICAS -->
+  <!-- 6 · REQUISITO 02 · PÁGINAS PÚBLICAS -->
   <section class="slide slide--req" aria-label="Requisito 2 · Páginas públicas">
     <header class="req reveal">
       <span class="req__num">02</span>
@@ -943,7 +957,7 @@
     </div>
   </section>
 
-  <!-- 6 · REQUISITO 03 · ÁREA PRIVADA -->
+  <!-- 7 · REQUISITO 03 · ÁREA PRIVADA -->
   <section class="slide slide--req" aria-label="Requisito 3 · Área privada">
     <header class="req reveal">
       <span class="req__num">03</span>
@@ -989,7 +1003,7 @@
     </div>
   </section>
 
-  <!-- 7 · REQUISITO 04 · LOGIN -->
+  <!-- 8 · REQUISITO 04 · LOGIN -->
   <section class="slide slide--req" aria-label="Requisito 4 · Sistema de login">
     <header class="req reveal">
       <span class="req__num">04</span>
@@ -1027,7 +1041,7 @@
     </div>
   </section>
 
-  <!-- 8 · REQUISITO 05 · CONTROLE DE ACESSO (código) -->
+  <!-- 9 · REQUISITO 05 · CONTROLE DE ACESSO (código) -->
   <section class="slide slide--req" aria-label="Requisito 5 · Controle de acesso">
     <header class="req reveal">
       <span class="req__num">05</span>
@@ -1077,56 +1091,7 @@
     </div>
   </section>
 
-  <!-- 9 · REQUISITO 05 · CONTROLE DE ACESSO NA PRÁTICA (fluxo) -->
-  <section class="slide slide--req" aria-label="Requisito 5 · Controle de acesso na prática">
-    <header class="req reveal">
-      <span class="req__num">05</span>
-      <div class="req__head">
-        <p class="req__kicker">Requisito 5 de 5 · na prática <span class="req__track" aria-hidden="true"><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i><i class="on"></i></span></p>
-        <h2 class="req__title">O que acontece ao abrir <span class="route" style="font-size:0.62em;">/painel</span></h2>
-      </div>
-    </header>
-    <div class="flow reveal" style="margin-top:0;">
-      <div class="flow__row">
-        <div class="step"><div class="step__num">01</div><div class="step__title">Pedido da página</div><div class="step__desc">O navegador envia o cookie de sessão, se existir</div></div>
-        <div class="arrow"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-        <div class="step"><div class="step__num">02</div><div class="step__title">proxy.ts intercepta</div><div class="step__desc">Roda antes da página, só nas rotas privadas</div></div>
-        <div class="arrow"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-        <div class="step step--decision"><div class="step__num">DECISÃO</div><div class="step__title">Sessão válida?</div><div class="step__desc">E o papel permite a rota?</div></div>
-      </div>
-      <div class="lane">
-        <div class="lane__tag lane__tag--ok">SIM</div>
-        <div class="step step--ok"><div class="step__title">A página confere de novo</div><div class="step__desc">Defesa em duas camadas, no servidor</div></div>
-        <div class="arrow"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-        <div class="step step--ok"><div class="step__title">Renderiza o painel</div><div class="step__desc">Com os dados apenas da conta logada</div></div>
-      </div>
-      <div class="lane">
-        <div class="lane__tag lane__tag--no">NÃO</div>
-        <div class="step step--no"><div class="step__title">Redireciona ao login</div><div class="step__desc"><span class="mono">/entrar?next=/painel</span> guarda o destino</div></div>
-        <div class="arrow"><svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-        <div class="step step--no"><div class="step__title">Login aceito</div><div class="step__desc">Volta automaticamente para o destino</div></div>
-      </div>
-    </div>
-    <p class="foot reveal">Voluntário que tenta abrir /organizacao → redirecionado para /painel.</p>
-  </section>
-
-  <!-- 10 · ALÉM DO ESCOPO MÍNIMO (pipeline) -->
-  <section class="slide" aria-label="Pronto para o back-end" style="background-image:radial-gradient(ellipse at 50% 100%, var(--yellow-dim) 0%, transparent 45%);">
-    <p class="label reveal">Além do escopo mínimo</p>
-    <h2 class="heading reveal">A tela não sabe de onde vêm os dados</h2>
-    <div class="pipeline reveal">
-      <div class="pipe"><div class="pipe__num">01</div><div class="pipe__name">Componente</div><div class="pipe__desc">Só exibe estados: carregando, vazio, erro e sucesso</div></div>
-      <div class="arrow"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-      <div class="pipe"><div class="pipe__num">02</div><div class="pipe__name">Hook</div><div class="pipe__desc">Guarda o estado e as ações da tela</div></div>
-      <div class="arrow"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-      <div class="pipe"><div class="pipe__num">03</div><div class="pipe__name">Serviço</div><div class="pipe__desc">Faz o fetch e valida a resposta com Zod</div></div>
-      <div class="arrow"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-      <div class="pipe pipe--accent"><div class="pipe__num">04</div><div class="pipe__name">Fonte de dados</div><div class="pipe__desc">Hoje: Route Handlers e MSW. Amanhã: o back-end da disciplina</div></div>
-    </div>
-    <p class="pipeline__cap reveal">Cada domínio fica em src/features: trocar a fonte de dados não exige refatorar a interface.</p>
-  </section>
-
-  <!-- 11 · ROTEIRO DA DEMONSTRAÇÃO -->
+  <!-- 10 · ROTEIRO DA DEMONSTRAÇÃO -->
   <section class="slide" aria-label="Roteiro da demonstração" style="background-image:radial-gradient(ellipse at 100% 0%, var(--yellow-dim) 0%, transparent 40%);">
     <div class="cols cols--3-2">
       <div>
@@ -1155,7 +1120,7 @@
     </div>
   </section>
 
-  <!-- 12 · ENCERRAMENTO -->
+  <!-- 11 · ENCERRAMENTO -->
   <section class="slide slide--ink slide--closing" aria-label="Encerramento">
     <div class="closing__slab" aria-hidden="true"></div>
     <div class="closing__text">

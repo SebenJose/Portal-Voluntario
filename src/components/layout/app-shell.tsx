@@ -43,10 +43,6 @@ const navigationItems: Array<NavigationItem> = [
 const prototypeItem: NavigationItem = { href: "/demonstracao/gestao", icon: ClipboardCheck, label: "Demonstração de gestão", value: "demo" };
 const organizationItem: NavigationItem = { href: "/organizacao", icon: ClipboardCheck, label: "Gestão de atividades", value: "organization" };
 
-const secondaryItems = [
-  { href: "/certificados#registrar-certificado", icon: Award, label: "Registrar certificado" },
-];
-
 function NavigationLink({
   href,
   icon: Icon,
@@ -158,16 +154,6 @@ export function AppShell({ active, children, description, title, user: initialUs
                 </ul>
               </nav>
 
-              <nav aria-label="Atalhos da conta" className="space-y-1">
-                <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/45">
-                  Sua jornada
-                </p>
-                <ul className="space-y-1">
-                  {secondaryItems.map((item) => (
-                    <li key={item.label}><NavigationLink href={item.href} icon={item.icon} label={item.label} /></li>
-                  ))}
-                </ul>
-              </nav>
               <nav aria-label="Protótipos" className="space-y-1">
                 <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Protótipos</p>
                 <ul><li><NavigationLink href={prototypeItem.href} icon={prototypeItem.icon} isActive={active === prototypeItem.value} label={prototypeItem.label} /></li></ul>

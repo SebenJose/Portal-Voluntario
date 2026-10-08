@@ -23,6 +23,18 @@ O service worker já está versionado em `public/mockServiceWorker.js`. Em produ
 ausente ou qualquer valor diferente de `enabled` deixa o MSW desligado e preserva a comunicação
 direta com os Route Handlers.
 
+## Painel com horas de exemplo
+
+Com os mocks ativos, **Meu painel** (`/painel`) já abre com os dados de demonstração
+após o login. O exemplo mostra 74 horas (24 de Ensino, 18 de Pesquisa
+e 32 de Extensão), três atividades concluídas e duas atividades futuras na agenda.
+Use **Voltar aos meus dados** (`/painel?demonstracao=conta`) para consultar os dados
+da conta, e **Ver dados de demonstração** para abrir os exemplos novamente.
+
+Os exemplos vêm do endpoint MSW `/api/demo/dashboard` e não gravam horas,
+inscrições ou certificados. Esse painel está disponível apenas com os mocks ativos.
+O endpoint aceita os cenários `empty`, `loading`, `network-error` e `server-error`.
+
 ## Autenticação
 
 As rotas `/api/auth/*` passam pelo navegador até os Route Handlers reais do Next.js. O MSW não cria

@@ -5,9 +5,13 @@ import { redirect } from "next/navigation";
 
 import { SESSION_COOKIE_NAME, verifySessionToken } from "@/features/auth/services/session";
 
-export async function requireAuthenticatedUser(nextPath: string) {
+export async function getAuthenticatedUser() {
   const cookieStore = await cookies();
-  const user = await verifySessionToken(cookieStore.get(SESSION_COOKIE_NAME)?.value);
+  return verifySessionToken(cookieStore.get(SESSION_COOKIE_NAME)?.value);
+}
+
+export async function requireAuthenticatedUser(nextPath: string) {
+  const user = await getAuthenticatedUser();
 
   if (!user) {
     redirect(`/entrar?next=${encodeURIComponent(nextPath)}`);

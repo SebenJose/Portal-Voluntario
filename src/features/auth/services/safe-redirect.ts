@@ -4,6 +4,7 @@ export function getSafeRedirectPath(value: string | string[] | undefined): strin
   try {
     const parsed = new URL(value, "https://portal-voluntario.local");
     if (parsed.origin !== "https://portal-voluntario.local") return "/painel";
+    if (/^\/(entrar|criar-conta)(\/|$)/u.test(parsed.pathname)) return "/painel";
     return `${parsed.pathname}${parsed.search}${parsed.hash}`;
   } catch {
     return "/painel";
