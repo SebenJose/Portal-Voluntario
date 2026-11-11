@@ -20,7 +20,7 @@ export const UserEntity = new EntitySchema<User>({
     role: { type: String, default: "volunteer" },
     createdAt: { type: Date, createDate: true },
   },
-  checks: [{ expression: `"role" IN ('volunteer', 'organization')` }],
+  checks: [{ expression: `"role" IN ('volunteer', 'organization', 'admin')` }],
 });
 
 export function publicUser(user: User): Pick<User, "id" | "name" | "email" | "role"> {

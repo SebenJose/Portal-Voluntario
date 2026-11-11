@@ -1,4 +1,5 @@
 import { applyDecorators, type INestApplication } from "@nestjs/common";
+import type { Role } from "@/common/domain";
 import {
   ApiBadRequestResponse, ApiBearerAuth, ApiForbiddenResponse, ApiNotFoundResponse, ApiProperty,
   ApiPropertyOptional, ApiUnauthorizedResponse, DocumentBuilder, SwaggerModule,
@@ -31,9 +32,9 @@ export const ApiPrivate = () => applyDecorators(
 );
 
 /** Rota protegida também pelo RolesGuard: responde 403 para outro papel. */
-export const ApiRole = (role: "volunteer" | "organization") => applyDecorators(
+export const ApiRole = (role: Role) => applyDecorators(
   ApiPrivate(),
-  ApiForbiddenResponse({ description: `Disponível apenas para o papel "${role}".`, type: ErrorResponseDto }),
+  ApiForbiddenResponse({ description: role === "organization" ? "Disponível apenas para organizações aprovadas pela administração." : `Disponível apenas para o papel \"${role}\".`, type: ErrorResponseDto }),
 );
 
 export function setupApiDocs(app: INestApplication): void {
