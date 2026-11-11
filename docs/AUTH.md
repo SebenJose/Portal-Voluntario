@@ -1,95 +1,69 @@
 # Contas e acesso
 
-Cadastro e login usam Route Handlers reais, com validação Zod no servidor e no formulário.
-O cadastro sempre cria um voluntário: campos como `role` enviados pelo cliente são ignorados.
-Não existem credenciais embutidas, login de demonstração ou cadastro público de organizações.
-O papel de organização deve ser provisionado por um fluxo administrativo confiável quando esse
-backend estiver disponível; editar o navegador não concede esse papel no servidor.
+Cadastro, login e sessões são persistidos na API NestJS e no SQLite. O Next é o adaptador HTTP
+usado pelo navegador e mantém o JWT em cookie HttpOnly; não existe autenticação simulada por MSW.
 
 ## Cadastro e login
 
-`POST /api/auth/register` recebe nome, e-mail, senha de 8–128 caracteres e confirmação.
-E-mails são normalizados. Tanto cadastro novo quanto e-mail existente retornam `202`, com
-a mesma mensagem e sem cookie de autenticação. A conta existente nunca é alterada. Depois
-do cadastro, o usuário entra em `/entrar`. Os dois caminhos executam scrypt antes de responder.
+`POST /api/auth/register` recebe nome, e-mail, senha e confirmação. O e-mail é normalizado;
+a senha precisa de pelo menos 8 caracteres e até 72 bytes UTF-8, limite explícito do bcrypt.
+O hash usa bcrypt com custo 12. Cadastro público sempre cria `volunteer`; campos extras de
+privilégio são rejeitados no Nest. O schema do Next descarta campos desconhecidos, sem permitir
+escolher papel. Cadastro novo e duplicado têm a mesma resposta `202`, sem autenticação automática
+ou redefinição da conta existente.
 
-`POST /api/auth/login` valida credenciais persistidas, retorna `401` para acesso incorreto
-e cria uma sessão somente quando a senha confere. E-mail inexistente também executa scrypt;
-isso reduz diferenças de tempo sem prometer igualdade absoluta de latência.
-Senhas usam scrypt (N=32768, r=8, p=1), salt aleatório e comparação `timingSafeEqual`.
-Senhas, hashes e confirmação nunca integram a resposta pública.
+`POST /api/auth/login` responde `401` para credenciais incorretas. Contas inexistentes também
+executam bcrypt contra um hash descartável. O login bem-sucedido cria uma sessão no banco e emite
+JWT HS256 com `sub` e `sid`, `iss=portal-voluntario`, `aud=portal-api`, emissão e expiração.
+O Nest retorna token e usuário ao Next; o navegador recebe somente o usuário e o cookie.
+Senhas e hashes não entram nas respostas.
+
+## Cookie, expiração e revogação
+
+`portal_session` usa HttpOnly, SameSite=Lax, Path=/ e duração de oito horas; Secure acompanha
+a origem canônica HTTPS configurada no Next. O JWT não é salvo em localStorage.
+O Guard verifica algoritmo, emissor, audiência, expiração e schema dos claims. Depois consulta
+a sessão e o usuário atuais no SQLite: papel modificado, sessão removida/expirada ou conta
+removida não são aceitos com identidade antiga do token.
+
+`POST /api/auth/logout` revoga a sessão antes de expirar o cookie (`204`). Outras sessões da conta
+continuam válidas. Uma cópia do token revogado deixa de funcionar. Logout de sessão já inválida
+é idempotente no adaptador Next; falha de conexão não é apresentada como logout bem-sucedido.
+
+## Autorização e isolamento
+
+O JWT Guard protege as rotas por padrão. Apenas cadastro, login e health são públicos, e as
+consultas do catálogo aceitam identidade opcional. Guard de papéis devolve `403` ao voluntário
+que tenta gerenciar atividades; ausência ou invalidade de token resulta em `401`.
+As operações de gestão também verificam a organização proprietária. Usuário autenticado não
+escolhe dono de inscrição ou submissão pelo corpo. Detalhes e arquivos de submissões de outra
+conta respondem `404`. O seed provisiona organizações fictícias, sem fluxo público de promoção.
 
 ## Origem, tamanho e abuso
 
-Todas as mutações reais exigem `Origin` igual à origem configurada e rejeitam
-`Sec-Fetch-Site: cross-site`. Não há exceção para requisições sem `Origin`; clientes HTTP
-devem enviar esse cabeçalho explicitamente. Login e cadastro exigem `application/json`,
-limitam o corpo a 8192 bytes mesmo sem `Content-Length` e limitam a leitura a cinco segundos.
+Mutações recebidas pelo Next exigem `Origin` igual a `PORTAL_ORIGIN` e recusam `Sec-Fetch-Site:
+cross-site`. `PORTAL_ORIGIN` é obrigatória em produção; HTTPS é exigido fora de loopback.
+O CORS do Nest usa origens explícitas, sem curinga ou cookies. Clientes de API usam Bearer;
+CORS não substitui autenticação ou a proteção das operações com cookie no Next.
 
-A autenticação tem orçamento agregado de 30 requisições/minuto por processo, compartilhado
-entre login e cadastro, e 10 tentativas por e-mail normalizado em 15 minutos. Há no máximo
-duas derivações scrypt simultâneas. O bloqueio retorna `429` e `Retry-After`.
-Esses limites usam memória, expiram automaticamente e reiniciam com o processo. Não confiam
-em IPs encaminhados pelo cliente. Para produção distribuída, substitua-os por limites
-compartilhados e proteção de entrada; o orçamento agregado local pode afetar usuários legítimos.
+O Next limita JSON a 8192 bytes e a leitura a cinco segundos, inclusive sem Content-Length.
+Uploads têm orçamento total de 5 MB + 64 KB para multipart; o Nest limita o arquivo a 5 MB,
+verifica MIME/assinatura, campos e tamanho e guarda o BLOB em transação com os metadados.
+A API também limita a leitura JSON pelo parser HTTP do Nest.
 
-## Configuração e sessões
+Login e cadastro possuem orçamento agregado de 30 tentativas/minuto e 10 por e-mail em 15
+minutos, por processo. No Next, o bloqueio informa Retry-After. O Nest possui limites próprios
+para requisições diretas e até duas operações bcrypt simultâneas. Cabeçalhos de IP enviados
+pelo cliente não escolhem a chave do limite. Os limites reiniciam com o processo; este projeto
+acadêmico não implementa limitação distribuída.
 
-Configure `SESSION_SECRET` com pelo menos 32 caracteres aleatórios, por exemplo com
-`openssl rand -base64 32`. Nunca versione esse valor nem use `NEXT_PUBLIC_*`.
-Em produção, `PORTAL_ORIGIN` é obrigatório, por exemplo `https://portal.example.org`,
-sem caminho, query, credenciais ou fragmento. HTTPS é exigido fora de loopback.
-Em desenvolvimento, a origem da requisição serve de padrão quando essa variável está ausente.
-Use a origem externa do portal mesmo quando um proxy termina TLS e encaminha HTTP internamente.
+## Migração e configuração
 
-O cookie `portal_session` é `HttpOnly`, `SameSite=Lax`, `Path=/`, dura oito horas e recebe
-`Secure` conforme a origem canônica HTTPS. O token HMAC-SHA-256 contém apenas ID aleatório
-de sessão e tempos; a identidade e o papel atuais são consultados no armazenamento do servidor.
+A chave atual é `JWT_SECRET` em `backend/.env`, com pelo menos 32 caracteres aleatórios.
+`BACKEND_API_URL` fica apenas no servidor Next. Não use `NEXT_PUBLIC_` para tokens ou segredos.
+A antiga chave `SESSION_SECRET`, tokens HMAC, contas scrypt/JSON e documentos no IndexedDB
+não são convertidos automaticamente. Os arquivos antigos foram preservados, mas não são lidos
+pelo fluxo ativo. Use novo cadastro ou as contas fictícias do seed.
 
-As sessões ficam em `.local-data/sessions.json`. Token sem registro, adulterado, expirado
-ou vinculado a uma conta removida é recusado. `POST /api/auth/logout` revoga o registro antes
-de expirar o cookie (`204`); uma cópia desse token deixa de funcionar. Outras sessões da conta
-continuam válidas. Respostas de autenticação e sessão usam `Cache-Control: no-store`.
-Sem chave válida, a emissão e a validação de sessões falham de forma fechada.
-
-**Migração:** tokens anteriores, inclusive da conta de demonstração antiga, são incompatíveis
-com o novo schema e serão recusados. Contas persistidas continuam disponíveis e precisam entrar
-novamente. Não reutilize o segredo antigo se houver suspeita de exposição.
-
-## Persistência e autorização
-
-Contas e inscrições ficam em `accounts.json` e `enrollments.json`, no diretório
-`PORTAL_DATA_DIR` (padrão `.local-data`, ignorado pelo Git). A escrita usa arquivos
-temporários exclusivos e renomeação, com arquivo novo `0600` e diretório novo `0700`.
-O adaptador suporta uma única instância Node.js. Vários processos, serverless e réplicas
-exigem banco transacional e armazenamento compartilhado de sessões e limites.
-
-O catálogo é público. Inscrições exigem sessão válida e usam exclusivamente o ID da conta
-autenticada; IDs no corpo não escolhem o proprietário. Duplicidade e vagas esgotadas retornam
-`409`; oportunidade inexistente, `404`. O catálogo filtra inscrições por conta.
-O painel exibe somente essas inscrições e zero horas homologadas enquanto não houver backend
-de aprovação. Certificados locais em análise não concedem horas.
-
-`/organizacao` exige papel `organization` no servidor. As APIs de gestão também verificam
-sessão e papel: visitante recebe `401`, voluntário `403`. Para organizações, respondem
-`501` quando atingidas diretamente, pois não há backend real de gestão/emissão.
-
-`/demonstracao/gestao` é uma tela pública com participantes fictícios. Seus handlers MSW usam
-`/api/demo/organizations/activities`, sem sessão e com estado separado de cada organização.
-Não há mudança de papel, gravação de contas ou emissão real de certificados nesse fluxo.
-O MSW pode simular esse contrato com autorização por sessão e estado separado por conta,
-mas controles de mock não substituem autorização, tenant e persistência no backend futuro.
-
-`/painel`, `/certificados` e `/minhas-atividades` exigem sessão no Proxy e na página. Certificados em IndexedDB
-e gestão simulada são habilitados apenas no modo de demonstração. Sem esse modo, as telas
-informam indisponibilidade e não iniciam operações sem integração.
-
-## Verificação local
-
-Use Node.js 22.12 ou superior e `pnpm test`. A suíte gera dados e chave aleatórios em
-diretórios temporários, testa rotas, revogação, isolamento, autorização, CSRF, limites e
-reconciliação de lote, e remove somente seus próprios artefatos. Não usa contas existentes,
-não instala dependências e não acessa serviços externos.
-
-O cancelamento usa `DELETE /api/opportunities/:id/registrations`, com a mesma proteção de origem e
-sessão da inscrição. Ele remove apenas o vínculo da conta autenticada; ausência retorna `404`.
+A validação inclui `backend/test/api.test.ts`, `backend/test/infrastructure.test.ts`,
+`tests/security.test.ts` e os fluxos reais de navegador em `tests/e2e/portal.spec.ts`.
