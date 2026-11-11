@@ -40,7 +40,8 @@ pnpm dev
 ```
 
 Abra [http://localhost:3000](http://localhost:3000). A API fica em
-`http://127.0.0.1:3001/api`; `GET /api/health` verifica a conexão com SQLite.
+`http://127.0.0.1:3001/api`; `GET /api/health` verifica a conexão com SQLite. A documentação Swagger fica em
+`http://127.0.0.1:3001/api/docs`.
 O script de desenvolvimento do back-end recompila antes de iniciar, mas não observa alterações:
 reinicie-o após editar o servidor. O Next possui recarga durante o desenvolvimento.
 
