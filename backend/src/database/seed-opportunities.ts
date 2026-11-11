@@ -1,0 +1,90 @@
+import type { Opportunity } from "@/features/opportunities/opportunity.entity";
+import type { ActivitySession } from "@/features/opportunities/activity-session.entity";
+
+type SeedOpportunity = Omit<Opportunity, "organizationId" | "organization" | "sessions" | "certificatesDispatched" | "featured"> & { organization: string; sessions: Array<Pick<ActivitySession, "date" | "startsAt" | "endsAt">>; enrolled: number; featured?: boolean };
+
+// Snapshot of the existing catalogue for the initial demo database. Counts are not imported.
+export const seedOpportunities = [
+  {
+    id: "horta-comunitaria",
+    title: "Horta comunitária e educação ambiental",
+    organization: "Instituto Sementes do Amanhã",
+    description:
+      "Ajude a organizar oficinas e atividades práticas de cultivo sustentável para a comunidade.",
+    category: "Extensão",
+    format: "Presencial",
+    location: "Santa Helena, PR",
+    dateLabel: "De 17 de outubro a 14 de novembro de 2026",
+    durationLabel: "Sábados, das 8h às 12h",
+    sessions: ["2026-10-17", "2026-10-24", "2026-10-31", "2026-11-07", "2026-11-14"].map((date) => ({ date, startsAt: "08:00", endsAt: "12:00" })),
+    hours: 20,
+    vacancies: 15,
+    enrolled: 9,
+    featured: true,
+  },
+  {
+    id: "monitoria-programacao",
+    title: "Monitoria de programação para iniciantes",
+    organization: "UTFPR — Campus Santa Helena",
+    description:
+      "Compartilhe conhecimento e acompanhe estudantes nos primeiros passos em programação.",
+    category: "Ensino",
+    format: "Híbrido",
+    location: "Campus Santa Helena",
+    dateLabel: "De 20 de outubro a 1 de dezembro de 2026",
+    durationLabel: "Terças, das 14h às 18h (último encontro até 20h)",
+    sessions: ["2026-10-20", "2026-10-27", "2026-11-03", "2026-11-10", "2026-11-17", "2026-11-24", "2026-12-01"].map((date) => ({ date, startsAt: "14:00", endsAt: date === "2026-12-01" ? "20:00" : "18:00" })),
+    hours: 30,
+    vacancies: 8,
+    enrolled: 5,
+  },
+  {
+    id: "pesquisa-rio-parana",
+    title: "Mapeamento da qualidade do Rio Paraná",
+    organization: "Grupo de Pesquisa em Recursos Hídricos",
+    description:
+      "Participe da coleta de dados e da conscientização sobre a preservação dos recursos hídricos.",
+    category: "Pesquisa",
+    format: "Presencial",
+    location: "Porto de Santa Helena",
+    dateLabel: "25 de outubro de 2026",
+    durationLabel: "Das 8h às 14h",
+    sessions: [{ date: "2026-10-25", startsAt: "08:00", endsAt: "14:00" }],
+    hours: 6,
+    vacancies: 20,
+    enrolled: 12,
+    featured: true,
+  },
+  {
+    id: "leitura-infantil",
+    title: "Clube de leitura infantil",
+    organization: "Biblioteca Municipal",
+    description:
+      "Colabore com a mediação de leituras e atividades lúdicas para crianças da rede pública.",
+    category: "Extensão",
+    format: "Presencial",
+    location: "Biblioteca Municipal",
+    dateLabel: "Quartas, de 14 de outubro a 11 de novembro de 2026",
+    durationLabel: "Das 14h às 17h (último encontro até 18h)",
+    sessions: ["2026-10-14", "2026-10-21", "2026-10-28", "2026-11-04", "2026-11-11"].map((date) => ({ date, startsAt: "14:00", endsAt: date === "2026-11-11" ? "18:00" : "17:00" })),
+    hours: 16,
+    vacancies: 10,
+    enrolled: 10,
+  },
+  {
+    id: "dados-abertos",
+    title: "Dados abertos para impacto social",
+    organization: "Laboratório de Computação Aplicada",
+    description:
+      "Contribua com a organização e visualização de dados para apoiar projetos sociais locais.",
+    category: "Pesquisa",
+    format: "Online",
+    location: "Remoto",
+    dateLabel: "De 3 de novembro a 1 de dezembro de 2026",
+    durationLabel: "Terças quinzenais, das 9h às 13h",
+    sessions: ["2026-11-03", "2026-11-17", "2026-12-01"].map((date) => ({ date, startsAt: "09:00", endsAt: "13:00" })),
+    hours: 12,
+    vacancies: 12,
+    enrolled: 4,
+  },
+] satisfies Array<SeedOpportunity>;

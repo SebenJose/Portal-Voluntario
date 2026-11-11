@@ -1,0 +1,41 @@
+{
+  "name": "@portal-voluntario/backend",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "pnpm build && pnpm start",
+    "build": "tsc -p tsconfig.json && tsc-alias -p tsconfig.json",
+    "start": "node --env-file-if-exists=.env dist/main.js",
+    "typecheck": "tsc -p tsconfig.test.json --noEmit",
+    "db:migrate": "pnpm build && node --env-file-if-exists=.env dist/database/cli.js migrate",
+    "db:seed": "pnpm build && node --env-file-if-exists=.env dist/database/cli.js seed",
+    "test": "tsc -p tsconfig.test.json && tsc-alias -p tsconfig.test.json && node --test .test-dist/test/*.test.js"
+  },
+  "dependencies": {
+    "@nestjs/common": "^12.4.2",
+    "@nestjs/core": "^12.4.2",
+    "@nestjs/jwt": "^12.0.4",
+    "@nestjs/mapped-types": "^12.0.1",
+    "@nestjs/platform-express": "^12.4.2",
+    "@nestjs/typeorm": "^12.0.3",
+    "bcrypt": "^6.0.0",
+    "better-sqlite3": "^12.0.0",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.2",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.2",
+    "typeorm": "~0.3.31",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/express": "^5.0.0",
+    "@types/multer": "^2.3.0",
+    "@types/node": "^24.0.0",
+    "tsc-alias": "^1.8.16",
+    "typescript": "^5.9.3"
+  }
+}

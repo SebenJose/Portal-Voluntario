@@ -2,6 +2,7 @@
 
 # dependencies
 /node_modules
+**/node_modules/
 /.pnp
 .pnp.*
 .yarn/*
@@ -12,6 +13,8 @@
 
 # testing
 /coverage
+/test-results/
+/playwright-report/
 
 # next.js
 /.next/
@@ -19,6 +22,12 @@
 
 # production
 /build
+/backend/dist/
+/backend/.test-dist/
+/backend/.data/
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal
 
 # Local account and registration data
 /.local-data/
@@ -35,6 +44,7 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
 
 # vercel
 .vercel

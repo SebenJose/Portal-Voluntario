@@ -7,9 +7,17 @@
     "build": "next build --webpack",
     "start": "next start",
     "lint": "eslint",
-    "test": "node --experimental-strip-types scripts/test-security.mts",
+    "test": "pnpm backend:build && node --experimental-strip-types scripts/test-security.mts",
     "typecheck": "next typegen --webpack && tsc --noEmit",
-    "check": "pnpm lint && pnpm test && pnpm typecheck && pnpm build"
+    "check": "pnpm lint && pnpm test && pnpm typecheck && pnpm build && pnpm backend:typecheck && pnpm backend:test && pnpm backend:build",
+    "backend:dev": "pnpm --filter @portal-voluntario/backend dev",
+    "backend:migrate": "pnpm --filter @portal-voluntario/backend db:migrate",
+    "backend:seed": "pnpm --filter @portal-voluntario/backend db:seed",
+    "test:e2e": "pnpm backend:build && pnpm build && node --experimental-strip-types scripts/test-e2e.mts",
+    "backend:build": "pnpm --filter @portal-voluntario/backend build",
+    "backend:start": "pnpm --filter @portal-voluntario/backend start",
+    "backend:test": "pnpm --filter @portal-voluntario/backend test",
+    "backend:typecheck": "pnpm --filter @portal-voluntario/backend typecheck"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
@@ -30,6 +38,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",

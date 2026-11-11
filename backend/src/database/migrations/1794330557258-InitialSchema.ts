@@ -1,0 +1,32 @@
+import type { MigrationInterface, QueryRunner } from "typeorm";
+
+export class InitialSchema1794330557258 implements MigrationInterface {
+  name = "InitialSchema1794330557258";
+
+  async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`CREATE TABLE "users" ("id" varchar PRIMARY KEY NOT NULL, "name" varchar(100) NOT NULL, "email" varchar(254) COLLATE NOCASE NOT NULL, "passwordHash" varchar NOT NULL, "role" varchar NOT NULL DEFAULT ('volunteer'), "createdAt" datetime NOT NULL DEFAULT (datetime('now')), CONSTRAINT "UQ_97672ac88f789774dd47f7c8be3" UNIQUE ("email"), CONSTRAINT "CHK_a071a72bb83bf965a92ba9f392" CHECK ("role" IN ('volunteer', 'organization')))`);
+    await queryRunner.query(`CREATE TABLE "sessions" ("id" varchar PRIMARY KEY NOT NULL, "userId" varchar NOT NULL, "expiresAt" datetime NOT NULL, "createdAt" datetime NOT NULL DEFAULT (datetime('now')), CONSTRAINT "FK_57de40bc620f456c7311aa3a1e6" FOREIGN KEY ("userId") REFERENCES "users" ("id") ON DELETE CASCADE ON UPDATE NO ACTION)`);
+    await queryRunner.query(`CREATE TABLE "organizations" ("id" varchar PRIMARY KEY NOT NULL, "name" varchar(150) NOT NULL, "ownerId" varchar NOT NULL, CONSTRAINT "UQ_cdf778d13ea7fe8095e013e34f0" UNIQUE ("ownerId"), CONSTRAINT "FK_cdf778d13ea7fe8095e013e34f0" FOREIGN KEY ("ownerId") REFERENCES "users" ("id") ON DELETE RESTRICT ON UPDATE NO ACTION)`);
+    await queryRunner.query(`CREATE TABLE "opportunities" ("id" varchar PRIMARY KEY NOT NULL, "organizationId" varchar NOT NULL, "title" varchar(150) NOT NULL, "description" text NOT NULL, "category" varchar NOT NULL, "format" varchar NOT NULL, "location" varchar(200) NOT NULL, "dateLabel" varchar(200) NOT NULL, "durationLabel" varchar(200) NOT NULL, "hours" integer NOT NULL, "vacancies" integer NOT NULL, "featured" boolean NOT NULL DEFAULT (0), "certificatesDispatched" boolean NOT NULL DEFAULT (0), CONSTRAINT "CHK_876089d853fba5684fa8a194dc" CHECK ("category" IN ('Ensino', 'Pesquisa', 'Extensão')), CONSTRAINT "CHK_dd9d168325c3501ea85adc691a" CHECK ("format" IN ('Presencial', 'Híbrido', 'Online')), CONSTRAINT "CHK_a60d8c3517c29e4b1e2d872c8d" CHECK ("hours" > 0 AND "vacancies" > 0), CONSTRAINT "FK_456776ef000cb135883049c602e" FOREIGN KEY ("organizationId") REFERENCES "organizations" ("id") ON DELETE RESTRICT ON UPDATE NO ACTION)`);
+    await queryRunner.query(`CREATE TABLE "activity_sessions" ("id" varchar PRIMARY KEY NOT NULL, "opportunityId" varchar NOT NULL, "date" varchar(10) NOT NULL, "startsAt" varchar(5) NOT NULL, "endsAt" varchar(5) NOT NULL, CONSTRAINT "UQ_a2bf43272df136b62664e647e0d" UNIQUE ("opportunityId", "date", "startsAt"), CONSTRAINT "CHK_d0916fb9cd6af6902899c1df70" CHECK ("endsAt" > "startsAt"), CONSTRAINT "FK_5a712c2a58c25606f3686629ba8" FOREIGN KEY ("opportunityId") REFERENCES "opportunities" ("id") ON DELETE CASCADE ON UPDATE NO ACTION)`);
+    await queryRunner.query(`CREATE TABLE "enrollments" ("id" varchar PRIMARY KEY NOT NULL, "userId" varchar NOT NULL, "opportunityId" varchar NOT NULL, "status" varchar NOT NULL DEFAULT ('Inscrito'), "registeredAt" datetime NOT NULL DEFAULT (datetime('now')), CONSTRAINT "UQ_83ffe57a60270ec115204a803b8" UNIQUE ("userId", "opportunityId"), CONSTRAINT "CHK_96c9884bac98f5723cf5f5786e" CHECK ("status" IN ('Inscrito', 'Presente', 'Ausente')), CONSTRAINT "FK_de33d443c8ae36800c37c58c929" FOREIGN KEY ("userId") REFERENCES "users" ("id") ON DELETE RESTRICT ON UPDATE NO ACTION, CONSTRAINT "FK_13238d0f9838c1b0285f06a06a4" FOREIGN KEY ("opportunityId") REFERENCES "opportunities" ("id") ON DELETE RESTRICT ON UPDATE NO ACTION)`);
+    await queryRunner.query(`CREATE TABLE "submissions" ("id" varchar PRIMARY KEY NOT NULL, "userId" varchar NOT NULL, "title" varchar(150) NOT NULL, "category" varchar NOT NULL, "hours" integer NOT NULL, "description" text NOT NULL, "status" varchar NOT NULL DEFAULT ('Em análise'), "createdAt" datetime NOT NULL DEFAULT (datetime('now')), "documentName" varchar(255) NOT NULL, "documentType" varchar NOT NULL, "documentSize" integer NOT NULL, "document" blob NOT NULL, CONSTRAINT "CHK_bdaa6d178f19f5a9914e04c0c1" CHECK ("category" IN ('Ensino', 'Pesquisa', 'Extensão')), CONSTRAINT "CHK_53ee4b4e163675c4496fd38b5d" CHECK ("status" = 'Em análise'), CONSTRAINT "CHK_37a7f2017ad474a9e6f62e05ed" CHECK ("hours" BETWEEN 1 AND 200), CONSTRAINT "CHK_ecea577845f10440031835643b" CHECK ("documentType" IN ('application/pdf', 'image/jpeg', 'image/png')), CONSTRAINT "CHK_b5869a35fc47a33ed784a29b35" CHECK ("documentSize" BETWEEN 1 AND 5242880 AND length("document") = "documentSize"), CONSTRAINT "FK_eae888413ab8fc63cc48759d46a" FOREIGN KEY ("userId") REFERENCES "users" ("id") ON DELETE RESTRICT ON UPDATE NO ACTION)`);
+    await queryRunner.query(`CREATE TABLE "participation_certificates" ("id" varchar PRIMARY KEY NOT NULL, "enrollmentId" varchar NOT NULL, "category" varchar NOT NULL, "hours" integer NOT NULL, "createdAt" datetime NOT NULL DEFAULT (datetime('now')), CONSTRAINT "UQ_5a64fe0f738a3ee313b106163b0" UNIQUE ("enrollmentId"), CONSTRAINT "CHK_73e40bbf70148e51475417640f" CHECK ("hours" > 0), CONSTRAINT "CHK_7346f662982771122d5ef60962" CHECK ("category" IN ('Ensino', 'Pesquisa', 'Extensão')), CONSTRAINT "FK_5a64fe0f738a3ee313b106163b0" FOREIGN KEY ("enrollmentId") REFERENCES "enrollments" ("id") ON DELETE RESTRICT ON UPDATE NO ACTION)`);
+    await queryRunner.query(`CREATE INDEX "IDX_57de40bc620f456c7311aa3a1e" ON "sessions" ("userId")`);
+    await queryRunner.query(`CREATE INDEX "IDX_50762206f116cd47d1c3fec396" ON "sessions" ("expiresAt")`);
+    await queryRunner.query(`CREATE INDEX "IDX_456776ef000cb135883049c602" ON "opportunities" ("organizationId")`);
+    await queryRunner.query(`CREATE INDEX "IDX_13238d0f9838c1b0285f06a06a" ON "enrollments" ("opportunityId")`);
+    await queryRunner.query(`CREATE INDEX "IDX_eae888413ab8fc63cc48759d46" ON "submissions" ("userId")`);
+  }
+
+  async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query('DROP TABLE "participation_certificates"');
+    await queryRunner.query('DROP TABLE "submissions"');
+    await queryRunner.query('DROP TABLE "enrollments"');
+    await queryRunner.query('DROP TABLE "activity_sessions"');
+    await queryRunner.query('DROP TABLE "opportunities"');
+    await queryRunner.query('DROP TABLE "organizations"');
+    await queryRunner.query('DROP TABLE "sessions"');
+    await queryRunner.query('DROP TABLE "users"');
+  }
+}
