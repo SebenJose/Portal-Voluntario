@@ -139,7 +139,8 @@ export function OpportunitiesPage({ user }: { user: AuthUser | null }) {
               {filteredOpportunities.map((opportunity) => (
                 <li key={opportunity.id}>
                   <OpportunityCard
-                    canRegister={Boolean(user)}
+                    canRegister={user?.role === "volunteer"}
+                    isOrganization={user?.role === "organization"}
                     isRegistered={registeredIds.has(opportunity.id)}
                     isRegistering={pendingIds.has(opportunity.id)}
                     onCancel={() => cancel(opportunity.id)}

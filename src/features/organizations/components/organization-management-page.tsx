@@ -11,6 +11,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Label } from "@/components/ui/label";
 import type { AuthUser } from "@/features/auth/schemas/session-schema";
 import { isDemoModeEnabled } from "@/lib/demo-mode";
+import { OpportunityEditor } from "@/features/organizations/components/opportunity-editor";
+import { useRouter } from "next/navigation";
 
 import {
   dispatchActivityCertificates,
@@ -35,11 +37,12 @@ type OrganizationManagementPageProps = {
 };
 
 export function OrganizationManagementPage({ user, mode = "organization" }: OrganizationManagementPageProps) {
+  const router = useRouter();
   const [activities, setActivities] = useState<Array<ManagedActivity>>([]);
   const [activeActivityId, setActiveActivityId] = useState("");
   const [selectedIds, setSelectedIds] = useState<ReadonlySet<string>>(new Set());
   const [search, setSearch] = useState("");
-  const [isLoading, setIsLoading] = useState(isDemoModeEnabled);
+  const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -49,9 +52,13 @@ export function OrganizationManagementPage({ user, mode = "organization" }: Orga
     try {
       const result = await getManagedActivities(mode);
       setActivities(result);
-      setActiveActivityId((currentId) => currentId || result[0]?.id || "");
+      setActiveActivityId((currentId) => result.some((item) => item.id === currentId) ? currentId : result[0]?.id || "");
       setError(null);
     } catch (cause: unknown) {
+      if (cause instanceof OrganizationActivitiesError && cause.status === 401) {
+        router.replace("/entrar?next=%2Forganizacao");
+        return;
+      }
       setError(
         cause instanceof OrganizationActivitiesError
           ? cause.message
@@ -60,12 +67,12 @@ export function OrganizationManagementPage({ user, mode = "organization" }: Orga
     } finally {
       setIsLoading(false);
     }
-  }, [mode]);
+  }, [mode, router]);
 
   useEffect(() => {
-    if (!isDemoModeEnabled) return;
+    if (mode === "public-demo" && !isDemoModeEnabled) return;
     void Promise.resolve().then(loadActivities);
-  }, [loadActivities]);
+  }, [loadActivities, mode]);
 
   const activeActivity = activities.find((activity) => activity.id === activeActivityId);
   const visibleParticipants = useMemo(() => {
@@ -145,7 +152,7 @@ export function OrganizationManagementPage({ user, mode = "organization" }: Orga
         updatedIds.forEach((id) => nextIds.delete(id));
         return nextIds;
       });
-      setNotice(updatedParticipants.length > 0 ? `Simulação: presença atualizada para ${updatedParticipants.length} participante(s).` : null);
+      setNotice(updatedParticipants.length > 0 ? `${mode === "public-demo" ? "Simulação: " : ""}presença atualizada para ${updatedParticipants.length} participante(s).` : null);
       if (failedIds.length > 0) setError(`Não foi possível atualizar ${failedIds.length} participante(s). As alterações concluídas foram mantidas; tente novamente os selecionados.`);
     } catch (cause: unknown) {
       setError(
@@ -176,7 +183,7 @@ export function OrganizationManagementPage({ user, mode = "organization" }: Orga
             : activity,
         ),
       );
-      setNotice(`Despacho simulado para ${receipt.sentCount} participante(s). Nenhum e-mail foi enviado. As presenças foram encerradas.`);
+      setNotice(mode === "public-demo" ? `Despacho simulado para ${receipt.sentCount} participante(s). Nenhum e-mail foi enviado.` : `Certificados emitidos para ${receipt.sentCount} participante(s). As horas foram registradas e as presenças encerradas.`);
     } catch (cause: unknown) {
       setError(
         cause instanceof OrganizationActivitiesError
@@ -191,16 +198,17 @@ export function OrganizationManagementPage({ user, mode = "organization" }: Orga
   return (
     <AppShell
       active={mode === "public-demo" ? "demo" : "organization"}
-      description="Explore uma demonstração da área de organizações com atividades e participantes fictícios."
-      title="Protótipo de gestão"
+      description={mode === "public-demo" ? "Explore a gestão com atividades e participantes fictícios." : "Gerencie atividades, presenças e certificados da sua organização."}
+      title={mode === "public-demo" ? "Protótipo de gestão" : "Gestão de atividades"}
       user={user}
     >
-      <aside aria-labelledby="organization-prototype-title" className="mb-6 rounded-2xl border border-brand-yellow/40 bg-brand-yellow/10 p-5">
+      {mode === "public-demo" ? <aside aria-labelledby="organization-prototype-title" className="mb-6 rounded-2xl border border-brand-yellow/40 bg-brand-yellow/10 p-5">
         <h2 className="font-semibold" id="organization-prototype-title">Demonstração da área de organizações</h2>
         <p className="mt-2 text-sm leading-6 text-muted-foreground">{mode === "public-demo" ? "Esta demonstração é pública e não exige login." : "Esta área é restrita a contas de organizações."} Os participantes são fictícios e nenhuma mensagem ou certificado é enviado. As alterações simuladas são reiniciadas ao recarregar a página.</p>
-      </aside>
-      {!isDemoModeEnabled ? (
-        <Card><CardContent className="p-6">A gestão de atividades está disponível somente na demonstração. O serviço ainda não está integrado.</CardContent></Card>
+      </aside> : null}
+      {mode === "organization" ? <div className="mb-5"><OpportunityEditor onSaved={loadActivities} /></div> : null}
+      {mode === "public-demo" && !isDemoModeEnabled ? (
+        <Card><CardContent className="p-6">A demonstração pública não está disponível nesta execução. Entre com sua conta para acessar os recursos reais do portal.</CardContent></Card>
       ) : isLoading ? (
         <OrganizationDataSkeleton />
       ) : error && activities.length === 0 ? (
@@ -243,10 +251,11 @@ export function OrganizationManagementPage({ user, mode = "organization" }: Orga
 
           {activeActivity ? (
             <>
+              {mode === "organization" ? <OpportunityEditor key={activeActivity.id} activityId={activeActivity.id} onSaved={loadActivities} /> : null}
               <section aria-label="Resumo da atividade" className="grid gap-4 sm:grid-cols-3">
                 <Card><CardContent className="flex items-center gap-3 p-5"><Users aria-hidden="true" className="size-5 text-brand-black" /><dl><dt className="text-sm text-muted-foreground">Inscritos</dt><dd className="text-2xl font-semibold">{activeActivity.participants.length}</dd></dl></CardContent></Card>
                 <Card><CardContent className="flex items-center gap-3 p-5"><CheckCheck aria-hidden="true" className="size-5 text-emerald-800" /><dl><dt className="text-sm text-muted-foreground">Presenças confirmadas</dt><dd className="text-2xl font-semibold">{presentCount}</dd></dl></CardContent></Card>
-                <Card><CardContent className="flex items-center gap-3 p-5"><Mail aria-hidden="true" className="size-5 text-brand-black" /><dl><dt className="text-sm text-muted-foreground">Certificados</dt><dd className="text-base font-semibold">{activeActivity.certificatesDispatched ? "Envio simulado" : "Aguardando simulação"}</dd></dl></CardContent></Card>
+                <Card><CardContent className="flex items-center gap-3 p-5"><Mail aria-hidden="true" className="size-5 text-brand-black" /><dl><dt className="text-sm text-muted-foreground">Certificados</dt><dd className="text-base font-semibold">{activeActivity.certificatesDispatched ? (mode === "public-demo" ? "Envio simulado" : "Emitidos") : "Aguardando emissão"}</dd></dl></CardContent></Card>
               </section>
 
               <Card aria-labelledby="participants-title" as="section" className="border-brand-yellow/30">
@@ -299,7 +308,7 @@ export function OrganizationManagementPage({ user, mode = "organization" }: Orga
                       variant="outline"
                     >
                       <Mail aria-hidden="true" />
-                      {activeActivity.certificatesDispatched ? "Envio já simulado" : "Simular envio de certificados"}
+                      {activeActivity.certificatesDispatched ? "Certificados emitidos" : (mode === "public-demo" ? "Simular envio de certificados" : "Emitir certificados")}
                     </Button>
                   </div>
 

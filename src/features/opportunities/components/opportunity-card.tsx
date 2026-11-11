@@ -18,6 +18,7 @@ type OpportunityCardProps = {
   isRegistering: boolean;
   onRegister: (opportunityId: string) => void;
   canRegister: boolean;
+  isOrganization?: boolean;
   onCancel: () => Promise<boolean>;
   cancellationError: string | null;
 };
@@ -28,6 +29,7 @@ export function OpportunityCard({
   isRegistering,
   onRegister,
   canRegister,
+  isOrganization = false,
   onCancel,
   cancellationError,
 }: OpportunityCardProps) {
@@ -84,7 +86,7 @@ export function OpportunityCard({
         <CardFooter>
           {isRegistered ? (
             <CancelEnrollmentButton error={cancellationError} isPending={isRegistering} onCancel={onCancel} title={opportunity.title} />
-          ) : !canRegister && !isFull ? (
+          ) : isOrganization ? <Button disabled className="w-full" variant="outline">Conta de organização</Button> : !canRegister && !isFull ? (
             <Button className="w-full" nativeButton={false} render={<Link href="/entrar?next=%2Foportunidades" />} variant="outline">
               Entre para participar
             </Button>
