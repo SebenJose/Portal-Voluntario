@@ -4,6 +4,13 @@ Base direta: `http://127.0.0.1:3001/api`. Use `Authorization: Bearer <JWT>` nas 
 O navegador chama as rotas equivalentes no Next (`http://localhost:3000/api`); o adaptador lê o
 cookie HttpOnly, envia Bearer ao Nest e remove o envelope de sucesso. Não cole JWT em localStorage.
 
+## Swagger (OpenAPI)
+
+Com a API rodando, a documentação interativa fica em `http://127.0.0.1:3001/api/docs` e o
+OpenAPI JSON em `/api/docs-json`. Para testar rotas privadas: execute `POST /auth/login`, copie
+`data.accessToken`, clique em **Authorize** e cole o token. Defina `API_DOCS=disabled` no
+`backend/.env` para não publicar a documentação.
+
 ## Respostas e erros
 
 Sucesso com corpo: `{ "data": ... }`. Logout e exclusões que retornam `204` não têm corpo.

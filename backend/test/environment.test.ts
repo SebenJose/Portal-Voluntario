@@ -11,8 +11,11 @@ test("configuração possui padrões locais e aceita portas e origens explícita
     API_PORT: 3001,
     DATABASE_PATH: ".data/portal.sqlite",
     JWT_SECRET,
+    API_DOCS: "enabled",
     CORS_ORIGINS: ["http://localhost:3000"],
   });
+  assert.equal(loadEnvironment({ JWT_SECRET, API_DOCS: "disabled" }).API_DOCS, "disabled");
+  assert.throws(() => loadEnvironment({ JWT_SECRET, API_DOCS: "talvez" }), /API_DOCS/u);
   const environment = loadEnvironment({
     JWT_SECRET,
     API_PORT: "4100",

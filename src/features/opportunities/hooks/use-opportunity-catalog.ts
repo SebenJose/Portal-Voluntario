@@ -3,10 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
-import { cancelOpportunityRegistration, getOpportunities, OpportunitiesServiceError, registerForOpportunity } from "@/features/opportunities/services/opportunities";
+import { cancelOpportunityRegistration, getOpportunities, OpportunitiesServiceError, registerForOpportunity, type OpportunityFilters } from "@/features/opportunities/services/opportunities";
 import type { Opportunity } from "@/features/opportunities/types";
 
-export function useOpportunityCatalog(userId: string | undefined, returnPath: string) {
+export function useOpportunityCatalog(userId: string | undefined, returnPath: string, filters: OpportunityFilters = {}) {
+  const { search, category } = filters;
   const router = useRouter();
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [registeredIds, setRegisteredIds] = useState<ReadonlySet<string>>(new Set());
@@ -27,7 +28,7 @@ export function useOpportunityCatalog(userId: string | undefined, returnPath: st
       setOpportunities([]);
       setRegisteredIds(new Set());
       try {
-        const result = await getOpportunities(controller.signal);
+        const result = await getOpportunities({ search, category }, controller.signal);
         if (controller.signal.aborted) return;
         setOpportunities(result.items);
         setRegisteredIds(new Set(result.registeredIds));
@@ -43,7 +44,7 @@ export function useOpportunityCatalog(userId: string | undefined, returnPath: st
       }
     });
     return () => controller.abort();
-  }, [attempt, userId, router, returnPath]);
+  }, [attempt, userId, router, returnPath, search, category]);
 
   async function changeRegistration(opportunityId: string, registered: boolean): Promise<boolean> {
     if (!userId) {

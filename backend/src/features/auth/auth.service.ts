@@ -1,12 +1,12 @@
 import { randomBytes } from "node:crypto";
 import { BadRequestException, Injectable, type OnModuleInit, ServiceUnavailableException, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { InjectDataSource } from "@nestjs/typeorm";
-import { DataSource, LessThan, MoreThan } from "typeorm";
+import { InjectRepository } from "@nestjs/typeorm";
+import { LessThan, MoreThan, type Repository } from "typeorm";
 import { z } from "zod";
 import { TransactionsService } from "@/database/transactions.service";
-import { UserEntity, publicUser } from "@/features/auth/user.entity";
-import { SessionEntity } from "@/features/auth/session.entity";
+import { UserEntity, publicUser, type User } from "@/features/auth/user.entity";
+import { SessionEntity, type Session } from "@/features/auth/session.entity";
 import { hashPassword, checkPassword, validatePasswordBytes } from "@/features/auth/passwords";
 import { AuthBudgetService } from "@/features/auth/auth-budget.service";
 import type { LoginDto, RegisterDto } from "@/features/auth/auth.dto";
@@ -19,7 +19,8 @@ const claimsSchema = z.object({ sub: z.uuid(), sid: z.uuid(), iat: z.number().in
 export class AuthService implements OnModuleInit {
   private dummyHash: string | undefined;
   constructor(
-    @InjectDataSource() private readonly database: DataSource,
+    @InjectRepository(UserEntity) private readonly users: Repository<User>,
+    @InjectRepository(SessionEntity) private readonly sessions: Repository<Session>,
     private readonly jwt: JwtService,
     private readonly transactions: TransactionsService,
     private readonly budget: AuthBudgetService,
@@ -30,11 +31,11 @@ export class AuthService implements OnModuleInit {
   }
 
   async register(input: RegisterDto): Promise<{ message: string }> {
-    this.budget.check(input.email);
+    this.budget.checkRegistration(input.email);
     if (Array.from(input.password).length < 8 || input.password !== input.passwordConfirmation) throw new BadRequestException("Confira a senha e sua confirmação (mínimo de 8 caracteres).");
     const passwordHash = await hashPassword(input.password);
     await this.transactions.run(async (manager) => {
-      const users = manager.getRepository(UserEntity);
+      const users = manager.withRepository(this.users);
       if (!await users.existsBy({ email: input.email })) {
         await users.save(users.create({ name: input.name, email: input.email, passwordHash, role: "volunteer" }));
       }
@@ -43,17 +44,21 @@ export class AuthService implements OnModuleInit {
   }
 
   async login(input: LoginDto) {
-    this.budget.check(input.email);
+    this.budget.assertLoginAllowed(input.email);
     validatePasswordBytes(input.password);
-    const user = await this.database.getRepository(UserEntity).createQueryBuilder("user").addSelect("user.passwordHash")
+    const user = await this.users.createQueryBuilder("user").addSelect("user.passwordHash")
       .where("user.email = :email", { email: input.email }).getOne();
     const passwordHash = user?.passwordHash ?? this.dummyHash;
     if (!passwordHash) throw new ServiceUnavailableException();
     const matches = await checkPassword(input.password, passwordHash);
-    if (!user || !matches) throw new UnauthorizedException("E-mail ou senha incorretos.");
+    if (!user || !matches) {
+      this.budget.recordLoginFailure(input.email);
+      throw new UnauthorizedException("E-mail ou senha incorretos.");
+    }
+    this.budget.resetLoginFailures(input.email);
     const expiresAt = new Date(Date.now() + sessionDurationSeconds * 1000);
     const session = await this.transactions.run(async (manager) => {
-      const sessions = manager.getRepository(SessionEntity);
+      const sessions = manager.withRepository(this.sessions);
       await sessions.delete({ expiresAt: LessThan(new Date()) });
       return sessions.save(sessions.create({ userId: user.id, expiresAt }));
     });
@@ -70,7 +75,7 @@ export class AuthService implements OnModuleInit {
     } catch {
       throw new UnauthorizedException("Sessão ausente, inválida ou expirada.");
     }
-    const session = await this.database.getRepository(SessionEntity).findOne({
+    const session = await this.sessions.findOne({
       where: { id: claims.sid, userId: claims.sub, expiresAt: MoreThan(new Date()) }, relations: { user: true },
     });
     if (!session?.user) throw new UnauthorizedException("Sessão ausente, inválida ou expirada.");
@@ -78,6 +83,6 @@ export class AuthService implements OnModuleInit {
   }
 
   async logout(sessionId: string): Promise<void> {
-    await this.transactions.run(async (manager) => { await manager.getRepository(SessionEntity).delete(sessionId); });
+    await this.transactions.run(async (manager) => { await manager.withRepository(this.sessions).delete(sessionId); });
   }
 }

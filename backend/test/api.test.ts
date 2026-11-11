@@ -119,6 +119,11 @@ test("API de domínio: autenticação, autorização, CRUD, inscrições, arquiv
       assert.equal(own.registeredIds.length, 2);
       const filtered = await data(await send("/opportunities?category=Ensino&search=Monitoria&sort=hours"), catalogSchema);
       assert.equal(filtered.items.length, 1);
+      const search = async (term: string) => (await data(await send(`/opportunities?search=${encodeURIComponent(term)}`), catalogSchema)).items.map((item) => item.id);
+      assert.deepEqual(await search("Porto de Santa"), ["pesquisa-rio-parana"]);
+      assert.deepEqual(await search("mediação de leituras"), ["leitura-infantil"]);
+      assert.deepEqual(await search("%"), []);
+      assert.deepEqual(await search("_"), []);
       assert.equal((await send("/opportunities?category=Inexistente")).status, 400);
       assert.equal((await send("/opportunities/inexistente")).status, 404);
     });
@@ -174,17 +179,19 @@ test("API de domínio: autenticação, autorização, CRUD, inscrições, arquiv
     await context.test("submissão multipart, atualização, download original e isolamento por proprietário", async () => {
       const body = new FormData();
       body.set("title", "Comprovante externo"); body.set("category", "Ensino"); body.set("hours", "8");
-      body.set("description", "Descrição da atividade externa."); body.set("document", new Blob([documentBytes], { type: "application/pdf" }), "comprovante.pdf");
+      body.set("description", "Descrição da atividade externa."); body.set("document", new Blob([documentBytes], { type: "application/pdf" }), "certificação-extensão.pdf");
       const response = await send("/submissions", "POST", volunteerToken, body);
       assert.equal(response.status, 201);
-      const uploaded = await data(response, z.object({ id: z.uuid(), status: z.literal("Em análise"), document: z.object({ size: z.number() }) }));
+      const uploaded = await data(response, z.object({ id: z.uuid(), status: z.literal("Em análise"), document: z.object({ name: z.string(), size: z.number() }) }));
       uploadedId = uploaded.id;
       assert.equal(uploaded.document.size, Buffer.byteLength(documentBytes));
+      // Nomes com acentos chegam em UTF-8 no multipart e devem ser preservados.
+      assert.equal(uploaded.document.name, "certificação-extensão.pdf");
       assert.equal((await send(`/submissions/${uploadedId}`, "PATCH", volunteerToken, { title: "Comprovante atualizado", hours: 9 })).status, 200);
       const download = await send(`/submissions/${uploadedId}/document`, "GET", volunteerToken);
       assert.equal(download.status, 200);
       assert.equal(download.headers.get("content-type"), "application/pdf");
-      assert.match(download.headers.get("content-disposition") ?? "", /attachment/u);
+      assert.equal(download.headers.get("content-disposition"), `attachment; filename*=UTF-8''${encodeURIComponent("certificação-extensão.pdf")}`);
       assert.equal(await download.text(), documentBytes);
       for (const method of ["GET", "PATCH", "DELETE"]) assert.equal((await send(`/submissions/${uploadedId}`, method, otherToken, method === "PATCH" ? { hours: 1 } : undefined)).status, 404);
       assert.equal((await send(`/submissions/${uploadedId}/document`, "GET", otherToken)).status, 404);
@@ -243,8 +250,69 @@ test("API de domínio: autenticação, autorização, CRUD, inscrições, arquiv
       }
       assert.equal((await send("/auth/login", "POST", undefined, { email, password: "SenhaInexistente" })).status, 429);
     });
+
+    await context.test("Swagger publica OpenAPI com todas as rotas, cadeado JWT e respostas 401/403", async () => {
+      const ui = await fetch(`${baseUrl}/api/docs`);
+      assert.equal(ui.status, 200);
+      assert.match(await ui.text(), /swagger-ui/u);
+      const spec = z.object({
+        openapi: z.string(),
+        paths: z.record(z.string(), z.record(z.string(), z.object({ security: z.array(z.record(z.string(), z.array(z.string()))).optional(), responses: z.record(z.string(), z.unknown()) }).passthrough())),
+        components: z.object({ securitySchemes: z.record(z.string(), z.object({ scheme: z.string() }).passthrough()) }).passthrough(),
+      }).parse(await (await fetch(`${baseUrl}/api/docs-json`)).json());
+      assert.equal(spec.components.securitySchemes.jwt?.scheme, "bearer");
+      const routes = Object.entries(spec.paths).flatMap(([path, methods]) => Object.keys(methods).map((method) => `${method.toUpperCase()} ${path}`)).sort();
+      assert.deepEqual(routes, [
+        "DELETE /api/opportunities/{id}", "DELETE /api/opportunities/{id}/registrations", "DELETE /api/submissions/{id}",
+        "GET /api/auth/session", "GET /api/dashboard", "GET /api/health", "GET /api/opportunities", "GET /api/opportunities/{id}",
+        "GET /api/organizations/activities", "GET /api/submissions", "GET /api/submissions/{id}", "GET /api/submissions/{id}/document",
+        "PATCH /api/opportunities/{id}", "PATCH /api/organizations/activities/{id}/participants/{participantId}", "PATCH /api/submissions/{id}",
+        "POST /api/auth/login", "POST /api/auth/logout", "POST /api/auth/register", "POST /api/opportunities",
+        "POST /api/opportunities/{id}/registrations", "POST /api/organizations/activities/{id}/certificates", "POST /api/submissions",
+      ]);
+      const operation = (method: string, path: string) => spec.paths[path]?.[method];
+      assert.deepEqual(operation("get", "/api/dashboard")?.security, [{ jwt: [] }]);
+      assert.ok(operation("get", "/api/dashboard")?.responses["401"]);
+      assert.ok(operation("post", "/api/opportunities")?.responses["403"]);
+      assert.ok(operation("post", "/api/organizations/activities/{id}/certificates")?.responses["403"]);
+      assert.equal(operation("get", "/api/health")?.security, undefined);
+      assert.equal(operation("post", "/api/auth/login")?.security, undefined);
+      assert.ok(operation("post", "/api/submissions")?.requestBody, "upload documentado como multipart");
+    });
+
+    await context.test("logins simultâneos aguardam o bcrypt em fila em vez de responder 429", async () => {
+      const emails = ["voluntario", "outro", "organizacao", "organizacao2", "organizacao3"].map((name) => `${name}@portal.example`);
+      const responses = await Promise.all(emails.map((email) => send("/auth/login", "POST", undefined, { email, password })));
+      assert.deepEqual(responses.map((response) => response.status), emails.map(() => 200));
+    });
+
+    await context.test("login correto zera as falhas da conta e cadastro não bloqueia o login", async () => {
+      const email = "organizacao4@portal.example";
+      const attempt = (secret: string) => send("/auth/login", "POST", undefined, { email, password: secret });
+      for (let index = 0; index < 9; index += 1) assert.equal((await attempt("SenhaErrada")).status, 401);
+      assert.equal((await attempt(password)).status, 200);
+      for (let index = 0; index < 9; index += 1) assert.equal((await attempt("SenhaErrada")).status, 401);
+      assert.equal((await attempt(password)).status, 200);
+      for (let index = 0; index < 10; index += 1) {
+        await send("/auth/register", "POST", undefined, { name: "Repetido", email, password, passwordConfirmation: password });
+      }
+      assert.equal((await send("/auth/register", "POST", undefined, { name: "Repetido", email, password, passwordConfirmation: password })).status, 429);
+      assert.equal((await attempt(password)).status, 200);
+    });
   } finally {
     await app.close();
     await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("Swagger pode ser desativado com API_DOCS=disabled", async () => {
+  const app = await createApplication({ JWT_SECRET: randomBytes(32).toString("hex"), DATABASE_PATH: ":memory:", API_DOCS: "disabled" }, false);
+  try {
+    await app.listen(0, "127.0.0.1");
+    const baseUrl = await app.getUrl();
+    assert.equal((await fetch(`${baseUrl}/api/docs`)).status, 404);
+    assert.equal((await fetch(`${baseUrl}/api/docs-json`)).status, 404);
+  } finally {
+    await app.close();
   }
 });

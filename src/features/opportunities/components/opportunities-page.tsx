@@ -1,7 +1,7 @@
 "use client";
 
 import { Search, SlidersHorizontal } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { MotionConfig } from "motion/react";
 import Link from "next/link";
 
@@ -20,25 +20,15 @@ import { opportunityCategories, type OpportunityCategory } from "@/features/oppo
 export function OpportunitiesPage({ user }: { user: AuthUser | null }) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<OpportunityCategory | "Todas">("Todas");
-  const { opportunities, registeredIds, isLoading, loadError, mutationError: registrationError, notice, pendingIds, register, cancel, retry } = useOpportunityCatalog(user?.id, "/oportunidades");
-
-  const filteredOpportunities = useMemo(() => {
-    const normalizedSearch = search.trim().toLocaleLowerCase();
-
-    return opportunities.filter((opportunity) => {
-      const matchesCategory = category === "Todas" || opportunity.category === category;
-      const searchableContent = [
-        opportunity.title,
-        opportunity.organization,
-        opportunity.description,
-        opportunity.location,
-      ]
-        .join(" ")
-        .toLocaleLowerCase();
-
-      return matchesCategory && searchableContent.includes(normalizedSearch);
-    });
-  }, [category, opportunities, search]);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    // Avoid one API request per keystroke; the API applies search and category filters.
+    const timer = window.setTimeout(() => setDebouncedSearch(search.trim()), 300);
+    return () => window.clearTimeout(timer);
+  }, [search]);
+  const { opportunities: filteredOpportunities, registeredIds, isLoading, loadError, mutationError: registrationError, notice, pendingIds, register, cancel, retry } = useOpportunityCatalog(
+    user?.id, "/oportunidades", { search: debouncedSearch, category: category === "Todas" ? undefined : category },
+  );
 
   return (
     <AppShell
@@ -70,6 +60,7 @@ export function OpportunitiesPage({ user }: { user: AuthUser | null }) {
             <Input
               aria-label="Buscar oportunidades"
               className="pl-9"
+              maxLength={100}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Buscar por título, organização ou local..."
               value={search}

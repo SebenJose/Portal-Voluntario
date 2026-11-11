@@ -35,28 +35,59 @@ export function requireMutationOrigin(request: Request): void {
 }
 
 const budgets = new Map<string, { attempts: number; expiresAt: number }>();
+const aggregateWindowMs = 60_000;
+const accountWindowMs = 15 * 60_000;
+const aggregateLimit = 30;
+const accountLimit = 10;
 
 // Local single-process adapter: aggregate budget cannot be bypassed with spoofed IP headers.
-function consumeBudget(key: string, limit: number, windowMs: number): void {
-  const now = Date.now();
+function currentBudget(key: string, now = Date.now()) {
   for (const [storedKey, budget] of budgets) {
     if (budget.expiresAt <= now) budgets.delete(storedKey);
   }
-  const budget = budgets.get(key) ?? { attempts: 0, expiresAt: now + windowMs };
-  if (budget.attempts >= limit) {
+  return budgets.get(key);
+}
+
+function assertBudget(key: string, limit: number): void {
+  const now = Date.now();
+  const budget = currentBudget(key, now);
+  if (budget && budget.attempts >= limit) {
     throw new RequestSecurityError("Muitas tentativas. Aguarde e tente novamente.", 429, Math.ceil((budget.expiresAt - now) / 1000));
   }
+}
+
+function incrementBudget(key: string, windowMs: number): void {
+  const budget = currentBudget(key) ?? { attempts: 0, expiresAt: Date.now() + windowMs };
   budget.attempts += 1;
   budgets.set(key, budget);
 }
 
-export function limitAuthRequests(): void {
-  consumeBudget("auth:aggregate", 30, 60_000);
+function accountKey(scope: "login" | "register", email: string): string {
+  return `${scope}:${createHash("sha256").update(email.trim().toLowerCase()).digest("hex")}`;
 }
 
-export function limitAccountAttempts(email: string): void {
-  const key = createHash("sha256").update(email.trim().toLowerCase()).digest("hex");
-  consumeBudget(`account:${key}`, 10, 15 * 60_000);
+// Every registration attempt counts, under keys separate from login so it cannot lock an account.
+export function limitRegistrationAttempts(email: string): void {
+  const key = accountKey("register", email);
+  assertBudget("register:aggregate", aggregateLimit);
+  assertBudget(key, accountLimit);
+  incrementBudget("register:aggregate", aggregateWindowMs);
+  incrementBudget(key, accountWindowMs);
+}
+
+// Only failed logins consume the budget; a successful login clears the account's failures.
+export function assertLoginAllowed(email: string): void {
+  assertBudget("login:aggregate", aggregateLimit);
+  assertBudget(accountKey("login", email), accountLimit);
+}
+
+export function recordLoginFailure(email: string): void {
+  incrementBudget("login:aggregate", aggregateWindowMs);
+  incrementBudget(accountKey("login", email), accountWindowMs);
+}
+
+export function resetLoginFailures(email: string): void {
+  budgets.delete(accountKey("login", email));
 }
 
 export const MAX_AUTH_BODY_BYTES = 8192;

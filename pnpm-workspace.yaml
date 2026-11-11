@@ -2,6 +2,8 @@ packages:
   - backend
 
 allowBuilds:
+  # Telemetria do swagger-ui-dist; não precisa executar scripts.
+  "@scarf/scarf": false
   bcrypt: true
   better-sqlite3: true
   sharp: false

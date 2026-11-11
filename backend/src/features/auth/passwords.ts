@@ -1,12 +1,24 @@
 import { BadRequestException, HttpException } from "@nestjs/common";
 import { compare, hash } from "bcrypt";
-let activeHashes = 0;
+
+// bcrypt is CPU-bound: run at most two at a time and queue a few more instead of rejecting
+// legitimate concurrent logins. Only a full queue answers 429.
+const maximumActive = 2;
+const maximumQueued = 16;
+let active = 0;
+const waiting: Array<() => void> = [];
 
 async function guarded<T>(operation: () => Promise<T>): Promise<T> {
-  if (activeHashes >= 2) throw new HttpException("Muitas tentativas. Aguarde e tente novamente.", 429);
-  activeHashes += 1;
+  if (active < maximumActive) active += 1;
+  else if (waiting.length < maximumQueued) await new Promise<void>((resolve) => { waiting.push(resolve); });
+  else throw new HttpException("Muitas tentativas. Aguarde e tente novamente.", 429);
   try { return await operation(); }
-  finally { activeHashes -= 1; }
+  finally {
+    // Hand the slot directly to the next waiting operation, keeping the active count unchanged.
+    const next = waiting.shift();
+    if (next) next();
+    else active -= 1;
+  }
 }
 
 export function validatePasswordBytes(password: string): void {

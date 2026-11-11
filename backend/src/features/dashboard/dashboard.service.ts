@@ -1,17 +1,20 @@
 import { Injectable } from "@nestjs/common";
-import { InjectDataSource } from "@nestjs/typeorm";
-import { DataSource } from "typeorm";
+import { InjectRepository } from "@nestjs/typeorm";
+import type { Repository } from "typeorm";
 import { categorySchema } from "@/common/domain";
-import { EnrollmentEntity } from "@/features/opportunities/enrollment.entity";
-import { ParticipationCertificateEntity } from "@/features/certificates/participation-certificate.entity";
+import { EnrollmentEntity, type Enrollment } from "@/features/opportunities/enrollment.entity";
+import { ParticipationCertificateEntity, type ParticipationCertificate } from "@/features/certificates/participation-certificate.entity";
 
 @Injectable()
 export class DashboardService {
-  constructor(@InjectDataSource() private readonly database: DataSource) {}
+  constructor(
+    @InjectRepository(EnrollmentEntity) private readonly enrollments: Repository<Enrollment>,
+    @InjectRepository(ParticipationCertificateEntity) private readonly certificates: Repository<ParticipationCertificate>,
+  ) {}
 
   async summary(userId: string) {
-    const registrations = await this.database.getRepository(EnrollmentEntity).find({ where: { userId }, relations: { opportunity: { organization: true } } });
-    const certificates = await this.database.getRepository(ParticipationCertificateEntity).find({ where: { enrollment: { userId } } });
+    const registrations = await this.enrollments.find({ where: { userId }, relations: { opportunity: { organization: true } } });
+    const certificates = await this.certificates.find({ where: { enrollment: { userId } } });
     return {
       hoursSummary: categorySchema.options.map((category) => ({ category, completed: certificates.filter((item) => item.category === category).reduce((sum, item) => sum + item.hours, 0) })),
       registrations: registrations.length,

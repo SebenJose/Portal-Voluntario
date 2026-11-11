@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
-import { InjectDataSource } from "@nestjs/typeorm";
-import { DataSource } from "typeorm";
+import { InjectRepository } from "@nestjs/typeorm";
+import type { Repository } from "typeorm";
 import { z } from "zod";
 import { TransactionsService } from "@/database/transactions.service";
 import { SubmissionEntity, type Submission } from "@/features/certificates/submission.entity";
@@ -23,15 +23,18 @@ function record(item: Submission) {
 
 @Injectable()
 export class SubmissionsService {
-  constructor(@InjectDataSource() private readonly database: DataSource, private readonly transactions: TransactionsService) {}
+  constructor(
+    @InjectRepository(SubmissionEntity) private readonly submissions: Repository<Submission>,
+    private readonly transactions: TransactionsService,
+  ) {}
 
   async list(userId: string) {
-    const items = await this.database.getRepository(SubmissionEntity).find({ where: { userId }, order: { createdAt: "DESC", id: "ASC" } });
+    const items = await this.submissions.find({ where: { userId }, order: { createdAt: "DESC", id: "ASC" } });
     return { items: items.map(record) };
   }
 
   async get(userId: string, id: string) {
-    const item = await this.database.getRepository(SubmissionEntity).findOneBy({ id, userId });
+    const item = await this.submissions.findOneBy({ id, userId });
     if (!item) throw new NotFoundException("Certificado não encontrado.");
     return record(item);
   }
@@ -46,7 +49,7 @@ export class SubmissionsService {
     if (!signature) throw new BadRequestException("O conteúdo do comprovante não corresponde ao formato informado.");
     const documentName = file.originalname.replaceAll("\\", "/").split("/").pop()?.replace(/[\u0000-\u001f\u007f]/gu, "") || "comprovante";
     const item = await this.transactions.run(async (manager) => {
-      const repository = manager.getRepository(SubmissionEntity);
+      const repository = manager.withRepository(this.submissions);
       return repository.save(repository.create({ ...fields, userId, documentName, documentType: file.mimetype, documentSize: file.size, document: file.buffer }));
     });
     return record(item);
@@ -54,7 +57,7 @@ export class SubmissionsService {
 
   async update(userId: string, id: string, input: UpdateSubmissionDto) {
     await this.transactions.run(async (manager) => {
-      const repository = manager.getRepository(SubmissionEntity);
+      const repository = manager.withRepository(this.submissions);
       const item = await repository.findOneBy({ id, userId });
       if (!item) throw new NotFoundException("Certificado não encontrado.");
       if (Object.keys(input).length > 0) await repository.update({ id, userId }, input);
@@ -64,13 +67,13 @@ export class SubmissionsService {
 
   async remove(userId: string, id: string): Promise<void> {
     await this.transactions.run(async (manager) => {
-      const result = await manager.getRepository(SubmissionEntity).delete({ id, userId });
+      const result = await manager.withRepository(this.submissions).delete({ id, userId });
       if (!result.affected) throw new NotFoundException("Certificado não encontrado.");
     });
   }
 
   async document(userId: string, id: string): Promise<Submission> {
-    const item = await this.database.getRepository(SubmissionEntity).createQueryBuilder("submission").addSelect("submission.document")
+    const item = await this.submissions.createQueryBuilder("submission").addSelect("submission.document")
       .where("submission.id = :id AND submission.userId = :userId", { id, userId }).getOne();
     if (!item) throw new NotFoundException("Certificado não encontrado.");
     return item;
