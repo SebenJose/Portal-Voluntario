@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { authUserSchema, loginRequestSchema, type LoginRequest } from "@/features/auth/schemas/session-schema";
-import { registrationSchema, type RegistrationValues } from "@/features/auth/schemas/registration-schema";
+import { organizationRegistrationSchema, registrationSchema, type OrganizationRegistrationValues, type RegistrationValues } from "@/features/auth/schemas/registration-schema";
 
 const authResponseSchema = z.object({ user: authUserSchema });
 const errorResponseSchema = z.object({ error: z.string().min(1) });
@@ -23,7 +23,11 @@ export async function registerAccount(values: RegistrationValues) {
   return submitAuth("/api/auth/register", registrationSchema.parse(values), z.object({ message: z.string().min(1) }));
 }
 
-async function submitAuth<T>(url: string, values: LoginRequest | RegistrationValues, schema: z.ZodType<T>): Promise<T> {
+export async function registerOrganization(values: OrganizationRegistrationValues) {
+  return submitAuth("/api/auth/register/organization", organizationRegistrationSchema.parse(values), z.object({ message: z.string().min(1) }));
+}
+
+async function submitAuth<T>(url: string, values: LoginRequest | RegistrationValues | OrganizationRegistrationValues, schema: z.ZodType<T>): Promise<T> {
   let response: Response;
   try {
     response = await fetch(url, {

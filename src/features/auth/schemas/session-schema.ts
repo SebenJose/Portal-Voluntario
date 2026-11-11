@@ -1,11 +1,19 @@
 import { z } from "zod";
 import { passwordSchema } from "@/features/auth/schemas/password-schema";
 
+export const userRoles = ["volunteer", "organization", "admin"] as const;
+export const organizationStatuses = ["pending", "approved", "rejected"] as const;
+
 export const authUserSchema = z.object({
   id: z.string().min(1),
   email: z.email(),
   name: z.string().min(1),
-  role: z.enum(["volunteer", "organization"]),
+  role: z.enum(userRoles),
+  organization: z.object({
+    id: z.string().min(1),
+    name: z.string().min(1),
+    status: z.enum(organizationStatuses),
+  }).optional(),
 });
 
 export const sessionPayloadSchema = z.object({
@@ -20,5 +28,7 @@ export const loginRequestSchema = z.object({
 });
 
 export type AuthUser = z.infer<typeof authUserSchema>;
+export type UserRole = AuthUser["role"];
+export type OrganizationStatus = (typeof organizationStatuses)[number];
 export type SessionPayload = z.infer<typeof sessionPayloadSchema>;
 export type LoginRequest = z.infer<typeof loginRequestSchema>;

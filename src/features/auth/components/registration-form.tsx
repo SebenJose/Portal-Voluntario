@@ -3,35 +3,46 @@
 import Link from "next/link";
 import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { type SubmitHandler, useForm } from "react-hook-form";
-import { ArrowRight, LockKeyhole, Mail, UserRound } from "lucide-react";
+import { type SubmitHandler, useForm, useWatch } from "react-hook-form";
+import { ArrowRight, Building2, HandHeart, LockKeyhole, Mail, UserRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { AuthField } from "@/features/auth/components/auth-field";
-import { registrationSchema, type RegistrationValues } from "@/features/auth/schemas/registration-schema";
-import { AuthServiceError, registerAccount } from "@/features/auth/services/client-auth";
+import { registrationFormSchema, type RegistrationFormInput, type RegistrationFormValues, type RegistrationProfile } from "@/features/auth/schemas/registration-schema";
+import { AuthServiceError, registerAccount, registerOrganization } from "@/features/auth/services/client-auth";
 import { getSafeRedirectPath } from "@/features/auth/services/safe-redirect";
+import { cn } from "@/lib/utils";
 
-export function RegistrationForm({ nextPath }: { nextPath?: string }) {
+const profileOptions: Array<{ value: RegistrationProfile; label: string; description: string; icon: typeof HandHeart }> = [
+  { value: "volunteer", label: "Sou voluntário", description: "Participe de atividades e acompanhe suas horas.", icon: HandHeart },
+  { value: "organization", label: "Sou uma organização", description: "Publique atividades após aprovação da administração.", icon: Building2 },
+];
+
+export function RegistrationForm({ nextPath, initialProfile = "volunteer" }: { nextPath?: string; initialProfile?: RegistrationProfile }) {
   const [message, setMessage] = useState<string | null>(null);
   const destination = getSafeRedirectPath(nextPath);
-  const form = useForm<RegistrationValues>({
+  const form = useForm<RegistrationFormInput, unknown, RegistrationFormValues>({
     mode: "onTouched",
-    defaultValues: { name: "", email: "", password: "", passwordConfirmation: "" },
-    resolver: zodResolver(registrationSchema),
+    defaultValues: { profile: initialProfile, name: "", email: "", password: "", passwordConfirmation: "", organizationName: "" },
+    resolver: zodResolver(registrationFormSchema),
   });
+  const profile = useWatch({ control: form.control, name: "profile" });
+  const isOrganization = profile === "organization";
+  const disabled = !form.formState.isReady || form.formState.isSubmitting;
 
-  const handleRegister: SubmitHandler<RegistrationValues> = async (values) => {
+  const handleRegister: SubmitHandler<RegistrationFormValues> = async ({ profile: selected, organizationName, ...account }) => {
     form.clearErrors("root.server");
     try {
-      const result = await registerAccount(values);
+      const result = selected === "organization"
+        ? await registerOrganization({ ...account, organizationName })
+        : await registerAccount(account);
       setMessage(result.message);
-      form.reset();
+      form.reset({ profile: selected, name: "", email: "", password: "", passwordConfirmation: "", organizationName: "" });
     } catch (error: unknown) {
       form.setError("root.server", {
         type: "server",
-        message: error instanceof AuthServiceError ? error.message : "Não foi possível criar sua conta. Tente novamente.",
+        message: error instanceof AuthServiceError ? error.message : "Não foi possível concluir o cadastro. Tente novamente.",
       });
     }
   };
@@ -50,20 +61,54 @@ export function RegistrationForm({ nextPath }: { nextPath?: string }) {
             <Button nativeButton={false} render={<Link href={`/entrar?next=${encodeURIComponent(destination)}`} />}>Entrar no portal</Button>
           </div>
         ) : <form aria-busy={form.formState.isSubmitting} className="space-y-5" noValidate onSubmit={form.handleSubmit(handleRegister)}>
+          <fieldset className="space-y-2.5" disabled={disabled}>
+            <legend className="mb-2.5 text-sm font-medium">Como você vai usar o portal?</legend>
+            <div className="grid gap-3 sm:grid-cols-2">
+              {profileOptions.map((option) => {
+                const Icon = option.icon;
+                const selected = profile === option.value;
+                return (
+                  <label
+                    className={cn(
+                      "flex cursor-pointer gap-3 rounded-xl border p-3 text-sm transition-colors has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-ring",
+                      selected ? "border-brand-black bg-brand-yellow/15" : "border-border hover:bg-muted/50",
+                    )}
+                    key={option.value}
+                  >
+                    <input className="sr-only" type="radio" value={option.value} {...form.register("profile")} />
+                    <Icon aria-hidden="true" className="mt-0.5 size-4.5 shrink-0" />
+                    <span><span className="block font-semibold text-brand-black">{option.label}</span><span className="text-muted-foreground">{option.description}</span></span>
+                  </label>
+                );
+              })}
+            </div>
+          </fieldset>
+          {isOrganization ? (
+            <AuthField
+              autoComplete="organization"
+              disabled={disabled}
+              error={form.formState.errors.organizationName?.message}
+              icon={Building2}
+              id="organizationName"
+              label="Nome da organização"
+              placeholder="Como sua organização é conhecida?"
+              {...form.register("organizationName")}
+            />
+          ) : null}
           <AuthField
             autoComplete="name"
-            disabled={!form.formState.isReady || form.formState.isSubmitting}
+            disabled={disabled}
             error={form.formState.errors.name?.message}
             icon={UserRound}
             id="name"
-            label="Nome completo"
-            placeholder="Como você se chama?"
+            label={isOrganization ? "Nome do responsável" : "Nome completo"}
+            placeholder={isOrganization ? "Quem responde pela organização?" : "Como você se chama?"}
             {...form.register("name")}
           />
           <AuthField
             autoCapitalize="none"
             autoComplete="username"
-            disabled={!form.formState.isReady || form.formState.isSubmitting}
+            disabled={disabled}
             error={form.formState.errors.email?.message}
             icon={Mail}
             id="email"
@@ -75,7 +120,7 @@ export function RegistrationForm({ nextPath }: { nextPath?: string }) {
           />
           <AuthField
             autoComplete="new-password"
-            disabled={!form.formState.isReady || form.formState.isSubmitting}
+            disabled={disabled}
             error={form.formState.errors.password?.message}
             icon={LockKeyhole}
             id="password"
@@ -86,7 +131,7 @@ export function RegistrationForm({ nextPath }: { nextPath?: string }) {
           />
           <AuthField
             autoComplete="new-password"
-            disabled={!form.formState.isReady || form.formState.isSubmitting}
+            disabled={disabled}
             error={form.formState.errors.passwordConfirmation?.message}
             icon={LockKeyhole}
             id="passwordConfirmation"
@@ -95,8 +140,13 @@ export function RegistrationForm({ nextPath }: { nextPath?: string }) {
             type="password"
             {...form.register("passwordConfirmation")}
           />
-          <Button aria-busy={form.formState.isSubmitting} className="h-13 w-full justify-between rounded-xl bg-brand-yellow px-5 font-semibold text-brand-black hover:bg-brand-yellow/85" disabled={!form.formState.isReady || form.formState.isSubmitting} type="submit">
-            {form.formState.isSubmitting ? "Criando sua conta…" : form.formState.errors.root?.server ? "Tentar novamente" : "Criar minha conta"}
+          {isOrganization ? (
+            <p className="rounded-lg border border-brand-yellow/50 bg-brand-yellow/10 px-3 py-2 text-sm leading-6">
+              O cadastro de organizações passa pela aprovação da administração. Você já pode entrar para acompanhar a análise.
+            </p>
+          ) : null}
+          <Button aria-busy={form.formState.isSubmitting} className="h-13 w-full justify-between rounded-xl bg-brand-yellow px-5 font-semibold text-brand-black hover:bg-brand-yellow/85" disabled={disabled} type="submit">
+            {form.formState.isSubmitting ? "Enviando cadastro…" : form.formState.errors.root?.server ? "Tentar novamente" : isOrganization ? "Cadastrar organização" : "Criar minha conta"}
             <ArrowRight aria-hidden="true" className="size-4" />
           </Button>
           {form.formState.errors.root?.server ? (
