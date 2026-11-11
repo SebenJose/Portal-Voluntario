@@ -1,14 +1,17 @@
 import { Global, Module } from "@nestjs/common";
 import { JwtModule, type JwtModuleOptions } from "@nestjs/jwt";
+import { TypeOrmModule } from "@nestjs/typeorm";
 import { ENVIRONMENT } from "@/config/configuration.module";
 import type { Environment } from "@/config/environment";
 import { AuthController } from "@/features/auth/auth.controller";
 import { AuthService, sessionDurationSeconds } from "@/features/auth/auth.service";
 import { AuthBudgetService } from "@/features/auth/auth-budget.service";
+import { SessionEntity } from "@/features/auth/session.entity";
+import { UserEntity } from "@/features/auth/user.entity";
 
 @Global()
 @Module({
-  imports: [JwtModule.registerAsync({
+  imports: [TypeOrmModule.forFeature([UserEntity, SessionEntity]), JwtModule.registerAsync({
     inject: [ENVIRONMENT],
     useFactory: (environment: Environment): JwtModuleOptions => ({
       secret: environment.JWT_SECRET,

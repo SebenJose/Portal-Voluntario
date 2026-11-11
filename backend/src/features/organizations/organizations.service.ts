@@ -1,12 +1,12 @@
 import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
-import { InjectDataSource } from "@nestjs/typeorm";
-import { DataSource } from "typeorm";
+import { InjectRepository } from "@nestjs/typeorm";
+import type { Repository } from "typeorm";
 import type { Attendance } from "@/common/domain";
 import { TransactionsService } from "@/database/transactions.service";
-import { OpportunityEntity } from "@/features/opportunities/opportunity.entity";
+import { OpportunityEntity, type Opportunity } from "@/features/opportunities/opportunity.entity";
 import { EnrollmentEntity, type Enrollment } from "@/features/opportunities/enrollment.entity";
 import { OpportunitiesService } from "@/features/opportunities/opportunities.service";
-import { ParticipationCertificateEntity } from "@/features/certificates/participation-certificate.entity";
+import { ParticipationCertificateEntity, type ParticipationCertificate } from "@/features/certificates/participation-certificate.entity";
 
 function participant(item: Enrollment) {
   if (!item.user) throw new NotFoundException("Participante não encontrado.");
@@ -15,16 +15,22 @@ function participant(item: Enrollment) {
 
 @Injectable()
 export class OrganizationsService {
-  constructor(@InjectDataSource() private readonly database: DataSource, private readonly transactions: TransactionsService, private readonly opportunities: OpportunitiesService) {}
+  constructor(
+    @InjectRepository(OpportunityEntity) private readonly activities: Repository<Opportunity>,
+    @InjectRepository(EnrollmentEntity) private readonly enrollments: Repository<Enrollment>,
+    @InjectRepository(ParticipationCertificateEntity) private readonly certificates: Repository<ParticipationCertificate>,
+    private readonly transactions: TransactionsService,
+    private readonly opportunities: OpportunitiesService,
+  ) {}
 
   async list(ownerId: string) {
-    const activities = await this.database.getRepository(OpportunityEntity).find({
+    const activities = await this.activities.find({
       where: { organization: { ownerId } }, order: { title: "ASC" },
     });
     return Promise.all(activities.map(async (activity) => ({
       id: activity.id, title: activity.title, dateLabel: activity.dateLabel,
       certificatesDispatched: activity.certificatesDispatched,
-      participants: (await this.database.getRepository(EnrollmentEntity).find({
+      participants: (await this.enrollments.find({
         where: { opportunityId: activity.id }, relations: { user: true }, order: { registeredAt: "ASC" },
       })).map(participant),
     })));
@@ -34,7 +40,7 @@ export class OrganizationsService {
     return this.transactions.run(async (manager) => {
       const activity = await this.opportunities.owned(manager, activityId, ownerId);
       if (activity.certificatesDispatched) throw new ConflictException("A presença está encerrada após a emissão dos certificados.");
-      const repository = manager.getRepository(EnrollmentEntity);
+      const repository = manager.withRepository(this.enrollments);
       const enrollment = await repository.findOne({ where: { id: participantId, opportunityId: activityId }, relations: { user: true } });
       if (!enrollment) throw new NotFoundException("Participante não encontrado nesta atividade.");
       enrollment.status = status;
@@ -47,11 +53,11 @@ export class OrganizationsService {
     return this.transactions.run(async (manager) => {
       const activity = await this.opportunities.owned(manager, activityId, ownerId);
       if (activity.certificatesDispatched) throw new ConflictException("Os certificados desta atividade já foram emitidos.");
-      const present = await manager.getRepository(EnrollmentEntity).findBy({ opportunityId: activityId, status: "Presente" });
+      const present = await manager.withRepository(this.enrollments).findBy({ opportunityId: activityId, status: "Presente" });
       if (present.length === 0) throw new ConflictException("Não há participantes com presença confirmada.");
-      const repository = manager.getRepository(ParticipationCertificateEntity);
+      const repository = manager.withRepository(this.certificates);
       await repository.save(present.map((enrollment) => repository.create({ enrollmentId: enrollment.id, hours: activity.hours, category: activity.category })));
-      await manager.getRepository(OpportunityEntity).update(activityId, { certificatesDispatched: true });
+      await manager.withRepository(this.activities).update(activityId, { certificatesDispatched: true });
       return { activityId, sentCount: present.length, certificatesDispatched: true };
     });
   }
