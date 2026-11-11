@@ -19,7 +19,7 @@ jobs:
   quality:
     name: Quality checks
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
     steps:
       - name: Checkout
@@ -50,3 +50,18 @@ jobs:
 
       - name: Production build
         run: pnpm build
+
+      - name: Backend typecheck
+        run: pnpm backend:typecheck
+
+      - name: Backend HTTP and SQLite tests
+        run: pnpm backend:test
+
+      - name: Backend build
+        run: pnpm backend:build
+
+      - name: Install browser for integration tests
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Browser integration with Next, Nest and SQLite
+        run: node --experimental-strip-types scripts/test-e2e.mts
