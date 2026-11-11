@@ -63,6 +63,18 @@ export async function createCertificate(fields: CertificateFields, file: File): 
   return readJson(response, certificateRecordSchema);
 }
 
+export async function updateCertificate(id: string, fields: CertificateFields): Promise<void> {
+  const values = certificateFieldsSchema.parse(fields);
+  const response = await requestCertificates(`/api/submissions/${encodeURIComponent(id)}`, {
+    method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(values),
+  });
+  await readJson(response, certificateRecordSchema);
+}
+
+export async function deleteCertificate(id: string): Promise<void> {
+  await requestCertificates(`/api/submissions/${encodeURIComponent(id)}`, { method: "DELETE" });
+}
+
 export async function downloadCertificateDocument(certificate: CertificateRecord): Promise<void> {
   const validatedCertificate = certificateRecordSchema.parse(certificate);
   const response = await requestCertificates(`/api/submissions/${encodeURIComponent(validatedCertificate.id)}/document`, { cache: "no-store" });

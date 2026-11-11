@@ -65,8 +65,16 @@ export async function readAuthJson(request: Request): Promise<unknown> {
   if (request.headers.get("content-type")?.split(";")[0]?.trim().toLowerCase() !== "application/json") {
     throw new RequestSecurityError("Envie os dados em JSON.", 415);
   }
+  const bytes = await readRequestBytes(request, MAX_AUTH_BODY_BYTES);
+  try {
+    const input: unknown = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
+    return input;
+  } catch { throw new RequestSecurityError("Envie dados válidos.", 400); }
+}
+
+export async function readRequestBytes(request: Request, maximumBytes: number): Promise<Uint8Array<ArrayBuffer>> {
   const length = request.headers.get("content-length");
-  if (length !== null && (!/^\d+$/u.test(length) || Number(length) > MAX_AUTH_BODY_BYTES)) {
+  if (length !== null && (!/^\d+$/u.test(length) || Number(length) > maximumBytes)) {
     throw new RequestSecurityError("A solicitação excede o tamanho permitido.", 413);
   }
   const reader = request.body?.getReader();
@@ -85,7 +93,7 @@ export async function readAuthJson(request: Request): Promise<unknown> {
       const chunk = await Promise.race([reader.read(), timeout]);
       if (chunk.done) break;
       size += chunk.value.byteLength;
-      if (size > MAX_AUTH_BODY_BYTES) {
+      if (size > maximumBytes) {
         void reader.cancel().catch(() => undefined);
         throw new RequestSecurityError("A solicitação excede o tamanho permitido.", 413);
       }
@@ -97,8 +105,7 @@ export async function readAuthJson(request: Request): Promise<unknown> {
       bytes.set(chunk, offset);
       offset += chunk.byteLength;
     }
-    const input: unknown = JSON.parse(new TextDecoder("utf-8", { fatal: true }).decode(bytes));
-    return input;
+    return bytes;
   } catch (error: unknown) {
     if (error instanceof RequestSecurityError) throw error;
     throw new RequestSecurityError("Envie dados válidos.", 400);

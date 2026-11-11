@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCertificateDate, formatCertificateSize } from "@/features/certificates/lib/formatting";
 import type { CertificateRecord } from "@/features/certificates/schemas/certificate-schema";
+import { CertificateActions } from "@/features/certificates/components/certificate-actions";
 import { activityCategoryStyles } from "@/lib/activity-categories";
 
 type CertificateCardProps = {
@@ -12,9 +13,10 @@ type CertificateCardProps = {
   isDownloading: boolean;
   downloadDisabled: boolean;
   onDownload: () => void;
+  onChanged: () => void;
 };
 
-export function CertificateCard({ certificate, isDownloading, downloadDisabled, onDownload }: CertificateCardProps) {
+export function CertificateCard({ certificate, isDownloading, downloadDisabled, onDownload, onChanged }: CertificateCardProps) {
   return (
     <Card aria-labelledby={`certificate-${certificate.id}-title`} as="article" className="h-full">
       <CardHeader>
@@ -33,10 +35,11 @@ export function CertificateCard({ certificate, isDownloading, downloadDisabled, 
         </dl>
         <p className="text-xs text-muted-foreground">Protocolo {certificate.id}</p>
       </CardContent>
-      <CardFooter>
+      <CardFooter className="flex flex-col items-start gap-4">
         <Button aria-busy={isDownloading} aria-label={`Baixar comprovante de ${certificate.title}`} disabled={downloadDisabled} onClick={onDownload} variant="outline">
           <Download aria-hidden="true" />{isDownloading ? "Baixando..." : "Baixar comprovante"}
         </Button>
+        <CertificateActions certificate={certificate} onChanged={onChanged} />
       </CardFooter>
     </Card>
   );

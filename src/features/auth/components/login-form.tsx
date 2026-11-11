@@ -63,7 +63,7 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
           <AuthField
             autoCapitalize="none"
             autoComplete="username"
-            disabled={isLoggingIn}
+            disabled={!form.formState.isReady || isLoggingIn}
             error={form.formState.errors.email?.message}
             icon={Mail}
             id="email"
@@ -75,7 +75,7 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
           />
           <AuthField
             autoComplete="current-password"
-            disabled={isLoggingIn}
+            disabled={!form.formState.isReady || isLoggingIn}
             error={form.formState.errors.password?.message}
             icon={LockKeyhole}
             id="password"
@@ -85,7 +85,7 @@ export function LoginForm({ nextPath }: { nextPath?: string }) {
             {...form.register("password")}
           />
 
-          <Button aria-busy={isLoggingIn} className="h-13 w-full justify-between rounded-xl bg-brand-yellow px-5 text-sm font-semibold text-brand-black hover:bg-brand-yellow/85" disabled={isLoggingIn} type="submit">
+          <Button aria-busy={isLoggingIn} className="h-13 w-full justify-between rounded-xl bg-brand-yellow px-5 text-sm font-semibold text-brand-black hover:bg-brand-yellow/85" disabled={!form.formState.isReady || isLoggingIn} type="submit">
             {isRedirecting ? "Abrindo o portal…" : isLoggingIn ? "Entrando…" : form.formState.errors.root?.server ? "Tentar novamente" : "Entrar no portal"}
             <ArrowRight aria-hidden="true" className="size-4" />
           </Button>

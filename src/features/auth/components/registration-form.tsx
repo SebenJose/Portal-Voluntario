@@ -52,7 +52,7 @@ export function RegistrationForm({ nextPath }: { nextPath?: string }) {
         ) : <form aria-busy={form.formState.isSubmitting} className="space-y-5" noValidate onSubmit={form.handleSubmit(handleRegister)}>
           <AuthField
             autoComplete="name"
-            disabled={form.formState.isSubmitting}
+            disabled={!form.formState.isReady || form.formState.isSubmitting}
             error={form.formState.errors.name?.message}
             icon={UserRound}
             id="name"
@@ -63,7 +63,7 @@ export function RegistrationForm({ nextPath }: { nextPath?: string }) {
           <AuthField
             autoCapitalize="none"
             autoComplete="username"
-            disabled={form.formState.isSubmitting}
+            disabled={!form.formState.isReady || form.formState.isSubmitting}
             error={form.formState.errors.email?.message}
             icon={Mail}
             id="email"
@@ -75,18 +75,18 @@ export function RegistrationForm({ nextPath }: { nextPath?: string }) {
           />
           <AuthField
             autoComplete="new-password"
-            disabled={form.formState.isSubmitting}
+            disabled={!form.formState.isReady || form.formState.isSubmitting}
             error={form.formState.errors.password?.message}
             icon={LockKeyhole}
             id="password"
             label="Senha"
             placeholder="Pelo menos 8 caracteres"
             type="password"
-            {...form.register("password", { deps: ["passwordConfirmation"] })}
+            {...form.register("password")}
           />
           <AuthField
             autoComplete="new-password"
-            disabled={form.formState.isSubmitting}
+            disabled={!form.formState.isReady || form.formState.isSubmitting}
             error={form.formState.errors.passwordConfirmation?.message}
             icon={LockKeyhole}
             id="passwordConfirmation"
@@ -95,7 +95,7 @@ export function RegistrationForm({ nextPath }: { nextPath?: string }) {
             type="password"
             {...form.register("passwordConfirmation")}
           />
-          <Button aria-busy={form.formState.isSubmitting} className="h-13 w-full justify-between rounded-xl bg-brand-yellow px-5 font-semibold text-brand-black hover:bg-brand-yellow/85" disabled={form.formState.isSubmitting} type="submit">
+          <Button aria-busy={form.formState.isSubmitting} className="h-13 w-full justify-between rounded-xl bg-brand-yellow px-5 font-semibold text-brand-black hover:bg-brand-yellow/85" disabled={!form.formState.isReady || form.formState.isSubmitting} type="submit">
             {form.formState.isSubmitting ? "Criando sua conta…" : form.formState.errors.root?.server ? "Tentar novamente" : "Criar minha conta"}
             <ArrowRight aria-hidden="true" className="size-4" />
           </Button>

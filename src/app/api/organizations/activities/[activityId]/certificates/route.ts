@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
-import { organizationBackendUnavailable } from "@/features/organizations/services/server-authorization";
-
-export async function POST(request: NextRequest) {
-  return organizationBackendUnavailable(request, true);
+import { certificateDispatchSchema } from "@/features/organizations/services/organization-activities";
+import { forwardApi } from "@/lib/server/backend-route";
+export async function POST(request: NextRequest, context: { params: Promise<{ activityId: string }> }) {
+  const { activityId } = await context.params;
+  return forwardApi(request, `/organizations/activities/${encodeURIComponent(activityId)}/certificates`, certificateDispatchSchema, 201);
 }

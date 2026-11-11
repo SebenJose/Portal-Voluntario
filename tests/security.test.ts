@@ -1,52 +1,217 @@
 import assert from "node:assert/strict";
 import { randomBytes, randomUUID } from "node:crypto";
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, rmSync } from "node:fs";
+import { spawn, spawnSync, type ChildProcess } from "node:child_process";
+import { once } from "node:events";
+import { createServer } from "node:net";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { after, test } from "node:test";
+import { after, before, test } from "node:test";
 import { NextRequest } from "next/server";
-import { http, HttpResponse } from "msw";
 import { setupServer } from "msw/node";
 import { z } from "zod";
-
 import { POST as loginRoute } from "@/app/api/auth/login/route";
 import { POST as registerRoute } from "@/app/api/auth/register/route";
 import { POST as logoutRoute } from "@/app/api/auth/logout/route";
+import { GET as sessionRoute } from "@/app/api/auth/session/route";
+import { GET as catalogRoute } from "@/app/api/opportunities/route";
+import { GET as dashboardRoute } from "@/app/api/dashboard/route";
 import { POST as enrollRoute, DELETE as cancelEnrollmentRoute } from "@/app/api/opportunities/[id]/registrations/route";
-import { createAccount, authenticateAccount } from "@/features/auth/services/accounts";
+import { GET as organizationsRoute } from "@/app/api/organizations/activities/route";
+import { POST as submissionsRoute, GET as certificateListRoute } from "@/app/api/submissions/route";
+import { GET as documentRoute } from "@/app/api/submissions/[id]/document/route";
+import { DELETE as deleteSubmissionRoute } from "@/app/api/submissions/[id]/route";
 import { getSafeRedirectPath } from "@/features/auth/services/safe-redirect";
-import { createSessionToken, verifySessionToken, revokeSessionToken, SESSION_DURATION_SECONDS } from "@/features/auth/services/session";
-import { requireOrganizationRequest, organizationBackendUnavailable } from "@/features/organizations/services/server-authorization";
-import { getOpportunityCatalog, enrollInOpportunity } from "@/features/opportunities/services/enrollments";
-import { cancellationResponseSchema } from "@/features/opportunities/schemas/opportunity-schema";
+import { verifySessionToken } from "@/features/auth/services/session";
+import { cancellationResponseSchema, opportunitiesResponseSchema, opportunitySchema } from "@/features/opportunities/schemas/opportunity-schema";
+import { opportunities } from "@/features/opportunities/data/opportunities";
 import { getAgendaEntries, getNextSessions, agendaDate, dateKey } from "@/features/opportunities/lib/agenda";
-import { getDashboardSummary } from "@/features/dashboard/services/dashboard-summary";
+import { dashboardSummarySchema } from "@/features/dashboard/schemas/dashboard-schema";
 import { dashboardPresentationSchema } from "@/features/dashboard/schemas/presentation-schema";
 import { updateParticipantsAttendance } from "@/features/organizations/services/organization-activities";
+import { certificateRecordSchema } from "@/features/certificates/schemas/certificate-schema";
+import { BackendApiError } from "@/lib/server/backend-api";
+import { newPasswordSchema } from "@/features/auth/schemas/password-schema";
 import { MAX_AUTH_BODY_BYTES, readAuthJson, requireMutationOrigin, RequestSecurityError } from "@/lib/server/request-security";
 import { handlers } from "@/mocks/handlers";
 
 const origin = "http://localhost:3189";
-const dataDirectory = mkdtempSync(path.join(tmpdir(), "portal-test-data-"));
-process.env.PORTAL_DATA_DIR = dataDirectory;
-process.env.PORTAL_ORIGIN = origin;
-process.env.SESSION_SECRET = randomBytes(48).toString("base64url");
-after(() => rmSync(dataDirectory, { recursive: true, force: true }));
+const directory = mkdtempSync(path.join(tmpdir(), "portal-bff-"));
+const password = randomBytes(18).toString("base64url");
+let api: ChildProcess | undefined;
+let apiUrl = "";
+let token = "";
+let otherToken = "";
 
 function accountValues(email = `${randomUUID()}@example.test`) {
-  const password = randomBytes(18).toString("base64url");
   return { name: "Pessoa de teste", email, password, passwordConfirmation: password };
 }
 
-function request(url: string, body?: unknown, cookie?: string, headers: Record<string, string> = {}, method: "POST" | "DELETE" = "POST"): NextRequest {
+function request(url: string, body?: unknown, cookie?: string, headers: Record<string, string> = {}, method: "GET" | "POST" | "PATCH" | "DELETE" = "POST"): NextRequest {
+  const form = body instanceof FormData;
   return new NextRequest(new URL(url, origin), {
     method,
-    headers: { Origin: origin, ...(body === undefined ? {} : { "Content-Type": "application/json" }), ...(cookie ? { Cookie: `portal_session=${cookie}` } : {}), ...headers },
-    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+    headers: { Origin: origin, ...(body !== undefined && !form ? { "Content-Type": "application/json" } : {}), ...(cookie ? { Cookie: `portal_session=${cookie}` } : {}), ...headers },
+    body: body instanceof FormData ? body : body === undefined ? undefined : JSON.stringify(body),
   });
 }
 
-const publicUserSchema = z.object({ user: z.object({ id: z.string(), role: z.literal("volunteer") }) });
+async function login(email: string): Promise<string> {
+  const response = await loginRoute(request("/api/auth/login", { email, password }));
+  assert.equal(response.status, 200);
+  const raw: unknown = await response.json();
+  z.object({ user: z.object({ id: z.uuid(), role: z.string() }) }).parse(raw);
+  assert.equal("accessToken" in z.record(z.string(), z.unknown()).parse(raw), false);
+  const cookie = response.headers.get("set-cookie") ?? "";
+  assert.match(cookie, /HttpOnly/iu);
+  assert.match(cookie, /SameSite=lax/iu);
+  assert.equal(response.headers.get("cache-control"), "no-store");
+  const value = /^portal_session=([^;]+)/u.exec(cookie)?.[1];
+  assert.ok(value);
+  return value;
+}
+
+before(async () => {
+  const reservation = createServer();
+  reservation.listen(0, "127.0.0.1");
+  await once(reservation, "listening");
+  const address = reservation.address();
+  assert.ok(address && typeof address === "object");
+  const port = address.port;
+  await new Promise<void>((resolve) => reservation.close(() => resolve()));
+  const environment = { ...process.env, JWT_SECRET: randomBytes(32).toString("hex"), API_PORT: String(port), DATABASE_PATH: path.join(directory, "bff.sqlite"), SEED_PASSWORD: password };
+  const seed = spawnSync(process.execPath, ["--env-file-if-exists=backend/.env", "backend/dist/database/cli.js", "seed"], { env: environment, encoding: "utf8" });
+  assert.equal(seed.status, 0, seed.stderr);
+  api = spawn(process.execPath, ["backend/dist/main.js"], { env: environment, stdio: "pipe" });
+  let logs = "";
+  api.stderr?.on("data", (chunk: unknown) => { if (Buffer.isBuffer(chunk)) logs += chunk.toString(); });
+  api.stdout?.resume();
+  apiUrl = `http://127.0.0.1:${port}/api`;
+  for (let attempt = 0; attempt < 80; attempt += 1) {
+    if (api.exitCode !== null) throw new Error(`API de teste não iniciou: ${logs}`);
+    try { if ((await fetch(`${apiUrl}/health`)).ok) break; } catch { /* Wait for our test server to listen. */ }
+    await new Promise<void>((resolve) => setTimeout(resolve, 100));
+  }
+  process.env.BACKEND_API_URL = apiUrl;
+  process.env.PORTAL_ORIGIN = origin;
+  token = await login("voluntario@portal.example");
+  otherToken = await login("outro@portal.example");
+});
+
+after(async () => {
+  if (api && api.exitCode === null) {
+    const stopped = once(api, "exit");
+    api.kill("SIGTERM");
+    const timer = setTimeout(() => api?.kill("SIGKILL"), 3000);
+    await stopped;
+    clearTimeout(timer);
+  }
+  rmSync(directory, { recursive: true, force: true });
+});
+
+test("validação da senha conta caracteres Unicode e respeita os 72 bytes do bcrypt", () => {
+  assert.equal(newPasswordSchema.safeParse("😀".repeat(4)).success, false);
+  assert.equal(newPasswordSchema.safeParse("😀".repeat(8)).success, true);
+  assert.equal(newPasswordSchema.safeParse("a".repeat(72)).success, true);
+  assert.equal(newPasswordSchema.safeParse("a".repeat(73)).success, false);
+  assert.equal(newPasswordSchema.safeParse("😀".repeat(19)).success, false);
+});
+
+test("cadastro e login atravessam Next e Nest sem expor JWT no corpo", async () => {
+  const values = accountValues();
+  const first = await registerRoute(request("/api/auth/register", { ...values, role: "organization" }));
+  const duplicate = await registerRoute(request("/api/auth/register", values));
+  assert.equal(first.status, 202);
+  assert.equal(duplicate.status, 202);
+  assert.equal(await first.text(), await duplicate.text());
+  assert.equal(first.headers.get("set-cookie"), null);
+  const current = await login(values.email);
+  assert.equal((await verifySessionToken(current))?.role, "volunteer");
+  assert.equal((await sessionRoute(request("/api/auth/session", undefined, current, {}, "GET"))).status, 200);
+  const invalid = { ...values, password: "😀".repeat(30), passwordConfirmation: "😀".repeat(30) };
+  assert.equal((await registerRoute(request("/api/auth/register", invalid))).status, 400);
+});
+
+test("sessão HttpOnly é revogável; logout não encerra outras sessões da conta", async () => {
+  const disposable = await login("voluntario@portal.example");
+  const response = await logoutRoute(request("/api/auth/logout", undefined, disposable));
+  assert.equal(response.status, 204);
+  assert.match(response.headers.get("set-cookie") ?? "", /Max-Age=0/u);
+  assert.equal(await verifySessionToken(disposable), null);
+  assert.ok(await verifySessionToken(token));
+  assert.equal(await verifySessionToken(`${token}x`), null);
+  assert.equal((await sessionRoute(request("/api/auth/session", undefined, undefined, {}, "GET"))).status, 401);
+});
+
+test("catálogo, inscrições e painel usam a API real e isolam contas", async () => {
+  const id = "dados-abertos";
+  const routeContext = { params: Promise.resolve({ id }) };
+  const before = opportunitiesResponseSchema.parse(await (await catalogRoute(request("/api/opportunities", undefined, token, {}, "GET"))).json());
+  assert.equal(before.items.length, 5);
+  assert.equal(before.items.find((item) => item.id === id)?.enrolled, 0);
+  assert.equal((await enrollRoute(request(`/api/opportunities/${id}/registrations`, undefined, token), routeContext)).status, 201);
+  assert.equal((await enrollRoute(request(`/api/opportunities/${id}/registrations`, undefined, token), routeContext)).status, 409);
+  const own = dashboardSummarySchema.parse(await (await dashboardRoute(request("/api/dashboard", undefined, token, {}, "GET"))).json());
+  const other = dashboardSummarySchema.parse(await (await dashboardRoute(request("/api/dashboard", undefined, otherToken, {}, "GET"))).json());
+  assert.equal(own.registrations, 3);
+  assert.equal(other.registrations, 0);
+  assert.ok(own.hoursSummary.every((item) => item.completed === 0));
+  const cancelled = await cancelEnrollmentRoute(request(`/api/opportunities/${id}/registrations`, undefined, token, {}, "DELETE"), routeContext);
+  assert.deepEqual(cancellationResponseSchema.parse(await cancelled.json()), { opportunityId: id, enrolled: 0, registered: false });
+  assert.equal((await cancelEnrollmentRoute(request(`/api/opportunities/${id}/registrations`, undefined, token, {}, "DELETE"), routeContext)).status, 404);
+  assert.equal((await organizationsRoute(request("/api/organizations/activities", undefined, token, {}, "GET"))).status, 403);
+});
+
+test("upload e download passam pelo Next e persistem no SQLite com autorização", async () => {
+  const bytes = "%PDF-1.4\nArquivo original do teste.\n%%EOF";
+  const body = new FormData();
+  body.set("title", "Comprovante do teste"); body.set("category", "Ensino"); body.set("hours", "3");
+  body.set("description", "Atividade externa para teste de integração.");
+  body.set("document", new Blob([bytes], { type: "application/pdf" }), "comprovante.pdf");
+  const response = await submissionsRoute(request("/api/submissions", body, token));
+  assert.equal(response.status, 201);
+  const saved = certificateRecordSchema.parse(await response.json());
+  const routeContext = { params: Promise.resolve({ id: saved.id }) };
+  const original = await documentRoute(request(`/api/submissions/${saved.id}/document`, undefined, token, {}, "GET"), routeContext);
+  assert.equal(original.status, 200);
+  assert.equal(await original.text(), bytes);
+  assert.equal((await documentRoute(request(`/api/submissions/${saved.id}/document`, undefined, otherToken, {}, "GET"), routeContext)).status, 404);
+  const listed: unknown = await (await certificateListRoute(request("/api/submissions", undefined, token, {}, "GET"))).json();
+  assert.equal(z.object({ items: z.array(certificateRecordSchema) }).parse(listed).items.length, 1);
+  assert.equal((await deleteSubmissionRoute(request(`/api/submissions/${saved.id}`, undefined, token, {}, "DELETE"), routeContext)).status, 204);
+  assert.equal((await documentRoute(request(`/api/submissions/${saved.id}/document`, undefined, token, {}, "GET"), routeContext)).status, 404);
+});
+
+test("indisponibilidade e contrato inválido são apresentados sem fallback local", async () => {
+  const originalFetch = globalThis.fetch;
+  try {
+    globalThis.fetch = async () => { throw new TypeError("Falha de rede simulada"); };
+    assert.equal((await catalogRoute(request("/api/opportunities", undefined, token, {}, "GET"))).status, 503);
+    await assert.rejects(verifySessionToken(token), (error: unknown) => error instanceof BackendApiError && error.status === 503);
+    globalThis.fetch = async () => Response.json({ data: { items: "inválido" } });
+    assert.equal((await catalogRoute(request("/api/opportunities", undefined, undefined, {}, "GET"))).status, 502);
+  } finally { globalThis.fetch = originalFetch; }
+});
+
+test("MSW intercepta apenas demonstrações e não substitui operações da conta", async () => {
+  const server = setupServer(...handlers);
+  const locationDescriptor = Object.getOwnPropertyDescriptor(globalThis, "location");
+  Object.defineProperty(globalThis, "location", { value: new URL(origin), configurable: true });
+  server.listen({ onUnhandledFrame: "error" });
+  try {
+    const presentation = dashboardPresentationSchema.parse(await (await fetch(`${origin}/api/demo/dashboard`)).json());
+    assert.equal(presentation.completedActivities.length, 3);
+    const demo = await fetch(`${origin}/api/demo/organizations/activities`);
+    assert.equal(demo.status, 200);
+    assert.ok(handlers.every((handler) => handler.info.header.includes("/api/demo/")));
+    assert.equal((await fetch(`${origin}/api/demo/dashboard?scenario=server-error`)).status, 500);
+    await assert.rejects(fetch(`${origin}/api/demo/dashboard?scenario=network-error`));
+  } finally {
+    server.close();
+    if (locationDescriptor) Object.defineProperty(globalThis, "location", locationDescriptor);
+    else Reflect.deleteProperty(globalThis, "location");
+  }
+});
 
 test("redirecionamento após login preserva destinos internos, filtros e âncoras", () => {
   for (const destination of ["/painel", "/minhas-atividades", "/certificados?scenario=empty#registrar-certificado", "/oportunidades", "/organizacao"]) {
@@ -58,24 +223,6 @@ test("redirecionamento após login rejeita destinos externos e evita retornar a 
   for (const destination of [undefined, ["/certificados"], "https://attacker.example", "//attacker.example", "/\\attacker.example", "/painel\n", "/entrar", "/entrar?next=%2Fcertificados", "/entrar/", "/criar-conta#cadastro", "/painel/../entrar"]) {
     assert.equal(getSafeRedirectPath(destination), "/painel");
   }
-});
-
-test("cadastro novo e duplicado têm a mesma resposta, não autenticam e não permitem role injetado", async () => {
-  const values = accountValues();
-  const first = await registerRoute(request("/api/auth/register", { ...values, role: "organization" }));
-  const duplicate = await registerRoute(request("/api/auth/register", values));
-  assert.equal(first.status, 202);
-  assert.equal(duplicate.status, 202);
-  assert.equal(await first.text(), await duplicate.text());
-  assert.equal(first.headers.get("set-cookie"), null);
-  assert.equal(duplicate.headers.get("set-cookie"), null);
-  const login = await loginRoute(request("/api/auth/login", values));
-  assert.equal(login.status, 200);
-  assert.equal(publicUserSchema.parse(await login.json()).user.role, "volunteer");
-  const cookie = login.headers.get("set-cookie") ?? "";
-  assert.match(cookie, /HttpOnly/iu);
-  assert.match(cookie, /SameSite=lax/iu);
-  assert.equal(login.headers.get("cache-control"), "no-store");
 });
 
 test("login, cadastro, logout, inscrição e cancelamento rejeitam origens externas e de outra porta", async () => {
@@ -120,118 +267,8 @@ test("leitura lenta do corpo é cancelada com 408", async (context) => {
   await rejected;
 });
 
-test("tokens assinados dependem de sessão persistida; logout revoga só a sessão atual", async () => {
-  const user = await createAccount(accountValues());
-  const current = await createSessionToken(user);
-  const otherDevice = await createSessionToken(user);
-  assert.equal((await verifySessionToken(current.token))?.id, user.id);
-  assert.equal((await logoutRoute(request("/api/auth/logout", undefined, current.token))).status, 204);
-  assert.equal(await verifySessionToken(current.token), null);
-  assert.equal((await verifySessionToken(otherDevice.token))?.id, user.id);
-  assert.equal((await enrollRoute(request("/api/opportunities/horta-comunitaria/registrations", undefined, current.token), { params: Promise.resolve({ id: "horta-comunitaria" }) })).status, 401);
-  await revokeSessionToken(otherDevice.token);
-  assert.equal(await verifySessionToken(otherDevice.token), null);
-  assert.equal(await verifySessionToken(`${current.token}x`), null);
-});
-
-test("tokens antigos com identidade embutida e nenhuma sessão persistida são inválidos", async () => {
-  const now = Math.floor(Date.now() / 1000);
-  const payload = Buffer.from(JSON.stringify({ user: { id: "demo-voluntario-001", name: "Conta antiga", email: "obsolete@example.test", role: "volunteer" }, issuedAt: now, expiresAt: now + 1000 })).toString("base64url");
-  const { createHmac } = await import("node:crypto");
-  const signature = createHmac("sha256", process.env.SESSION_SECRET ?? "").update(payload).digest("base64url");
-  assert.equal(await verifySessionToken(`${payload}.${signature}`), null);
-  assert.equal(await authenticateAccount({ email: "nonexistent@example.test", password: "SenhaInexistente" }), null);
-});
-
-test("sessões futuras, expiradas ou verificadas sem segredo falham de forma fechada", async () => {
-  const user = await createAccount(accountValues());
-  const session = await createSessionToken(user);
-  const now = Date.now;
-  const secret = process.env.SESSION_SECRET;
-  try {
-    Date.now = () => now() + (SESSION_DURATION_SECONDS + 1) * 1000;
-    assert.equal(await verifySessionToken(session.token), null);
-    Date.now = () => now() + 30_000;
-    const future = await createSessionToken(user);
-    Date.now = now;
-    assert.equal(await verifySessionToken(future.token), null);
-    delete process.env.SESSION_SECRET;
-    assert.equal(await verifySessionToken(session.token), null);
-    await assert.rejects(createSessionToken(user));
-  } finally {
-    Date.now = now;
-    if (secret !== undefined) process.env.SESSION_SECRET = secret;
-  }
-});
-
-test("identidade atual da conta controla autorização e contas removidas perdem acesso", async () => {
-  const user = await createAccount(accountValues());
-  const session = await createSessionToken(user);
-  await assert.rejects(requireOrganizationRequest(request("/api/organizations/activities", undefined, session.token)), (error: unknown) => error instanceof RequestSecurityError && error.status === 403);
-  assert.equal((await organizationBackendUnavailable(request("/api/organizations/activities"))).status, 401);
-  const file = path.join(dataDirectory, "accounts.json");
-  const accounts = z.array(z.object({ user: z.object({ id: z.string(), name: z.string(), email: z.string(), role: z.enum(["volunteer", "organization"]) }), salt: z.string(), passwordHash: z.string() })).parse(JSON.parse(readFileSync(file, "utf8")));
-  const account = accounts.find((item) => item.user.id === user.id);
-  assert.ok(account);
-  account.user.role = "organization";
-  writeFileSync(file, JSON.stringify(accounts));
-  assert.equal((await requireOrganizationRequest(request("/api/organizations/activities", undefined, session.token))).role, "organization");
-  assert.equal((await organizationBackendUnavailable(request("/api/organizations/activities", undefined, session.token))).status, 501);
-  writeFileSync(file, JSON.stringify(accounts.filter((item) => item.user.id !== user.id)));
-  assert.equal(await verifySessionToken(session.token), null);
-});
-
-test("painel novo começa vazio e inscrições não atravessam usuários nem concedem horas", async () => {
-  const first = await createAccount(accountValues());
-  const second = await createAccount(accountValues());
-  const empty = getDashboardSummary(first.id);
-  assert.equal(empty.registrations, 0);
-  assert.deepEqual(empty.upcomingActivities, []);
-  assert.ok(empty.hoursSummary.every((item) => item.completed === 0));
-  enrollInOpportunity(first.id, "horta-comunitaria");
-  assert.equal(getDashboardSummary(first.id).registrations, 1);
-  assert.equal(getDashboardSummary(second.id).registrations, 0);
-  assert.deepEqual(getOpportunityCatalog(second.id).registeredIds, []);
-  assert.ok(getDashboardSummary(first.id).hoursSummary.every((item) => item.completed === 0));
-  assert.throws(() => enrollInOpportunity(first.id, "horta-comunitaria"));
-});
-
-test("cancelamento exige sessão, preserva outras contas, libera vaga e permite reinscrição", async () => {
-  const first = await createAccount(accountValues());
-  const second = await createAccount(accountValues());
-  const firstSession = await createSessionToken(first);
-  const secondSession = await createSessionToken(second);
-  const id = "monitoria-programacao";
-  const endpoint = `/api/opportunities/${id}/registrations`;
-  const context = { params: Promise.resolve({ id }) };
-  const before = getOpportunityCatalog().items.find((item) => item.id === id);
-  assert.ok(before);
-  enrollInOpportunity(first.id, id);
-  assert.equal((await cancelEnrollmentRoute(request(endpoint, undefined, undefined, {}, "DELETE"), context)).status, 401);
-  assert.equal((await cancelEnrollmentRoute(request(endpoint, undefined, secondSession.token, {}, "DELETE"), context)).status, 404);
-  assert.deepEqual(getOpportunityCatalog(first.id).registeredIds, [id]);
-  enrollInOpportunity(second.id, id);
-
-  const response = await cancelEnrollmentRoute(request(endpoint, undefined, firstSession.token, {}, "DELETE"), context);
-  assert.equal(response.status, 200);
-  assert.equal(response.headers.get("cache-control"), "no-store");
-  assert.deepEqual(cancellationResponseSchema.parse(await response.json()), {
-    opportunityId: id, registered: false, enrolled: before.enrolled + 1,
-  });
-  assert.deepEqual(getOpportunityCatalog(first.id).registeredIds, []);
-  assert.deepEqual(getOpportunityCatalog(second.id).registeredIds, [id]);
-  assert.equal(getDashboardSummary(first.id).registrations, 0);
-  assert.equal(getDashboardSummary(second.id).registrations, 1);
-  assert.equal((await cancelEnrollmentRoute(request(endpoint, undefined, firstSession.token, {}, "DELETE"), context)).status, 404);
-  assert.equal((await cancelEnrollmentRoute(request(endpoint, undefined, firstSession.token, {}, "DELETE"), { params: Promise.resolve({ id: "inexistente" }) })).status, 404);
-  assert.equal(enrollInOpportunity(first.id, id).enrolled, before.enrolled + 2);
-  await revokeSessionToken(firstSession.token);
-  assert.equal((await cancelEnrollmentRoute(request(endpoint, undefined, firstSession.token, {}, "DELETE"), context)).status, 401);
-  assert.deepEqual(getOpportunityCatalog(first.id).registeredIds, [id]);
-});
-
 test("agenda conserva recorrências e datas locais e exclui encontros já encerrados", () => {
-  const activity = getOpportunityCatalog().items.find((item) => item.id === "horta-comunitaria");
+  const activity = z.array(opportunitySchema).parse(opportunities).find((item) => item.id === "horta-comunitaria");
   assert.ok(activity);
   const entries = getAgendaEntries([activity]);
   assert.deepEqual(entries.map((entry) => entry.date), ["2026-10-17", "2026-10-24", "2026-10-31", "2026-11-07", "2026-11-14"]);
@@ -240,38 +277,6 @@ test("agenda conserva recorrências e datas locais e exclui encontros já encerr
   assert.equal(getNextSessions(entries, new Date("2026-10-17T12:00:01")).length, 4);
   assert.deepEqual(getNextSessions(entries, new Date("2026-11-14T12:00:01")), []);
   assert.deepEqual(getAgendaEntries([]), []);
-});
-
-test("rate limiting devolve 429 com Retry-After para conta inexistente", async () => {
-  const credentials = { email: `${randomUUID()}@example.test`, password: "SenhaInexistente" };
-  for (let index = 0; index < 10; index += 1) {
-    assert.equal((await loginRoute(request("/api/auth/login", credentials))).status, 401);
-  }
-  const limited = await loginRoute(request("/api/auth/login", credentials));
-  assert.equal(limited.status, 429);
-  assert.ok(Number(limited.headers.get("retry-after")) > 0);
-});
-
-test("limite por e-mail também protege conta existente", async () => {
-  const values = accountValues();
-  await createAccount(values);
-  for (let index = 0; index < 10; index += 1) {
-    assert.equal((await loginRoute(request("/api/auth/login", { email: values.email, password: "SenhaErrada" }))).status, 401);
-  }
-  assert.equal((await loginRoute(request("/api/auth/login", values))).status, 429);
-});
-
-test("orçamento agregado não pode ser contornado trocando cabeçalhos de IP", async () => {
-  let limited = false;
-  for (let index = 0; index <= 30; index += 1) {
-    const response = await loginRoute(request("/api/auth/login", {}, undefined, { "X-Forwarded-For": `192.0.2.${index}` }));
-    if (response.status === 429) {
-      limited = true;
-      break;
-    }
-    assert.equal(response.status, 400);
-  }
-  assert.equal(limited, true);
 });
 
 test("lote aguarda todos, mantém sucessos e identifica falhas para retry", async () => {
@@ -290,69 +295,5 @@ test("lote aguarda todos, mantém sucessos e identifica falhas para retry", asyn
     assert.deepEqual(result.updated.map((item) => item.id), ["success"]);
   } finally {
     globalThis.fetch = originalFetch;
-  }
-});
-
-test("MSW permite demo pública isolada e exige papel na gestão de organizações", async () => {
-  let identity: { id: string; name: string; email: string; role: "organization" | "volunteer" } | null = null;
-  let sessionRequests = 0;
-  const server = setupServer(...handlers);
-  const locationDescriptor = Object.getOwnPropertyDescriptor(globalThis, "location");
-  Object.defineProperty(globalThis, "location", { value: new URL(origin), configurable: true });
-  server.listen({ onUnhandledFrame: "error" });
-  // Override passthrough only in this test: the real session endpoint is tested separately.
-  server.use(http.get(`${origin}/api/auth/session`, () => {
-    sessionRequests += 1;
-    return identity ? HttpResponse.json({ user: identity }) : new HttpResponse(null, { status: 401 });
-  }));
-  const interceptedFetch = globalThis.fetch;
-  globalThis.fetch = (input, init) => interceptedFetch(typeof input === "string" ? new URL(input, origin) : input, init);
-  try {
-    const presentationResponse = await fetch("/api/demo/dashboard");
-    assert.equal(presentationResponse.status, 200);
-    const presentation = dashboardPresentationSchema.parse(await presentationResponse.json());
-    assert.equal(presentation.completedActivities.length, 3);
-    assert.equal(presentation.registeredActivities.length, 2);
-    assert.equal(presentation.hoursSummary.reduce((total, item) => total + item.completed, 0), 74);
-    for (const category of presentation.hoursSummary) {
-      assert.equal(category.completed, presentation.completedActivities.filter((activity) => activity.category === category.category).reduce((total, activity) => total + activity.hours, 0));
-    }
-    const presentationUser = await createAccount(accountValues());
-    assert.equal(getDashboardSummary(presentationUser.id).registrations, 0);
-    assert.ok(getDashboardSummary(presentationUser.id).hoursSummary.every((item) => item.completed === 0));
-    const emptyPresentation = await fetch("/api/demo/dashboard?scenario=empty");
-    assert.equal(dashboardPresentationSchema.parse(await emptyPresentation.json()).completedActivities.length, 0);
-    assert.equal((await fetch("/api/demo/dashboard?scenario=server-error")).status, 500);
-    await assert.rejects(fetch("/api/demo/dashboard?scenario=network-error"));
-    const demoEndpoint = "/api/demo/organizations/activities";
-    assert.equal((await fetch(demoEndpoint)).status, 200);
-    assert.equal((await fetch(`${demoEndpoint}/horta-comunitaria/participants/p-002`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "Presente" }) })).status, 200);
-    assert.equal((await fetch(`${demoEndpoint}/horta-comunitaria/participants/p-002`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "Inválido" }) })).status, 400);
-    assert.equal((await fetch(`${demoEndpoint}/horta-comunitaria/certificates`, { method: "POST" })).status, 201);
-    assert.equal((await fetch(`${demoEndpoint}/horta-comunitaria/participants/p-001`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "Ausente" }) })).status, 409);
-    assert.equal(sessionRequests, 0);
-    assert.equal((await fetch("/api/organizations/activities")).status, 401);
-    identity = { id: randomUUID(), name: "Teste", email: "test@example.test", role: "volunteer" };
-    assert.equal((await fetch("/api/organizations/activities")).status, 403);
-    assert.equal((await fetch("/api/organizations/activities/horta-comunitaria/certificates", { method: "POST" })).status, 403);
-    assert.equal((await fetch("/api/organizations/activities/horta-comunitaria/participants/p-001", { method: "PATCH", body: JSON.stringify({ status: "Presente" }) })).status, 403);
-    identity.role = "organization";
-    const organizationResponse = await fetch("/api/organizations/activities");
-    assert.equal(organizationResponse.status, 200);
-    const organizationActivities = z.array(z.object({ id: z.string(), certificatesDispatched: z.boolean(), participants: z.array(z.object({ id: z.string(), status: z.string() })) })).parse(await organizationResponse.json());
-    const organizationActivity = organizationActivities.find((activity) => activity.id === "horta-comunitaria");
-    assert.ok(organizationActivity);
-    assert.equal(organizationActivity.certificatesDispatched, false);
-    assert.equal(organizationActivity.participants.find((participant) => participant.id === "p-002")?.status, "Inscrito");
-    assert.equal((await fetch("/api/organizations/activities/horta-comunitaria/certificates", { method: "POST" })).status, 201);
-    assert.equal((await fetch("/api/organizations/activities/horta-comunitaria/participants/p-001", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status: "Ausente" }) })).status, 409);
-    assert.equal((await fetch("/api/organizations/activities/horta-comunitaria/certificates", { method: "POST" })).status, 409);
-    identity.id = randomUUID();
-    assert.equal((await fetch("/api/organizations/activities/horta-comunitaria/certificates", { method: "POST" })).status, 201);
-  } finally {
-    globalThis.fetch = interceptedFetch;
-    server.close();
-    if (locationDescriptor) Object.defineProperty(globalThis, "location", locationDescriptor);
-    else Reflect.deleteProperty(globalThis, "location");
   }
 });

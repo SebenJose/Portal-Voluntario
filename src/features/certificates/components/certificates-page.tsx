@@ -12,14 +12,8 @@ import { CertificateSubmissionForm } from "@/features/certificates/components/ce
 import { CertificateTotals } from "@/features/certificates/components/certificate-totals";
 import { CertificateCard } from "@/features/certificates/components/certificate-card";
 import { useCertificateHistory } from "@/features/certificates/hooks/use-certificate-history";
-import { isDemoModeEnabled } from "@/lib/demo-mode";
 
 export function CertificatesPage({ user }: { user: AuthUser }) {
-  if (!isDemoModeEnabled) return (
-    <AppShell active="certificates" description="Consulte seus comprovantes." title="Meus certificados" user={user}>
-      <Card><CardContent className="p-6">O registro de certificados está disponível somente na demonstração. O serviço de homologação ainda não está integrado.</CardContent></Card>
-    </AppShell>
-  );
   return <CertificateHistory user={user} />;
 }
 
@@ -30,7 +24,7 @@ function CertificateHistory({ user }: { user: AuthUser }) {
     <AppShell active="certificates" description="Consulte suas atividades externas e os comprovantes registrados." title="Meus certificados" user={user}>
       <div className="mb-6 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
         <p className="max-w-2xl text-sm leading-6 text-muted-foreground">
-          Nesta demonstração, os registros e arquivos ficam salvos apenas neste navegador. A análise é simulada e as horas declaradas ainda não são homologadas.
+          Seus registros e comprovantes ficam salvos na sua conta. As horas declaradas permanecem em análise e não entram no saldo homologado.
         </p>
         <Button className="shrink-0 bg-brand-yellow text-brand-black hover:bg-brand-yellow/85" nativeButton={false} render={<SectionLink sectionId="registrar-certificado" />}>
           <Plus aria-hidden="true" />Registrar certificado
@@ -60,7 +54,7 @@ function CertificateHistory({ user }: { user: AuthUser }) {
         ) : (
           <div className="space-y-4">
             <ul className="grid gap-5 md:grid-cols-2">
-              {certificates.map((certificate) => <li key={certificate.id}><CertificateCard certificate={certificate} downloadDisabled={downloadingId !== null} isDownloading={downloadingId === certificate.id} onDownload={() => { void download(certificate); }} /></li>)}
+              {certificates.map((certificate) => <li key={certificate.id}><CertificateCard onChanged={retry} certificate={certificate} downloadDisabled={downloadingId !== null} isDownloading={downloadingId === certificate.id} onDownload={() => { void download(certificate); }} /></li>)}
             </ul>
           </div>
         )}

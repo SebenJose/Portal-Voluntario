@@ -36,7 +36,7 @@ export function DashboardPage({ user, summary, presentation }: { user: AuthUser;
           <Button nativeButton={false} render={<Link href="/painel?demonstracao=conta" />} variant="outline">Voltar aos meus dados</Button>
         </aside>
       ) : isDemoModeEnabled ? (
-        <div className="mb-5 flex justify-end"><Button nativeButton={false} render={<Link href="/painel" />} variant="outline"><FlaskConical aria-hidden="true" />Ver dados de demonstração</Button></div>
+        <div className="mb-5 flex justify-end"><Button nativeButton={false} render={<Link href="/painel?demonstracao=horas" />} variant="outline"><FlaskConical aria-hidden="true" />Ver dados de demonstração</Button></div>
       ) : null}
       <div className="grid gap-5 xl:grid-cols-[1.4fr_0.6fr]">
         <Card aria-labelledby="hours-bank-title" as="section" className="overflow-hidden border-brand-black bg-brand-black text-white shadow-sm">
@@ -77,12 +77,7 @@ export function DashboardPage({ user, summary, presentation }: { user: AuthUser;
             </li>
           ))}</ul></CardContent>
         </Card>
-        {presentation ? <CompletedDemoActivities activities={presentation.completedActivities} /> : isDemoModeEnabled ? <DashboardCertificates userId={user.id} /> : (
-          <Card aria-labelledby="dashboard-certificates-title" as="section">
-            <CardHeader><CardTitle id="dashboard-certificates-title">Certificados lançados</CardTitle></CardHeader>
-            <CardContent className="space-y-4"><p className="text-sm text-muted-foreground">O registro de certificados está disponível somente na demonstração. O serviço de homologação ainda não está integrado.</p><Button nativeButton={false} render={<Link href="/certificados" />} variant="outline">Ver certificados</Button></CardContent>
-          </Card>
-        )}
+        {presentation ? <CompletedDemoActivities activities={presentation.completedActivities} /> : <DashboardCertificates userId={user.id} />}
       </div>
 
       <div className="mt-5 space-y-5" id="minhas-atividades">

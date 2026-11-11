@@ -1,55 +1,29 @@
-# Demonstração local
+# Demonstração pública
 
-O portal usa o Mock Service Worker (MSW) para responder às chamadas de demonstração no navegador.
-O worker começa antes de as páginas montarem seus componentes interativos; se o início falhar,
-a página informa o problema e oferece uma ação para tentar novamente.
+Os dados reais de contas, oportunidades, inscrições, certificados e gestão vêm do Nest/SQLite,
+independentemente do MSW. O worker intercepta somente `/api/demo/*`.
 
-## Desenvolvimento
-
-O MSW inicia por padrão durante `pnpm dev`. Para executar sem interceptação, defina
-`NEXT_PUBLIC_API_MOCKING=disabled` no ambiente e reinicie o servidor.
-
-## Build de produção
-
-A demonstração em produção é opt-in. Configure `NEXT_PUBLIC_API_MOCKING=enabled` antes de gerar o
-build e mantenha o mesmo valor ao iniciar o servidor:
+Para habilitar as apresentações, defina `NEXT_PUBLIC_API_MOCKING=enabled` antes de iniciar
+o desenvolvimento ou gerar o build. Em produção:
 
 ```bash
 NEXT_PUBLIC_API_MOCKING=enabled pnpm build
 NEXT_PUBLIC_API_MOCKING=enabled pnpm start
 ```
 
-O service worker já está versionado em `public/mockServiceWorker.js`. Em produção, a configuração
-ausente ou qualquer valor diferente de `enabled` deixa o MSW desligado e preserva a comunicação
-direta com os Route Handlers.
+O padrão é desligado, inclusive em desenvolvimento. Requisições sem handler passam para a rede.
+O provider mostra erro e permite tentar novamente caso o worker não inicie.
 
-## Painel com horas de exemplo
+`/demonstracao/gestao` é pública e usa `/api/demo/organizations/activities`. Participantes,
+presença e despacho são fictícios, isolados em memória e reiniciados ao recarregar. Essa demo
+não altera organizações, contas, horas ou certificados reais.
 
-Com os mocks ativos, **Meu painel** (`/painel`) já abre com os dados de demonstração
-após o login. O exemplo mostra 74 horas (24 de Ensino, 18 de Pesquisa
-e 32 de Extensão), três atividades concluídas e duas atividades futuras na agenda.
-Use **Voltar aos meus dados** (`/painel?demonstracao=conta`) para consultar os dados
-da conta, e **Ver dados de demonstração** para abrir os exemplos novamente.
+O painel real permanece em `/painel`. Com o modo habilitado, o botão **Ver dados de demonstração**
+abre `/painel?demonstracao=horas`, que usa `/api/demo/dashboard`. O exemplo mostra 74 horas,
+três atividades concluídas e duas futuras. **Voltar aos meus dados** retorna à conta real.
+As horas apresentadas não são gravadas. Os endpoints de demo aceitam `empty`, `loading`,
+`network-error` e `server-error` para revisão de estados da interface.
 
-Os exemplos vêm do endpoint MSW `/api/demo/dashboard` e não gravam horas,
-inscrições ou certificados. Esse painel está disponível apenas com os mocks ativos.
-O endpoint aceita os cenários `empty`, `loading`, `network-error` e `server-error`.
-
-## Autenticação
-
-As rotas `/api/auth/*` passam pelo navegador até os Route Handlers reais do Next.js. O MSW não cria
-credenciais, sessões nem cookies de demonstração.
-
-Em produção, configure também `PORTAL_ORIGIN` com a origem externa e `SESSION_SECRET`.
-Não existe conta embutida: cadastre uma conta e entre no portal. O cadastro cria somente voluntários.
-A demonstração de gestão em `/demonstracao/gestao` pode ser acessada pelo menu sem login.
-Seus participantes e alterações ficam apenas na memória do navegador e são reiniciados ao recarregar.
-Ela usa endpoints MSW próprios em `/api/demo/organizations/activities`, sem alterar contas,
-inscrições, certificados ou os dados da gestão reservada.
-
-A rota `/organizacao` e suas APIs continuam exigindo papel de organização verificado no servidor;
-seu provisionamento não é público. A restrição veio da atualização de autenticação da `main`, que
-também removeu o login embutido antigo; por isso o menu de gestão desapareceu para voluntários.
-Os certificados locais continuam em IndexedDB por conta e não concedem horas homologadas.
-Sem mocks, registro de certificados e gestão informam indisponibilidade em vez de iniciar chamadas
-sem integração. Veja [os controles e limites do adaptador local](AUTH.md).
+A autenticação continua real mesmo durante a apresentação: mantenha o Nest em execução e
+configure a URL, a origem e a chave conforme o README. As contas demonstrativas atuais são
+criadas pelo seed; não existem credenciais embutidas no cliente.

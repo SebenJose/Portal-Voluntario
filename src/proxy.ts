@@ -1,9 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { BackendApiError } from "@/lib/server/backend-api";
+import type { AuthUser } from "@/features/auth/schemas/session-schema";
 import { SESSION_COOKIE_NAME, verifySessionToken } from "@/features/auth/services/session";
 
 export async function proxy(request: NextRequest) {
-  const user = await verifySessionToken(request.cookies.get(SESSION_COOKIE_NAME)?.value);
+  let user: AuthUser | null;
+  try {
+    user = await verifySessionToken(request.cookies.get(SESSION_COOKIE_NAME)?.value);
+  } catch (error: unknown) {
+    // Pages repeat authentication and render the error boundary when the API is unavailable.
+    if (error instanceof BackendApiError) return NextResponse.next();
+    throw error;
+  }
   if (user) {
     if (request.nextUrl.pathname.startsWith("/organizacao") && user.role !== "organization") {
       return NextResponse.redirect(new URL("/painel", request.url));

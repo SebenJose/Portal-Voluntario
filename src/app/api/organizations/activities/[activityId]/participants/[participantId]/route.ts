@@ -1,6 +1,7 @@
 import { NextRequest } from "next/server";
-import { organizationBackendUnavailable } from "@/features/organizations/services/server-authorization";
-
-export async function PATCH(request: NextRequest) {
-  return organizationBackendUnavailable(request, true);
+import { attendanceUpdateSchema } from "@/features/organizations/services/organization-activities";
+import { forwardApi } from "@/lib/server/backend-route";
+export async function PATCH(request: NextRequest, context: { params: Promise<{ activityId: string; participantId: string }> }) {
+  const { activityId, participantId } = await context.params;
+  return forwardApi(request, `/organizations/activities/${encodeURIComponent(activityId)}/participants/${encodeURIComponent(participantId)}`, attendanceUpdateSchema);
 }

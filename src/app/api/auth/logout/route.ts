@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { backendErrorResponse } from "@/lib/server/backend-route";
 
 import { SESSION_COOKIE_NAME, revokeSessionToken } from "@/features/auth/services/session";
-import { applicationOrigin, requireMutationOrigin, securityErrorResponse } from "@/lib/server/request-security";
+import { applicationOrigin, requireMutationOrigin } from "@/lib/server/request-security";
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,6 +19,6 @@ export async function POST(request: NextRequest) {
     });
     return response;
   } catch (error: unknown) {
-    return securityErrorResponse(error, "Não foi possível encerrar a sessão. Tente novamente.");
+    return backendErrorResponse(error);
   }
 }

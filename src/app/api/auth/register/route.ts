@@ -1,29 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-
+import { z } from "zod";
 import { registrationSchema } from "@/features/auth/schemas/registration-schema";
-import { AccountAlreadyExistsError, createAccount } from "@/features/auth/services/accounts";
-import { limitAccountAttempts, limitAuthRequests, readAuthJson, requireMutationOrigin, securityErrorResponse } from "@/lib/server/request-security";
+import { backendData } from "@/lib/server/backend-api";
+import { backendErrorResponse } from "@/lib/server/backend-route";
+import { limitAccountAttempts, limitAuthRequests, readAuthJson, requireMutationOrigin, RequestSecurityError } from "@/lib/server/request-security";
 
 export async function POST(request: NextRequest) {
   try {
     requireMutationOrigin(request);
     limitAuthRequests();
-    const input = registrationSchema.safeParse(await readAuthJson(request));
-    if (!input.success) {
-      return NextResponse.json({ error: "Confira os dados e a confirmação de senha." }, { status: 400, headers: { "Cache-Control": "no-store" } });
-    }
-    limitAccountAttempts(input.data.email);
-    try {
-      await createAccount(input.data);
-    } catch (error: unknown) {
-      if (!(error instanceof AccountAlreadyExistsError)) throw error;
-    }
-    // Both outcomes perform scrypt and return the same body, status and cookie policy.
-    return NextResponse.json(
-      { message: "Se os dados permitiram o cadastro, sua conta foi criada. Entre com seu e-mail e senha." },
-      { status: 202, headers: { "Cache-Control": "no-store" } },
-    );
-  } catch (error: unknown) {
-    return securityErrorResponse(error, "Não foi possível concluir o cadastro. Tente novamente.");
-  }
+    const parsed = registrationSchema.safeParse(await readAuthJson(request));
+    if (!parsed.success) throw new RequestSecurityError("Confira os dados e a confirmação de senha.", 400);
+    limitAccountAttempts(parsed.data.email);
+    const result = await backendData("/auth/register", z.object({ message: z.string().min(1) }), { method: "POST", body: parsed.data });
+    return NextResponse.json(result, { status: 202, headers: { "Cache-Control": "no-store" } });
+  } catch (error: unknown) { return backendErrorResponse(error); }
 }

@@ -1,27 +1,11 @@
 import "server-only";
+import { cookies } from "next/headers";
+import { SESSION_COOKIE_NAME } from "@/features/auth/services/session";
+import { backendData } from "@/lib/server/backend-api";
+import { dashboardSummarySchema } from "@/features/dashboard/schemas/dashboard-schema";
+export type { DashboardSummary } from "@/features/dashboard/schemas/dashboard-schema";
 
-import { activityCategories } from "@/lib/activity-categories";
-import { getOpportunityCatalog } from "@/features/opportunities/services/enrollments";
-import type { UpcomingActivity } from "@/features/dashboard/types";
-
-export function getDashboardSummary(userId: string) {
-  const catalog = getOpportunityCatalog(userId);
-  const registered = new Set(catalog.registeredIds);
-  const upcomingActivities: UpcomingActivity[] = catalog.items
-    .filter((item) => registered.has(item.id))
-    .map((item) => ({
-      id: item.id,
-      title: item.title,
-      organization: item.organization,
-      dateLabel: item.dateLabel,
-      status: "Inscrito",
-    }));
-  return {
-    // No real attendance or approval backend exists; declarations must never grant hours.
-    hoursSummary: activityCategories.map((category) => ({ category, completed: 0 })),
-    registrations: registered.size,
-    upcomingActivities,
-  };
+export async function getDashboardSummary() {
+  const token = (await cookies()).get(SESSION_COOKIE_NAME)?.value;
+  return backendData("/dashboard", dashboardSummarySchema, { token });
 }
-
-export type DashboardSummary = ReturnType<typeof getDashboardSummary>;

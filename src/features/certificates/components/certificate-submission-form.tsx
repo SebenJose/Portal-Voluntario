@@ -90,12 +90,12 @@ export function CertificateSubmissionForm({ onSubmitted }: { onSubmitted?: () =>
       <CardHeader>
         <CardTitle id="certificate-submission-title">Registrar certificado externo</CardTitle>
         <CardDescription>
-          Registre uma atividade realizada fora do portal. Nesta demonstração, o arquivo fica neste navegador e a análise é simulada.
+          Registre uma atividade realizada fora do portal. O comprovante será salvo na sua conta e as horas permanecerão em análise.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form aria-busy={form.formState.isSubmitting} className="grid gap-5 md:grid-cols-2" noValidate onSubmit={form.handleSubmit(handleSubmit)}>
-          <fieldset className="contents" disabled={form.formState.isSubmitting}>
+          <fieldset className="contents" disabled={!form.formState.isReady || form.formState.isSubmitting}>
           <div className="space-y-2 md:col-span-2">
             <Label htmlFor="submission-title">Título da atividade</Label>
             <Input

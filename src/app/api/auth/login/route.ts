@@ -1,27 +1,21 @@
-import { NextRequest, NextResponse } from "next/server";
-
-import { authenticateAccount } from "@/features/auth/services/accounts";
+import { NextRequest } from "next/server";
+import { z } from "zod";
+import { authUserSchema, loginRequestSchema } from "@/features/auth/schemas/session-schema";
 import { authResponse } from "@/features/auth/services/auth-response";
-import { createSessionToken } from "@/features/auth/services/session";
-import { loginRequestSchema } from "@/features/auth/schemas/session-schema";
-import { limitAccountAttempts, limitAuthRequests, readAuthJson, requireMutationOrigin, securityErrorResponse } from "@/lib/server/request-security";
+import { backendData } from "@/lib/server/backend-api";
+import { backendErrorResponse } from "@/lib/server/backend-route";
+import { limitAccountAttempts, limitAuthRequests, readAuthJson, requireMutationOrigin, RequestSecurityError } from "@/lib/server/request-security";
+
+const loginResponseSchema = z.object({ accessToken: z.string().min(1), expiresAt: z.iso.datetime(), user: authUserSchema });
 
 export async function POST(request: NextRequest) {
   try {
     requireMutationOrigin(request);
     limitAuthRequests();
-    const credentials = loginRequestSchema.safeParse(await readAuthJson(request));
-    if (!credentials.success) {
-      return NextResponse.json({ error: "Confira o e-mail e a senha informados." }, { status: 400, headers: { "Cache-Control": "no-store" } });
-    }
-    limitAccountAttempts(credentials.data.email);
-    const user = await authenticateAccount(credentials.data);
-    if (!user) {
-      return NextResponse.json({ error: "E-mail ou senha incorretos." }, { status: 401, headers: { "Cache-Control": "no-store" } });
-    }
-    const session = await createSessionToken(user);
-    return authResponse(request, user, session);
-  } catch (error: unknown) {
-    return securityErrorResponse(error, "O serviço de acesso está indisponível. Tente novamente.");
-  }
+    const parsed = loginRequestSchema.safeParse(await readAuthJson(request));
+    if (!parsed.success) throw new RequestSecurityError("Confira o e-mail e a senha informados.", 400);
+    limitAccountAttempts(parsed.data.email);
+    const result = await backendData("/auth/login", loginResponseSchema, { method: "POST", body: parsed.data });
+    return authResponse(request, result.user, { token: result.accessToken, expiresAt: new Date(result.expiresAt) });
+  } catch (error: unknown) { return backendErrorResponse(error); }
 }
