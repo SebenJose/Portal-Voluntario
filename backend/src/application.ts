@@ -4,6 +4,7 @@ import { ConsoleLogger, type INestApplication, type LoggerService, ValidationPip
 import { NestFactory } from "@nestjs/core";
 
 import { AppModule } from "@/app.module";
+import { setupApiDocs } from "@/common/http/api-docs";
 import { loadEnvironment, type Environment } from "@/config/environment";
 
 export async function createApplication(
@@ -33,4 +34,5 @@ export function configureApplication(app: INestApplication, environment: Environ
     maxAge: 600,
   });
   app.enableShutdownHooks();
+  if (environment.API_DOCS === "enabled") setupApiDocs(app);
 }

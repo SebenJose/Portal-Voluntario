@@ -11,6 +11,8 @@ export const environmentSchema = z.object({
   API_PORT: z.coerce.number().int().min(1).max(65535).default(3001),
   DATABASE_PATH: z.string().trim().min(1).default(".data/portal.sqlite"),
   JWT_SECRET: z.string().min(32),
+  // Swagger UI em /api/docs. Desative em produção se a documentação não deve ser pública.
+  API_DOCS: z.enum(["enabled", "disabled"]).default("enabled"),
   CORS_ORIGINS: z.string().default("http://localhost:3000")
     .transform((value) => value.split(",").map((origin) => origin.trim()))
     .pipe(z.array(originSchema).min(1)),

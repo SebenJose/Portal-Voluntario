@@ -251,6 +251,35 @@ test("API de domínio: autenticação, autorização, CRUD, inscrições, arquiv
       assert.equal((await send("/auth/login", "POST", undefined, { email, password: "SenhaInexistente" })).status, 429);
     });
 
+    await context.test("Swagger publica OpenAPI com todas as rotas, cadeado JWT e respostas 401/403", async () => {
+      const ui = await fetch(`${baseUrl}/api/docs`);
+      assert.equal(ui.status, 200);
+      assert.match(await ui.text(), /swagger-ui/u);
+      const spec = z.object({
+        openapi: z.string(),
+        paths: z.record(z.string(), z.record(z.string(), z.object({ security: z.array(z.record(z.string(), z.array(z.string()))).optional(), responses: z.record(z.string(), z.unknown()) }).passthrough())),
+        components: z.object({ securitySchemes: z.record(z.string(), z.object({ scheme: z.string() }).passthrough()) }).passthrough(),
+      }).parse(await (await fetch(`${baseUrl}/api/docs-json`)).json());
+      assert.equal(spec.components.securitySchemes.jwt?.scheme, "bearer");
+      const routes = Object.entries(spec.paths).flatMap(([path, methods]) => Object.keys(methods).map((method) => `${method.toUpperCase()} ${path}`)).sort();
+      assert.deepEqual(routes, [
+        "DELETE /api/opportunities/{id}", "DELETE /api/opportunities/{id}/registrations", "DELETE /api/submissions/{id}",
+        "GET /api/auth/session", "GET /api/dashboard", "GET /api/health", "GET /api/opportunities", "GET /api/opportunities/{id}",
+        "GET /api/organizations/activities", "GET /api/submissions", "GET /api/submissions/{id}", "GET /api/submissions/{id}/document",
+        "PATCH /api/opportunities/{id}", "PATCH /api/organizations/activities/{id}/participants/{participantId}", "PATCH /api/submissions/{id}",
+        "POST /api/auth/login", "POST /api/auth/logout", "POST /api/auth/register", "POST /api/opportunities",
+        "POST /api/opportunities/{id}/registrations", "POST /api/organizations/activities/{id}/certificates", "POST /api/submissions",
+      ]);
+      const operation = (method: string, path: string) => spec.paths[path]?.[method];
+      assert.deepEqual(operation("get", "/api/dashboard")?.security, [{ jwt: [] }]);
+      assert.ok(operation("get", "/api/dashboard")?.responses["401"]);
+      assert.ok(operation("post", "/api/opportunities")?.responses["403"]);
+      assert.ok(operation("post", "/api/organizations/activities/{id}/certificates")?.responses["403"]);
+      assert.equal(operation("get", "/api/health")?.security, undefined);
+      assert.equal(operation("post", "/api/auth/login")?.security, undefined);
+      assert.ok(operation("post", "/api/submissions")?.requestBody, "upload documentado como multipart");
+    });
+
     await context.test("logins simultâneos aguardam o bcrypt em fila em vez de responder 429", async () => {
       const emails = ["voluntario", "outro", "organizacao", "organizacao2", "organizacao3"].map((name) => `${name}@portal.example`);
       const responses = await Promise.all(emails.map((email) => send("/auth/login", "POST", undefined, { email, password })));
@@ -273,5 +302,17 @@ test("API de domínio: autenticação, autorização, CRUD, inscrições, arquiv
   } finally {
     await app.close();
     await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("Swagger pode ser desativado com API_DOCS=disabled", async () => {
+  const app = await createApplication({ JWT_SECRET: randomBytes(32).toString("hex"), DATABASE_PATH: ":memory:", API_DOCS: "disabled" }, false);
+  try {
+    await app.listen(0, "127.0.0.1");
+    const baseUrl = await app.getUrl();
+    assert.equal((await fetch(`${baseUrl}/api/docs`)).status, 404);
+    assert.equal((await fetch(`${baseUrl}/api/docs-json`)).status, 404);
+  } finally {
+    await app.close();
   }
 });
