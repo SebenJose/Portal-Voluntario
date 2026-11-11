@@ -3,11 +3,14 @@
 import type { LucideIcon } from "lucide-react";
 import {
   Award,
+  Building2,
   CalendarDays,
   ClipboardCheck,
   Compass,
+  FileCheck2,
   LayoutDashboard,
   LogOut,
+  UserRound,
 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -16,10 +19,11 @@ import { PortalBrand } from "@/components/layout/portal-brand";
 import { AuthServiceError, getCurrentUser } from "@/features/auth/services/client-auth";
 import { LogoutConfirmationDialog } from "@/features/auth/components/logout-confirmation-dialog";
 import { useLogoutConfirmation } from "@/features/auth/hooks/use-logout-confirmation";
+import { roleLabels } from "@/features/auth/lib/access";
 import type { AuthUser } from "@/features/auth/schemas/session-schema";
 
 type AppShellProps = {
-  active: "dashboard" | "opportunities" | "organization" | "certificates" | "activities" | "demo";
+  active: "dashboard" | "opportunities" | "organization" | "certificates" | "activities" | "demo" | "account" | "admin-organizations" | "admin-certificates";
   children: ReactNode;
   description: string;
   title: string;
@@ -33,15 +37,36 @@ type NavigationItem = {
   value: AppShellProps["active"];
 };
 
-const navigationItems: Array<NavigationItem> = [
+const opportunitiesItem: NavigationItem = { href: "/oportunidades", icon: Compass, label: "Oportunidades", value: "opportunities" };
+const accountItem: NavigationItem = { href: "/conta", icon: UserRound, label: "Minha conta", value: "account" };
+
+const volunteerItems: Array<NavigationItem> = [
   { href: "/painel", icon: LayoutDashboard, label: "Meu painel", value: "dashboard" },
-  { href: "/oportunidades", icon: Compass, label: "Oportunidades", value: "opportunities" },
+  opportunitiesItem,
   { href: "/minhas-atividades", icon: CalendarDays, label: "Minhas atividades", value: "activities" },
   { href: "/certificados", icon: Award, label: "Meus certificados", value: "certificates" },
 ];
 
+const organizationItems: Array<NavigationItem> = [
+  { href: "/painel", icon: LayoutDashboard, label: "Painel da organização", value: "dashboard" },
+  { href: "/organizacao", icon: ClipboardCheck, label: "Gestão de atividades", value: "organization" },
+  opportunitiesItem,
+];
+
+const adminItems: Array<NavigationItem> = [
+  { href: "/administracao", icon: Building2, label: "Organizações", value: "admin-organizations" },
+  { href: "/administracao/certificados", icon: FileCheck2, label: "Certificados externos", value: "admin-certificates" },
+  opportunitiesItem,
+];
+
 const prototypeItem: NavigationItem = { href: "/demonstracao/gestao", icon: ClipboardCheck, label: "Demonstração de gestão", value: "demo" };
-const organizationItem: NavigationItem = { href: "/organizacao", icon: ClipboardCheck, label: "Gestão de atividades", value: "organization" };
+
+/** Menu de cada perfil. Visitantes veem o menu do voluntário e a demonstração pública. */
+function navigationFor(user: AuthUser | null): { main: Array<NavigationItem>; prototypes: Array<NavigationItem> } {
+  if (!user) return { main: volunteerItems, prototypes: [prototypeItem] };
+  const main = user.role === "admin" ? adminItems : user.role === "organization" ? organizationItems : volunteerItems;
+  return { main: [...main, accountItem], prototypes: [] };
+}
 
 function NavigationLink({
   href,
@@ -119,11 +144,10 @@ export function AppShell({ active, children, description, title, user: initialUs
     .join("") ?? "V";
   const roleLabel = sessionStatus === "loading"
     ? "Verificando sessão…"
-    : user?.role === "organization"
-      ? "Organização"
-      : user
-        ? "Voluntário"
-        : "Acesso público";
+    : user
+      ? roleLabels[user.role]
+      : "Acesso público";
+  const navigation = navigationFor(user);
 
   return (
     <>
@@ -141,7 +165,7 @@ export function AppShell({ active, children, description, title, user: initialUs
                   Principal
                 </p>
                 <ul className="space-y-1">
-                  {[...navigationItems, ...(user?.role === "organization" ? [organizationItem] : [])].map((item) => (
+                  {navigation.main.map((item) => (
                     <li key={item.value}>
                       <NavigationLink
                         href={item.href}
@@ -154,10 +178,12 @@ export function AppShell({ active, children, description, title, user: initialUs
                 </ul>
               </nav>
 
-              <nav aria-label="Protótipos" className="space-y-1">
-                <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Protótipos</p>
-                <ul><li><NavigationLink href={prototypeItem.href} icon={prototypeItem.icon} isActive={active === prototypeItem.value} label={prototypeItem.label} /></li></ul>
-              </nav>
+              {navigation.prototypes.length > 0 ? (
+                <nav aria-label="Protótipos" className="space-y-1">
+                  <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Protótipos</p>
+                  <ul>{navigation.prototypes.map((item) => <li key={item.value}><NavigationLink href={item.href} icon={item.icon} isActive={active === item.value} label={item.label} /></li>)}</ul>
+                </nav>
+              ) : null}
             </div>
 
             <footer aria-label="Perfil da conta" className="rounded-2xl border border-white/10 bg-white/5 p-3">
@@ -201,7 +227,7 @@ export function AppShell({ active, children, description, title, user: initialUs
             </div>
             <nav aria-label="Navegação mobile" className="overflow-x-auto px-4 pb-3">
               <ul className="flex min-w-max gap-1">
-                {[...navigationItems, prototypeItem, ...(user?.role === "organization" ? [organizationItem] : [])].map((item) => (
+                {[...navigation.main, ...navigation.prototypes].map((item) => (
                   <li key={item.value}>
                     <NavigationLink
                       href={item.href}
