@@ -269,7 +269,7 @@ test("API de domínio: autenticação, autorização, CRUD, inscrições, arquiv
         "GET /api/admin/organizations", "GET /api/admin/submissions", "GET /api/admin/submissions/{id}/document",
         "GET /api/auth/session", "GET /api/dashboard", "GET /api/health", "GET /api/opportunities", "GET /api/opportunities/{id}",
         "GET /api/organizations/activities", "GET /api/submissions", "GET /api/submissions/{id}", "GET /api/submissions/{id}/document",
-        "PATCH /api/admin/organizations/{id}", "PATCH /api/admin/submissions/{id}/review",
+        "PATCH /api/account/password", "PATCH /api/account/profile", "PATCH /api/admin/organizations/{id}", "PATCH /api/admin/submissions/{id}/review",
         "PATCH /api/opportunities/{id}", "PATCH /api/organizations/activities/{id}/participants/{participantId}", "PATCH /api/submissions/{id}",
         "POST /api/auth/login", "POST /api/auth/logout", "POST /api/auth/register", "POST /api/auth/register/organization", "POST /api/opportunities",
         "POST /api/opportunities/{id}/registrations", "POST /api/organizations/activities/{id}/certificates", "POST /api/submissions",

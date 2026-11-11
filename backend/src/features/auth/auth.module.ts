@@ -20,6 +20,6 @@ import { OrganizationEntity } from "@/features/organizations/organization.entity
       verifyOptions: { algorithms: ["HS256"], issuer: "portal-voluntario", audience: "portal-api" },
     }),
   })],
-  controllers: [AuthController], providers: [AuthService, AuthBudgetService], exports: [AuthService],
+  controllers: [AuthController], providers: [AuthService, AuthBudgetService], exports: [AuthService, AuthBudgetService],
 })
 export class AuthModule {}

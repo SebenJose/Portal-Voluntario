@@ -136,6 +136,26 @@ test("perfis: aprovação de organizações, avaliação de certificados e conta
       assert.equal((await send(`/submissions/${rejectedId}`, "DELETE", otherToken)).status, 409);
       for (const path of ["/submissions", "/dashboard"]) assert.equal((await send(path, "GET", organizationToken)).status, 403, `organização em ${path}`);
     });
+
+    await context.test("conta: perfil por papel e troca de senha revoga as outras sessões", async () => {
+      const email = `conta-${randomUUID().slice(0, 8)}@portal.example`;
+      assert.equal((await send("/auth/register", "POST", undefined, { name: "Conta Perfil", email, password, passwordConfirmation: password })).status, 202);
+      const first = (await login(email)).accessToken;
+      const second = (await login(email)).accessToken;
+      const profile = await data(await send("/account/profile", "PATCH", first, { name: "  Nome Atualizado  " }), z.object({ user: z.object({ name: z.string() }) }));
+      assert.equal(profile.user.name, "Nome Atualizado");
+      assert.equal((await send("/account/profile", "PATCH", first, { organizationName: "Indevida" })).status, 403);
+      assert.equal((await send("/account/profile", "PATCH", first, { role: "admin" })).status, 400);
+      const newPassword = `${password}-novo`;
+      assert.equal((await send("/account/password", "PATCH", first, { currentPassword: "errada-123", newPassword, newPasswordConfirmation: newPassword })).status, 400);
+      assert.equal((await send("/account/password", "PATCH", first, { currentPassword: password, newPassword, newPasswordConfirmation: "diferente1" })).status, 400);
+      assert.equal((await send("/account/password", "PATCH", first, { currentPassword: password, newPassword, newPasswordConfirmation: newPassword })).status, 204);
+      assert.equal((await send("/auth/session", "GET", first)).status, 200, "sessão atual continua");
+      assert.equal((await send("/auth/session", "GET", second)).status, 401, "outras sessões são encerradas");
+      assert.equal((await send("/auth/login", "POST", undefined, { email, password })).status, 401);
+      assert.equal((await send("/auth/login", "POST", undefined, { email, password: newPassword })).status, 200);
+      assert.equal((await send("/account/profile", "PATCH", undefined, { name: "Sem token" })).status, 401);
+    });
   } finally {
     await app.close();
     await rm(directory, { recursive: true, force: true });
