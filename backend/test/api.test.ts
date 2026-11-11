@@ -266,8 +266,10 @@ test("API de domínio: autenticação, autorização, CRUD, inscrições, arquiv
       const routes = Object.entries(spec.paths).flatMap(([path, methods]) => Object.keys(methods).map((method) => `${method.toUpperCase()} ${path}`)).sort();
       assert.deepEqual(routes, [
         "DELETE /api/opportunities/{id}", "DELETE /api/opportunities/{id}/registrations", "DELETE /api/submissions/{id}",
+        "GET /api/admin/organizations", "GET /api/admin/submissions", "GET /api/admin/submissions/{id}/document",
         "GET /api/auth/session", "GET /api/dashboard", "GET /api/health", "GET /api/opportunities", "GET /api/opportunities/{id}",
         "GET /api/organizations/activities", "GET /api/submissions", "GET /api/submissions/{id}", "GET /api/submissions/{id}/document",
+        "PATCH /api/admin/organizations/{id}", "PATCH /api/admin/submissions/{id}/review",
         "PATCH /api/opportunities/{id}", "PATCH /api/organizations/activities/{id}/participants/{participantId}", "PATCH /api/submissions/{id}",
         "POST /api/auth/login", "POST /api/auth/logout", "POST /api/auth/register", "POST /api/auth/register/organization", "POST /api/opportunities",
         "POST /api/opportunities/{id}/registrations", "POST /api/organizations/activities/{id}/certificates", "POST /api/submissions",
@@ -280,6 +282,7 @@ test("API de domínio: autenticação, autorização, CRUD, inscrições, arquiv
       assert.equal(operation("get", "/api/health")?.security, undefined);
       assert.equal(operation("post", "/api/auth/login")?.security, undefined);
       assert.ok(operation("post", "/api/submissions")?.requestBody, "upload documentado como multipart");
+      assert.ok(operation("patch", "/api/admin/submissions/{id}/review")?.responses["403"]);
     });
 
     await context.test("logins simultâneos aguardam o bcrypt em fila em vez de responder 429", async () => {

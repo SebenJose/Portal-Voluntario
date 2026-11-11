@@ -14,9 +14,10 @@ import { OpportunitiesModule } from "@/features/opportunities/opportunities.modu
 import { OrganizationsModule } from "@/features/organizations/organizations.module";
 import { CertificatesModule } from "@/features/certificates/certificates.module";
 import { DashboardModule } from "@/features/dashboard/dashboard.module";
+import { AdminModule } from "@/features/admin/admin.module";
 
 @Module({
-  imports: [DatabaseModule, HealthModule, AuthModule, OpportunitiesModule, OrganizationsModule, CertificatesModule, DashboardModule],
+  imports: [DatabaseModule, HealthModule, AuthModule, OpportunitiesModule, OrganizationsModule, CertificatesModule, DashboardModule, AdminModule],
   providers: [
     { provide: APP_GUARD, useClass: JwtGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
