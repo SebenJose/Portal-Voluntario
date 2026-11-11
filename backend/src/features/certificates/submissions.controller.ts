@@ -12,7 +12,11 @@ export class SubmissionsController {
   list(@CurrentAuth() identity: AuthIdentity) { return this.submissions.list(identity.user.id); }
 
   @Post()
-  @UseInterceptors(FileInterceptor("document", { limits: { fileSize: 5 * 1024 * 1024, files: 1, fields: 4, fieldSize: 10000, parts: 6 } }))
+  // Browsers send UTF-8 filenames without RFC 5987 encoding; multer defaults to latin1.
+  @UseInterceptors(FileInterceptor("document", {
+    defParamCharset: "utf8",
+    limits: { fileSize: 5 * 1024 * 1024, files: 1, fields: 4, fieldSize: 10000, parts: 6 },
+  }))
   create(@CurrentAuth() identity: AuthIdentity, @Body() input: SubmissionFieldsDto, @UploadedFile() file: unknown) {
     return this.submissions.create(identity.user.id, input, file);
   }

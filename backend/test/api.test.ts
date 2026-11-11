@@ -174,17 +174,19 @@ test("API de domínio: autenticação, autorização, CRUD, inscrições, arquiv
     await context.test("submissão multipart, atualização, download original e isolamento por proprietário", async () => {
       const body = new FormData();
       body.set("title", "Comprovante externo"); body.set("category", "Ensino"); body.set("hours", "8");
-      body.set("description", "Descrição da atividade externa."); body.set("document", new Blob([documentBytes], { type: "application/pdf" }), "comprovante.pdf");
+      body.set("description", "Descrição da atividade externa."); body.set("document", new Blob([documentBytes], { type: "application/pdf" }), "certificação-extensão.pdf");
       const response = await send("/submissions", "POST", volunteerToken, body);
       assert.equal(response.status, 201);
-      const uploaded = await data(response, z.object({ id: z.uuid(), status: z.literal("Em análise"), document: z.object({ size: z.number() }) }));
+      const uploaded = await data(response, z.object({ id: z.uuid(), status: z.literal("Em análise"), document: z.object({ name: z.string(), size: z.number() }) }));
       uploadedId = uploaded.id;
       assert.equal(uploaded.document.size, Buffer.byteLength(documentBytes));
+      // Nomes com acentos chegam em UTF-8 no multipart e devem ser preservados.
+      assert.equal(uploaded.document.name, "certificação-extensão.pdf");
       assert.equal((await send(`/submissions/${uploadedId}`, "PATCH", volunteerToken, { title: "Comprovante atualizado", hours: 9 })).status, 200);
       const download = await send(`/submissions/${uploadedId}/document`, "GET", volunteerToken);
       assert.equal(download.status, 200);
       assert.equal(download.headers.get("content-type"), "application/pdf");
-      assert.match(download.headers.get("content-disposition") ?? "", /attachment/u);
+      assert.equal(download.headers.get("content-disposition"), `attachment; filename*=UTF-8''${encodeURIComponent("certificação-extensão.pdf")}`);
       assert.equal(await download.text(), documentBytes);
       for (const method of ["GET", "PATCH", "DELETE"]) assert.equal((await send(`/submissions/${uploadedId}`, method, otherToken, method === "PATCH" ? { hours: 1 } : undefined)).status, 404);
       assert.equal((await send(`/submissions/${uploadedId}/document`, "GET", otherToken)).status, 404);
