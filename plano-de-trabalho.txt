@@ -1,0 +1,365 @@
+# Plano de Trabalho — Desenvolvimento do Back-end
+
+## 1. Objetivo
+
+Desenvolver o back-end completo da aplicação existente, utilizando obrigatoriamente **NestJS, TypeORM e SQLite**, conforme os requisitos do trabalho acadêmico.
+
+A API deverá atender a todas as funcionalidades do front-end, substituindo dados simulados por dados persistidos no banco de dados.
+
+O projeto deverá possuir arquitetura organizada, autenticação, autorização, validação, tratamento padronizado de respostas e erros, testes e documentação.
+
+**Diretriz principal:** aproveitar ao máximo a estrutura e o código existentes, evitando reescritas desnecessárias.
+
+## 2. Etapa 1 — Análise do projeto existente
+
+Antes de implementar qualquer funcionalidade:
+
+1. Examinar a estrutura completa do repositório.
+2. Identificar o framework e as bibliotecas utilizadas no front-end.
+3. Mapear todas as páginas, componentes, funcionalidades e fluxos existentes.
+4. Identificar dados fixos, mocks, armazenamento local e simulações de requisições.
+5. Identificar as entidades necessárias, seus atributos e relacionamentos.
+6. Verificar a existência de implementação prévia do back-end.
+7. Identificar funcionalidades que exigem autenticação ou permissões específicas.
+
+Produzir um documento `docs/analise-inicial.md` contendo:
+
+- Diagnóstico da estrutura atual.
+- Inventário das funcionalidades do front-end.
+- Lista das entidades identificadas.
+- Matriz de funcionalidades e endpoints necessários.
+- Dependências e possíveis incompatibilidades.
+- Estratégia de implementação e integração.
+
+**Critério de conclusão:** compreender o funcionamento da aplicação e estabelecer como cada funcionalidade será atendida pela API.
+
+## 3. Etapa 2 — Estruturação do back-end
+
+Configurar o ambiente utilizando obrigatoriamente:
+
+- NestJS.
+- TypeScript.
+- TypeORM.
+- SQLite.
+- class-validator e class-transformer.
+- bcrypt.
+- JWT e Guards do NestJS.
+
+Organizar o back-end seguindo a separação de responsabilidades:
+
+- **Controller:** receber requisições HTTP e retornar respostas.
+- **Service:** implementar regras de negócio.
+- **Repository:** realizar operações de persistência com TypeORM.
+- **DTO:** validar dados recebidos.
+- **Entity:** representar as tabelas e relacionamentos.
+
+Adotar uma estrutura modular, reutilizando arquivos existentes quando apropriado.
+
+Configurar:
+
+1. Variáveis de ambiente.
+2. Conexão com SQLite.
+3. Módulos do NestJS.
+4. Validação global com `ValidationPipe`.
+5. Middleware de log.
+6. Interceptor global para padronização de respostas.
+7. Filtro global para tratamento de exceções.
+8. Configuração segura de CORS.
+
+Não adicionar tecnologias desnecessárias ou substituir a stack exigida.
+
+**Critério de conclusão:** aplicação NestJS inicializa corretamente e conecta-se ao SQLite.
+
+## 4. Etapa 3 — Modelagem e persistência
+
+Com base na análise do front-end:
+
+1. Definir as entidades necessárias.
+2. Criar entidades TypeORM com tipos e restrições apropriados.
+3. Implementar relacionamentos conforme as regras reais da aplicação.
+4. Definir chaves primárias e estrangeiras.
+5. Configurar a persistência em SQLite.
+6. Criar migrations quando apropriado.
+7. Implementar seed com dados de exemplo suficientes para demonstrar as funcionalidades.
+
+Evitar relacionamentos artificiais criados apenas para cumprir o enunciado.
+
+Não armazenar senhas em texto puro.
+
+O seed deve ser reproduzível, não duplicar dados indevidamente e incluir usuários de exemplo com papéis diferentes.
+
+**Critério de conclusão:** banco de dados funcional, dados persistentes, relacionamentos válidos e seed executável.
+
+## 5. Etapa 4 — Implementação da API REST
+
+Implementar endpoints para atender às funcionalidades identificadas na primeira etapa.
+
+Para as principais entidades, disponibilizar operações CRUD:
+
+- `POST` — criação.
+- `GET` — consulta e listagem.
+- `PATCH` ou `PUT` — atualização.
+- `DELETE` — exclusão.
+
+Utilizar:
+
+- Parâmetros de rota para identificar recursos.
+- Query params para filtros, busca, ordenação ou paginação, quando necessários.
+- Status HTTP adequados.
+- DTOs específicos para criação e atualização.
+- Validações com class-validator.
+- Tratamento de registros inexistentes e dados inválidos.
+
+Manter as regras de negócio nos Services, evitando lógica de persistência diretamente nos Controllers.
+
+Não criar endpoints sem finalidade real.
+
+**Critério de conclusão:** todas as funcionalidades pertinentes do front-end possuem endpoints funcionais e os CRUDs principais estão completos.
+
+## 6. Etapa 5 — Autenticação e autorização
+
+Implementar um módulo de autenticação contemplando:
+
+### Cadastro
+
+- Endpoint para cadastro de usuários.
+- Validação dos dados recebidos.
+- Verificação de duplicidade de identificação, como e-mail.
+- Hash seguro de senha utilizando bcrypt.
+- Persistência do usuário no banco.
+
+### Login
+
+- Endpoint para autenticação.
+- Validação das credenciais.
+- Geração de token JWT.
+- Retorno dos dados necessários para autenticação do front-end, sem expor dados sensíveis.
+
+### Proteção de rotas
+
+- Implementar um Guard JWT.
+- Exigir autenticação nas rotas privadas.
+- Retornar HTTP 401 para requisições não autenticadas ou com token inválido.
+
+### Controle de permissões
+
+- Definir papéis apropriados ao contexto da aplicação, como `USER` e `ADMIN`.
+- Implementar controle de acesso baseado em papéis.
+- Criar pelo menos uma rota restrita a um papel específico.
+- Retornar HTTP 403 quando um usuário autenticado não possuir permissão.
+
+Impedir que usuários comuns atribuam privilégios administrativos a si mesmos durante o cadastro.
+
+**Critério de conclusão:** cadastro, login, autenticação JWT e autorização por papéis funcionando corretamente.
+
+## 7. Etapa 6 — Validação, logs e tratamento de erros
+
+Implementar obrigatoriamente:
+
+### DTOs
+
+- Validações com class-validator.
+- Tipos e formatos adequados.
+- Rejeição de dados inválidos.
+- Tratamento consistente de campos obrigatórios.
+
+### Middleware de log
+
+Registrar informações úteis das requisições, como:
+
+- Método HTTP.
+- Endpoint.
+- Status HTTP, quando disponível.
+- Tempo de processamento.
+
+Não registrar senhas, tokens ou informações sensíveis.
+
+### Interceptor global
+
+Padronizar as respostas de sucesso da API utilizando um formato consistente.
+
+### Filtro global
+
+Padronizar as respostas de erro, incluindo:
+
+- Código HTTP.
+- Mensagem compreensível.
+- Identificação do erro.
+- Detalhes de validação, quando apropriado.
+
+Garantir que o interceptor e o filtro não provoquem respostas inconsistentes nem alterem indevidamente os códigos HTTP.
+
+**Critério de conclusão:** respostas uniformes, erros tratados corretamente e logs funcionando.
+
+## 8. Etapa 7 — Integração com o front-end
+
+Substituir todas as fontes de dados simulados que representem informações gerenciadas pela aplicação.
+
+Atividades:
+
+1. Criar ou adaptar uma camada centralizada de comunicação com a API.
+2. Configurar a URL do back-end por variável de ambiente.
+3. Substituir mocks e dados fixos por requisições HTTP.
+4. Integrar formulários de cadastro e login.
+5. Integrar operações CRUD.
+6. Implementar envio do JWT nas requisições autenticadas.
+7. Tratar respostas 401 e 403.
+8. Implementar estados de carregamento, sucesso e erro.
+9. Garantir que alterações sejam refletidas corretamente na interface.
+10. Preservar o layout, a navegação e as funcionalidades existentes.
+
+Não modificar componentes visuais desnecessariamente.
+
+Não considerar a integração concluída apenas porque os endpoints funcionam isoladamente.
+
+**Critério de conclusão:** o usuário consegue realizar as operações da aplicação pelo front-end, com persistência real no SQLite.
+
+## 9. Etapa 8 — Testes e validação
+
+Implementar e executar testes para verificar o atendimento aos requisitos.
+
+### Testes da API
+
+- Cadastro válido e inválido.
+- Login com credenciais corretas e incorretas.
+- Geração e validação de JWT.
+- Acesso a rotas privadas sem token — 401.
+- Acesso sem permissão — 403.
+- Operações CRUD.
+- Validação de DTOs.
+- Relacionamentos entre entidades.
+- Tratamento de erros.
+- Padronização das respostas.
+- Funcionamento do seed.
+
+### Testes de integração
+
+Verificar os fluxos completos entre front-end, API e banco de dados.
+
+Confirmar que:
+
+- Dados cadastrados permanecem disponíveis após reiniciar a aplicação.
+- Atualizações são persistidas corretamente.
+- Exclusões produzem o comportamento esperado.
+- A autenticação funciona nos fluxos reais do front-end.
+- Não existem funcionalidades dependentes de mocks indevidamente.
+
+Executar também os comandos de build, lint e testes disponíveis.
+
+Corrigir erros encontrados antes de considerar o projeto concluído.
+
+Não declarar um teste como aprovado sem executá-lo.
+
+## 10. Etapa 9 — Documentação
+
+Atualizar o `README.md` com:
+
+1. Descrição do projeto.
+2. Tecnologias utilizadas.
+3. Estrutura dos diretórios.
+4. Pré-requisitos.
+5. Instalação das dependências.
+6. Configuração das variáveis de ambiente.
+7. Inicialização do back-end.
+8. Inicialização do front-end.
+9. Configuração e inicialização do banco de dados.
+10. Execução do seed.
+11. Execução dos testes.
+12. Credenciais demonstrativas para usuários com diferentes papéis.
+13. Instruções de uso da API.
+
+Documentar os principais endpoints, incluindo:
+
+- Método HTTP.
+- Rota.
+- Objetivo.
+- Parâmetros.
+- Corpo da requisição, quando aplicável.
+- Autenticação necessária.
+- Respostas esperadas.
+- Principais códigos de erro.
+
+As credenciais demonstrativas devem ser fictícias, e nenhum segredo real deve ser incluído no repositório.
+
+Garantir que o projeto possa ser executado a partir de um clone limpo do GitHub.
+
+## 11. Etapa 10 — Auditoria final
+
+Realizar uma revisão independente confrontando a implementação com todos os requisitos do professor.
+
+Utilizar a seguinte checklist:
+
+- [ ] API REST atende às funcionalidades do front-end.
+- [ ] Métodos HTTP, parâmetros, query params e status codes adequados.
+- [ ] DTOs com class-validator.
+- [ ] Middleware de log.
+- [ ] Interceptor global de respostas.
+- [ ] Filtro global de exceções.
+- [ ] Separação entre Controller, Service e Repository.
+- [ ] Regras de negócio nos Services.
+- [ ] Persistência SQLite com TypeORM.
+- [ ] Entidades com relacionamentos.
+- [ ] Seed de dados de exemplo.
+- [ ] CRUD das principais entidades.
+- [ ] Cadastro com senha armazenada em hash bcrypt.
+- [ ] Login com JWT.
+- [ ] Guard protegendo rotas privadas.
+- [ ] Resposta 401 para ausência de autenticação.
+- [ ] Pelo menos uma rota restrita por papel.
+- [ ] Resposta 403 para falta de permissão.
+- [ ] Front-end integrado à API.
+- [ ] Fluxos principais testados.
+- [ ] README com instruções de execução.
+- [ ] Repositório preparado para entrega no GitHub.
+
+Para cada item, informar:
+
+- Status: **ATENDIDO, PARCIAL ou NÃO ATENDIDO**.
+- Arquivos responsáveis pela implementação.
+- Evidências concretas de funcionamento.
+- Pendências, quando existentes.
+
+Não considerar a tarefa concluída enquanto houver requisitos obrigatórios não atendidos.
+
+## 12. Regras gerais de execução
+
+Durante todo o desenvolvimento:
+
+1. Preservar o código existente sempre que possível.
+2. Não remover funcionalidades do front-end.
+3. Não alterar a identidade visual da aplicação sem necessidade.
+4. Evitar dependências desnecessárias.
+5. Priorizar soluções simples, organizadas e compatíveis com o conteúdo acadêmico.
+6. Não usar serviços externos de banco de dados ou autenticação.
+7. Não incluir segredos, tokens ou dados sensíveis no Git.
+8. Não realizar refatorações extensas que não contribuam para o escopo.
+9. Verificar as alterações por testes e execução real.
+10. Não ocultar erros, testes falhos ou funcionalidades incompletas.
+11. Não realizar `git push`, sobrescrever histórico ou remover arquivos importantes sem autorização.
+12. Documentar decisões técnicas relevantes.
+
+## 13. Resultado esperado
+
+Ao final, entregar:
+
+- Back-end NestJS funcional.
+- Banco SQLite com entidades, relacionamentos e seed.
+- API REST com CRUD completo das principais entidades.
+- Autenticação JWT e controle de permissões.
+- Validação, middleware, interceptor e filtro global.
+- Front-end integrado aos endpoints reais.
+- Testes executados.
+- Documentação atualizada.
+- Repositório preparado para entrega.
+
+Criar `docs/relatorio-final.md` contendo:
+
+- Resumo do que foi implementado.
+- Principais decisões arquiteturais.
+- Endpoints desenvolvidos.
+- Resultados dos testes.
+- Evidências de atendimento aos requisitos.
+- Limitações e pendências reais.
+- Instruções para demonstrar o sistema ao professor.
+
+**Instrução final ao Codex:** comece pela análise do repositório e execute as etapas na ordem estabelecida. Adapte as entidades, rotas e regras de negócio ao sistema que realmente existe. Não invente funcionalidades, não substitua arbitrariamente a arquitetura atual e não declare a conclusão sem evidências verificáveis.
