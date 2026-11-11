@@ -59,6 +59,7 @@ export async function storeCertificate(
     ownerId,
     createdAt: new Date().toISOString(),
     status: "Em análise",
+    review: null,
     document: { name: file.name, type: file.type, size: file.size },
     file,
   });

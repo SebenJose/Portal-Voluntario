@@ -3,6 +3,7 @@ import { z } from "zod";
 import { activityCategories } from "@/lib/activity-categories";
 
 export const certificateDocumentTypes = ["application/pdf", "image/jpeg", "image/png"] as const;
+export const certificateStatuses = ["Em análise", "Aprovado", "Recusado"] as const;
 export const maximumCertificateSize = 5 * 1024 * 1024;
 
 export const certificateFieldsSchema = z.object({
@@ -43,15 +44,17 @@ export const certificateBlobSchema = z.custom<Blob>(
 export const certificateRecordSchema = certificateFieldsSchema.extend({
   id: z.uuid(),
   createdAt: z.iso.datetime(),
-  status: z.literal("Em análise"),
+  status: z.enum(certificateStatuses),
   document: z.object({
     name: z.string().min(1),
     type: z.enum(certificateDocumentTypes),
     size: z.number().int().positive().max(maximumCertificateSize),
   }),
+  review: z.object({ note: z.string().nullable(), reviewedAt: z.iso.datetime() }).nullable(),
 });
 
 export const certificateListSchema = z.object({ items: z.array(certificateRecordSchema) });
 
 export type CertificateFields = z.infer<typeof certificateFieldsSchema>;
 export type CertificateRecord = z.infer<typeof certificateRecordSchema>;
+export type CertificateStatus = CertificateRecord["status"];
