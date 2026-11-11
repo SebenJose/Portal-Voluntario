@@ -38,12 +38,15 @@ exigem Origin correspondente à origem do portal; JSON tem limite de 8192 bytes.
 | --- | --- | --- | --- |
 | `GET /health` | Consulta real da conexão SQLite, sem parâmetros. | Público | `200` com status/database; `503` com banco indisponível. |
 | `POST /auth/register` | Nome, e-mail, senha e confirmação (JSON abaixo). | Público | `202` genérico para novo/duplicado; `400` inválido. Não autentica. |
+| `POST /auth/register/organization` | Mesmos campos do cadastro e `organizationName`. | Público | `202` genérico; cria o responsável com papel `organization` e a organização `pending`. |
 | `POST /auth/login` | E-mail e senha. | Público | `200` com accessToken, expiresAt e usuário sem hash; `401` credencial incorreta. |
-| `GET /auth/session` | Consultar usuário e papel atuais. | JWT | `200` com `{user}`; `401` inclui sessão revogada. |
+| `GET /auth/session` | Consultar usuário, papel e, para organizações, `organization: { id, name, status }`. | JWT | `200` com `{user}`; `401` inclui sessão revogada. |
+| `PATCH /account/profile` | `{ name?, organizationName? }`; o nome da organização só vale para organizações. | JWT | `200` com `{user}`; `403` organizationName em outra conta. |
+| `PATCH /account/password` | `{ currentPassword, newPassword, newPasswordConfirmation }`. | JWT | `204`; encerra as outras sessões; `400` senha atual incorreta ou confirmação diferente. |
 | `POST /auth/logout` | Revogar somente a sessão atual, sem corpo. | JWT | `204`; cópias do token deixam de funcionar. |
 | `GET /opportunities` | Catálogo, `items` e `registeredIds`; filtros abaixo. | Público, JWT opcional | `200`; IDs inscritos apenas da conta autenticada. |
 | `GET /opportunities/:id` | Consultar oportunidade por slug. | Público, JWT opcional | `200`; `404` ausente. |
-| `POST /opportunities` | Criar oportunidade e encontros, JSON abaixo. | Organização | `201`; `409` slug duplicado; `403` conta sem organização. |
+| `POST /opportunities` | Criar oportunidade e encontros, JSON abaixo. | Organização aprovada | `201`; `409` slug duplicado; `403` organização pendente, recusada ou ausente. |
 | `PATCH /opportunities/:id` | Atualizar qualquer campo da criação, exceto ID; campos ausentes são preservados. | Organização proprietária | `200`; `409` encerrada ou vagas menores que inscrições existentes. |
 | `DELETE /opportunities/:id` | Excluir oportunidade sem vínculos. | Organização proprietária | `204`; `409` se tiver inscrições/certificados; `404` ausente. |
 | `POST /opportunities/:id/registrations` | Inscrever o voluntário autenticado, sem corpo. | Voluntário | `201` com opportunityId/registered/enrolled; `409` lotada, duplicada ou encerrada. |
@@ -51,13 +54,18 @@ exigem Origin correspondente à origem do portal; JSON tem limite de 8192 bytes.
 | `GET /organizations/activities` | Listar atividades e participantes da organização autenticada. | Organização | `200` com array, inclusive vazio. |
 | `PATCH /organizations/activities/:id/participants/:participantId` | Alterar presença; participantId é UUID da inscrição. JSON `{ "status": "Presente" }`. | Organização proprietária | `200` com participant; `404` se vínculo não pertence à atividade; `409` encerrada. |
 | `POST /organizations/activities/:id/certificates` | Emitir certificados para presentes, sem corpo. | Organização proprietária | `201` com activityId, sentCount e certificatesDispatched=true; `409` sem presentes ou já emitida. |
-| `GET /submissions` | Consultar envios da própria conta, sem bytes do documento. | JWT | `200` com `{items: [...]}`. |
-| `POST /submissions` | Enviar metadados e documento em multipart, campos abaixo. | JWT | `201` com registro; `400` conteúdo inválido; `413` arquivo acima do limite. |
+| `GET /submissions` | Consultar envios da própria conta, sem bytes do documento; cada item traz `status` e `review`. | Voluntário | `200` com `{items: [...]}`. |
+| `POST /submissions` | Enviar metadados e documento em multipart, campos abaixo. | Voluntário | `201` com registro; `400` conteúdo inválido; `413` arquivo acima do limite. |
 | `GET /submissions/:id` | Consultar registro por UUID. | Proprietário | `200`; `404` para outra conta ou ausência; `400` UUID inválido. |
-| `PATCH /submissions/:id` | Corrigir metadados em análise; mesmos campos textuais/horas, todos opcionais, sem arquivo/status/dono. | Proprietário | `200`; `404` para outra conta/ausência; `400` inválido. |
-| `DELETE /submissions/:id` | Excluir envio e BLOB juntos. | Proprietário | `204`; `404` para outra conta/ausência. |
+| `PATCH /submissions/:id` | Corrigir metadados em análise; mesmos campos textuais/horas, todos opcionais, sem arquivo/status/dono. | Proprietário | `200`; `404` para outra conta/ausência; `400` inválido; `409` já avaliado. |
+| `DELETE /submissions/:id` | Excluir envio e BLOB juntos. | Proprietário | `204`; `404` para outra conta/ausência; `409` já avaliado. |
 | `GET /submissions/:id/document` | Baixar arquivo original por UUID. | Proprietário | `200` binário; `404` para outra conta/ausência. |
-| `GET /dashboard` | Resumo da conta: inscrições, atividades e horas homologadas por eixo. | JWT | `200`; envios externos em análise não concedem horas. |
+| `GET /dashboard` | Resumo da conta: inscrições, atividades e horas homologadas por eixo. | Voluntário | `200`; somam certificados de participação e envios externos aprovados. |
+| `GET /admin/organizations` | Listar organizações; filtro `?status=` com `pending`, `approved` ou `rejected`. | Administração | `200` com responsável, status e número de atividades. |
+| `PATCH /admin/organizations/:id` | `{ "status": "approved" }` ou `"rejected"`. | Administração | `200`; `409` status já aplicado; `404` ausente. |
+| `GET /admin/submissions` | Listar envios externos; filtro `?status=` com `Em análise`, `Aprovado` ou `Recusado`. | Administração | `200` com `{items}` e dados do voluntário. |
+| `PATCH /admin/submissions/:id/review` | `{ "status": "Aprovado" }` ou `{ "status": "Recusado", "note": "..." }`. | Administração | `200`; `400` recusa sem justificativa; `409` já avaliado. |
+| `GET /admin/submissions/:id/document` | Baixar o comprovante original para avaliação. | Administração | `200` binário; `404` ausente. |
 
 Os caminhos de gestão e oportunidades referenciam a mesma atividade. `sentCount` preserva o
 contrato do protótipo e conta certificados registrados; não significa e-mails enviados.

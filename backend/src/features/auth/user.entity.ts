@@ -1,5 +1,6 @@
 import { EntitySchema } from "typeorm";
-import type { Role } from "@/common/domain";
+import type { OrganizationStatus, Role } from "@/common/domain";
+import type { Organization } from "@/features/organizations/organization.entity";
 
 export interface User {
   id: string;
@@ -20,9 +21,14 @@ export const UserEntity = new EntitySchema<User>({
     role: { type: String, default: "volunteer" },
     createdAt: { type: Date, createDate: true },
   },
-  checks: [{ expression: `"role" IN ('volunteer', 'organization')` }],
+  checks: [{ expression: `"role" IN ('volunteer', 'organization', 'admin')` }],
 });
 
-export function publicUser(user: User): Pick<User, "id" | "name" | "email" | "role"> {
-  return { id: user.id, name: user.name, email: user.email, role: user.role };
+export interface PublicUser extends Pick<User, "id" | "name" | "email" | "role"> {
+  organization?: { id: string; name: string; status: OrganizationStatus };
+}
+
+export function publicUser(user: User, organization?: Organization): PublicUser {
+  const base = { id: user.id, name: user.name, email: user.email, role: user.role };
+  return organization ? { ...base, organization: { id: organization.id, name: organization.name, status: organization.status } } : base;
 }

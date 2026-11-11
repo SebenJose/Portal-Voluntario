@@ -2,7 +2,19 @@ import path from "node:path";
 
 import type { NextConfig } from "next";
 
+import { buildSecurityHeaders } from "./src/lib/security-headers";
+
+const securityHeaders = buildSecurityHeaders({
+  development: process.env.NODE_ENV === "development",
+  https: process.env.PORTAL_ORIGIN?.startsWith("https://") ?? false,
+});
+
 const nextConfig: NextConfig = {
+  // Não anunciar o framework (X-Powered-By: Next.js).
+  poweredByHeader: false,
+  async headers() {
+    return [{ source: "/(.*)", headers: securityHeaders }];
+  },
   experimental: {
     // Mantém a checagem de tipos ativa sem depender do processo CLI separado.
     useTypeScriptCli: false,

@@ -44,7 +44,7 @@ export async function seedDatabase(database: DataSource, input: unknown): Promis
       const owner = await ensureUser(manager, email, `Responsável demonstrativo ${index + 1}`, "organization", passwordHash);
       const organizations = manager.getRepository(OrganizationEntity);
       const organization = await organizations.findOneBy({ ownerId: owner.id })
-        ?? await organizations.save(organizations.create({ ownerId: owner.id, name: fixture.organization }));
+        ?? await organizations.save(organizations.create({ ownerId: owner.id, name: fixture.organization, status: "approved", reviewedAt: null }));
       const opportunities = manager.getRepository(OpportunityEntity);
       // Never reset edited opportunities, attendance, accounts or passwords when repeating the seed.
       if (await opportunities.existsBy({ id: fixture.id })) continue;
@@ -58,6 +58,13 @@ export async function seedDatabase(database: DataSource, input: unknown): Promis
         const registrations = manager.getRepository(EnrollmentEntity);
         await registrations.save(registrations.create({ userId: volunteer.id, opportunityId: fixture.id, status: index === 0 ? "Presente" : "Inscrito" }));
       }
+    }
+    await ensureUser(manager, "admin@portal.example", "Administração demonstrativa", "admin", passwordHash);
+    // A pending organization lets the approval flow be demonstrated without extra setup.
+    const pendingOwner = await ensureUser(manager, "organizacao-pendente@portal.example", "Responsável aguardando aprovação", "organization", passwordHash);
+    const organizations = manager.getRepository(OrganizationEntity);
+    if (!await organizations.existsBy({ ownerId: pendingOwner.id })) {
+      await organizations.save(organizations.create({ ownerId: pendingOwner.id, name: "Coletivo Mãos Dadas", status: "pending", reviewedAt: null }));
     }
   });
 }

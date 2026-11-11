@@ -31,6 +31,12 @@ export class RolesGuard implements CanActivate {
     const identity = requestIdentities.get(context.switchToHttp().getRequest<Request>());
     if (!identity) throw new UnauthorizedException("Entre na sua conta.");
     if (!roles.includes(identity.user.role)) throw new ForbiddenException("Sua conta não tem permissão para esta operação.");
+    // Organizations only manage activities after an administrator approves the registration.
+    if (identity.user.role === "organization" && identity.organization?.status !== "approved") {
+      throw new ForbiddenException(identity.organization?.status === "rejected"
+        ? "O cadastro da organização foi recusado pela administração."
+        : "O cadastro da organização aguarda aprovação da administração.");
+    }
     return true;
   }
 }

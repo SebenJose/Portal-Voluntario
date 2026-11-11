@@ -63,14 +63,29 @@ Todas usam a senha escolhida em `SEED_PASSWORD`. As contas são fictícias:
 | `organizacao3@portal.example` | Organização responsável pelo projeto do Rio Paraná. |
 | `organizacao4@portal.example` | Organização responsável pelo clube de leitura. |
 | `organizacao5@portal.example` | Organização responsável pelo projeto de dados abertos. |
+| `organizacao-pendente@portal.example` | Organização "Coletivo Mãos Dadas", aguardando aprovação. |
+| `admin@portal.example` | Administração: aprova organizações e avalia certificados externos. |
 
-O cadastro público cria somente voluntários. Cada organização só gerencia suas próprias
-atividades. Ao emitir certificados para os presentes, o sistema registra as horas uma vez e
-encerra presenças/inscrições da atividade. Não há envio de e-mail.
+## Perfis
 
-Comprovantes externos ficam persistidos no servidor e permanecem `Em análise`; suas horas
-declaradas não aumentam o saldo homologado. A tela permite criar, consultar, editar, excluir
-e baixar o arquivo original. PDF, JPG e PNG são aceitos, com limite de 5 MB.
+| Perfil | Como a conta é criada | Telas |
+| --- | --- | --- |
+| Voluntário | Cadastro público em `/criar-conta`. | Meu painel, Oportunidades, Minhas atividades, Meus certificados, Minha conta. |
+| Organização | Cadastro público com a opção "Sou uma organização"; fica pendente até a aprovação. | Painel da organização, Gestão de atividades, Oportunidades, Minha conta. |
+| Administração | Somente pelo seed (não há cadastro público de administrador). | Organizações, Certificados externos, Oportunidades, Minha conta. |
+
+O proxy do Next redireciona cada perfil para a própria tela inicial quando ele tenta abrir telas
+de outro perfil, e a API repete a regra respondendo `403`. Organizações pendentes ou recusadas
+entram no portal, mas veem apenas a situação do cadastro; a gestão de atividades só é liberada
+após a aprovação. Cada organização só gerencia suas próprias atividades. Ao emitir certificados
+para os presentes, o sistema registra as horas uma vez e encerra presenças/inscrições da
+atividade. Não há envio de e-mail.
+
+Comprovantes externos ficam persistidos no servidor e entram `Em análise`. A administração
+aprova ou recusa (com justificativa obrigatória na recusa); somente os aprovados somam horas
+homologadas no painel do voluntário. Enquanto estão em análise, o voluntário pode editar,
+excluir e baixar o arquivo original; depois da avaliação o registro fica bloqueado. PDF, JPG e
+PNG são aceitos, com limite de 5 MB.
 
 ## Configuração
 

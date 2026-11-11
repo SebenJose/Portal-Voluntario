@@ -22,3 +22,9 @@ export class RegisterDto extends LoginDto {
   @IsString() @MinLength(8) @MaxLength(72)
   declare passwordConfirmation: string;
 }
+
+export class RegisterOrganizationDto extends RegisterDto {
+  @ApiProperty({ type: String, minLength: 2, maxLength: 150, example: "Instituto Mãos Dadas", description: "Nome público da organização." })
+  @Transform(trimText) @IsString() @MinLength(2) @MaxLength(150)
+  declare organizationName: string;
+}

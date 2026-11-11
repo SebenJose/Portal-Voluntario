@@ -1,15 +1,16 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, ParseUUIDPipe, Patch, Post, StreamableFile, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { ApiBody, ApiConsumes, ApiCreatedResponse, ApiNoContentResponse, ApiOkResponse, ApiOperation, ApiParam, ApiPayloadTooLargeResponse, ApiProduces, ApiTags } from "@nestjs/swagger";
-import { ApiNotFound, ApiPrivate, ApiValidation, ErrorResponseDto } from "@/common/http/api-docs";
-import { CurrentAuth, type AuthIdentity } from "@/features/auth/auth-context";
+import { ApiBody, ApiConflictResponse, ApiConsumes, ApiCreatedResponse, ApiNoContentResponse, ApiOkResponse, ApiOperation, ApiParam, ApiPayloadTooLargeResponse, ApiProduces, ApiTags } from "@nestjs/swagger";
+import { ApiNotFound, ApiRole, ApiValidation, ErrorResponseDto } from "@/common/http/api-docs";
+import { CurrentAuth, Roles, type AuthIdentity } from "@/features/auth/auth-context";
 import { CreateSubmissionDto, SubmissionFieldsDto, UpdateSubmissionDto } from "@/features/certificates/submission.dto";
 import { SubmissionsService } from "@/features/certificates/submissions.service";
 
 const idParam = ApiParam({ name: "id", format: "uuid", description: "Id do certificado enviado." });
 
 @ApiTags("Certificados externos")
-@ApiPrivate()
+@ApiRole("volunteer")
+@Roles("volunteer")
 @Controller("submissions")
 export class SubmissionsController {
   constructor(private readonly submissions: SubmissionsService) {}
@@ -37,13 +38,15 @@ export class SubmissionsController {
   get(@CurrentAuth() identity: AuthIdentity, @Param("id", ParseUUIDPipe) id: string) { return this.submissions.get(identity.user.id, id); }
 
   @Patch(":id") @idParam
-  @ApiOperation({ summary: "Atualizar meu certificado" }) @ApiOkResponse({ description: "Certificado atualizado." }) @ApiValidation() @ApiNotFound()
+  @ApiOperation({ summary: "Atualizar meu certificado", description: "Permitido apenas enquanto o status for Em análise." }) @ApiOkResponse({ description: "Certificado atualizado." }) @ApiValidation() @ApiNotFound()
+  @ApiConflictResponse({ description: "Certificado já avaliado.", type: ErrorResponseDto })
   update(@CurrentAuth() identity: AuthIdentity, @Param("id", ParseUUIDPipe) id: string, @Body() input: UpdateSubmissionDto) {
     return this.submissions.update(identity.user.id, id, input);
   }
 
   @Delete(":id") @HttpCode(204) @idParam
-  @ApiOperation({ summary: "Excluir meu certificado" }) @ApiNoContentResponse({ description: "Excluído." }) @ApiValidation() @ApiNotFound()
+  @ApiOperation({ summary: "Excluir meu certificado", description: "Permitido apenas enquanto o status for Em análise." }) @ApiNoContentResponse({ description: "Excluído." }) @ApiValidation() @ApiNotFound()
+  @ApiConflictResponse({ description: "Certificado já avaliado.", type: ErrorResponseDto })
   remove(@CurrentAuth() identity: AuthIdentity, @Param("id", ParseUUIDPipe) id: string) { return this.submissions.remove(identity.user.id, id); }
 
   @Get(":id/document") @idParam

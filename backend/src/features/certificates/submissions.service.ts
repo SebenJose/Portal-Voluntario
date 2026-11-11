@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import type { Repository } from "typeorm";
 import { z } from "zod";
@@ -13,12 +13,17 @@ const fileSchema = z.object({
   buffer: z.instanceof(Buffer),
 }).refine((file) => file.buffer.length === file.size);
 
-function record(item: Submission) {
+export function submissionRecord(item: Submission) {
   return {
     id: item.id, title: item.title, category: item.category, hours: item.hours,
     description: item.description, status: item.status, createdAt: item.createdAt.toISOString(),
     document: { name: item.documentName, type: item.documentType, size: item.documentSize },
+    review: item.reviewedAt ? { note: item.reviewNote, reviewedAt: item.reviewedAt.toISOString() } : null,
   };
+}
+
+function assertEditable(item: Submission): void {
+  if (item.status !== "Em análise") throw new ConflictException("O certificado já foi avaliado e não pode ser alterado.");
 }
 
 @Injectable()
@@ -30,13 +35,13 @@ export class SubmissionsService {
 
   async list(userId: string) {
     const items = await this.submissions.find({ where: { userId }, order: { createdAt: "DESC", id: "ASC" } });
-    return { items: items.map(record) };
+    return { items: items.map(submissionRecord) };
   }
 
   async get(userId: string, id: string) {
     const item = await this.submissions.findOneBy({ id, userId });
     if (!item) throw new NotFoundException("Certificado não encontrado.");
-    return record(item);
+    return submissionRecord(item);
   }
 
   async create(userId: string, fields: SubmissionFieldsDto, input: unknown) {
@@ -52,7 +57,7 @@ export class SubmissionsService {
       const repository = manager.withRepository(this.submissions);
       return repository.save(repository.create({ ...fields, userId, documentName, documentType: file.mimetype, documentSize: file.size, document: file.buffer }));
     });
-    return record(item);
+    return submissionRecord(item);
   }
 
   async update(userId: string, id: string, input: UpdateSubmissionDto) {
@@ -60,6 +65,7 @@ export class SubmissionsService {
       const repository = manager.withRepository(this.submissions);
       const item = await repository.findOneBy({ id, userId });
       if (!item) throw new NotFoundException("Certificado não encontrado.");
+      assertEditable(item);
       if (Object.keys(input).length > 0) await repository.update({ id, userId }, input);
     });
     return this.get(userId, id);
@@ -67,8 +73,11 @@ export class SubmissionsService {
 
   async remove(userId: string, id: string): Promise<void> {
     await this.transactions.run(async (manager) => {
-      const result = await manager.withRepository(this.submissions).delete({ id, userId });
-      if (!result.affected) throw new NotFoundException("Certificado não encontrado.");
+      const repository = manager.withRepository(this.submissions);
+      const item = await repository.findOneBy({ id, userId });
+      if (!item) throw new NotFoundException("Certificado não encontrado.");
+      assertEditable(item);
+      await repository.delete({ id, userId });
     });
   }
 

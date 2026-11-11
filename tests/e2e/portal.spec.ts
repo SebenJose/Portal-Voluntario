@@ -1,24 +1,9 @@
 import { randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
-import { test, expect, type Locator, type Page } from "@playwright/test";
-import { z } from "zod";
+import { test, expect, type Locator } from "@playwright/test";
+import { configuration, login, trackBrowserErrors } from "./helpers";
 
-const configuration = z.object({ E2E_SEED_PASSWORD: z.string().min(8), E2E_BASE_URL: z.url() }).parse(process.env);
-const browserErrors = new WeakMap<Page, string[]>();
-test.beforeEach(({ page }) => {
-  const errors: string[] = [];
-  browserErrors.set(page, errors);
-  page.on("pageerror", (error) => { errors.push(error.message); process.stderr.write(`Erro de página: ${error.message}\n`); });
-});
-test.afterEach(({ page }) => { expect(browserErrors.get(page)).toEqual([]); });
-
-async function login(page: Page, email: string, destination = "/painel"): Promise<void> {
-  await page.goto(`/entrar?next=${encodeURIComponent(destination)}`);
-  await page.getByLabel("E-mail", { exact: true }).fill(email);
-  await page.getByLabel("Senha", { exact: true }).fill(configuration.E2E_SEED_PASSWORD);
-  await page.getByRole("button", { name: "Entrar no portal", exact: true }).click();
-  await expect(page).toHaveURL(new URL(destination, configuration.E2E_BASE_URL).href);
-}
+trackBrowserErrors();
 
 async function fillActivity(editor: Locator, id: string, title: string): Promise<void> {
   await editor.getByLabel("Identificador", { exact: true }).fill(id);

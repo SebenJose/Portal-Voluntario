@@ -6,11 +6,11 @@ import { getSafeRedirectPath } from "@/features/auth/services/safe-redirect";
 
 export const metadata: Metadata = { title: "Criar conta | Portal Voluntário" };
 
-export default async function Page({ searchParams }: { searchParams: Promise<{ next?: string | string[] }> }) {
-  const { next } = await searchParams;
+export default async function Page({ searchParams }: { searchParams: Promise<{ next?: string | string[]; perfil?: string | string[] }> }) {
+  const { next, perfil } = await searchParams;
   return (
     <AuthPageLayout titleId="registration-title">
-      <RegistrationForm nextPath={getSafeRedirectPath(next)} />
+      <RegistrationForm initialProfile={perfil === "organizacao" ? "organization" : "volunteer"} nextPath={getSafeRedirectPath(next)} />
     </AuthPageLayout>
   );
 }

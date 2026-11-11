@@ -77,13 +77,18 @@ export async function deleteCertificate(id: string): Promise<void> {
 
 export async function downloadCertificateDocument(certificate: CertificateRecord): Promise<void> {
   const validatedCertificate = certificateRecordSchema.parse(certificate);
-  const response = await requestCertificates(`/api/submissions/${encodeURIComponent(validatedCertificate.id)}/document`, { cache: "no-store" });
+  await downloadDocument(`/api/submissions/${encodeURIComponent(validatedCertificate.id)}/document`, validatedCertificate.document.name);
+}
+
+/** Baixa um comprovante validado pelo BFF e dispara o download no navegador. */
+export async function downloadDocument(path: string, fileName: string): Promise<void> {
+  const response = await requestCertificates(path, { cache: "no-store" });
   const parsed = certificateBlobSchema.safeParse(await response.blob());
   if (!parsed.success) throw new CertificatesServiceError("O comprovante recebido é inválido. Tente novamente.");
   const url = URL.createObjectURL(parsed.data);
   const link = document.createElement("a");
   link.href = url;
-  link.download = validatedCertificate.document.name;
+  link.download = fileName;
   document.body.append(link);
   link.click();
   link.remove();

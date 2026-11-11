@@ -2,9 +2,8 @@ import { Body, Controller, Get, HttpCode, Post } from "@nestjs/common";
 import { ApiAcceptedResponse, ApiNoContentResponse, ApiOkResponse, ApiOperation, ApiTags, ApiTooManyRequestsResponse, ApiUnauthorizedResponse } from "@nestjs/swagger";
 import { ApiPrivate, ApiValidation, ErrorResponseDto } from "@/common/http/api-docs";
 import { CurrentAuth, Public, type AuthIdentity } from "@/features/auth/auth-context";
-import { LoginDto, RegisterDto } from "@/features/auth/auth.dto";
+import { LoginDto, RegisterDto, RegisterOrganizationDto } from "@/features/auth/auth.dto";
 import { AuthService } from "@/features/auth/auth.service";
-import { publicUser } from "@/features/auth/user.entity";
 
 const tooMany = ApiTooManyRequestsResponse({ description: "Muitas tentativas para a conta ou para o serviço.", type: ErrorResponseDto });
 
@@ -18,6 +17,11 @@ export class AuthController {
   @ApiAcceptedResponse({ description: "Cadastro processado." }) @ApiValidation() @tooMany
   register(@Body() input: RegisterDto) { return this.auth.register(input); }
 
+  @Public() @Post("register/organization") @HttpCode(202)
+  @ApiOperation({ summary: "Cadastrar organização", description: "Cria o responsável com papel organization e a organização com status pending. A gestão só é liberada após aprovação de um administrador." })
+  @ApiAcceptedResponse({ description: "Cadastro processado; aguarda aprovação." }) @ApiValidation() @tooMany
+  registerOrganization(@Body() input: RegisterOrganizationDto) { return this.auth.registerOrganization(input); }
+
   @Public() @Post("login") @HttpCode(200)
   @ApiOperation({ summary: "Entrar e obter o JWT", description: "Retorna `accessToken` (JWT HS256, 8h). Use-o no botão Authorize." })
   @ApiOkResponse({ description: "Login realizado: { accessToken, expiresAt, user }." }) @ApiValidation()
@@ -25,8 +29,8 @@ export class AuthController {
   login(@Body() input: LoginDto) { return this.auth.login(input); }
 
   @Get("session") @ApiPrivate()
-  @ApiOperation({ summary: "Usuário da sessão atual" }) @ApiOkResponse({ description: "{ user: { id, name, email, role } }" })
-  session(@CurrentAuth() identity: AuthIdentity) { return { user: publicUser(identity.user) }; }
+  @ApiOperation({ summary: "Usuário da sessão atual" }) @ApiOkResponse({ description: "{ user: { id, name, email, role, organization? } }" })
+  async session(@CurrentAuth() identity: AuthIdentity) { return { user: await this.auth.present(identity.user, identity.organization) }; }
 
   @Post("logout") @HttpCode(204) @ApiPrivate()
   @ApiOperation({ summary: "Sair", description: "Revoga somente a sessão do token enviado." }) @ApiNoContentResponse({ description: "Sessão revogada." })

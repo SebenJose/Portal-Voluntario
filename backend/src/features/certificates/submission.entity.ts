@@ -1,5 +1,5 @@
 import { EntitySchema } from "typeorm";
-import type { Category } from "@/common/domain";
+import type { Category, SubmissionStatus } from "@/common/domain";
 import type { User } from "@/features/auth/user.entity";
 
 export interface Submission {
@@ -9,13 +9,17 @@ export interface Submission {
   category: Category;
   hours: number;
   description: string;
-  status: "Em análise";
+  status: SubmissionStatus;
   createdAt: Date;
   documentName: string;
   documentType: string;
   documentSize: number;
   document: Buffer;
+  reviewNote: string | null;
+  reviewedAt: Date | null;
+  reviewerId: string | null;
   user?: User;
+  reviewer?: User | null;
 }
 
 export const SubmissionEntity = new EntitySchema<Submission>({
@@ -33,14 +37,21 @@ export const SubmissionEntity = new EntitySchema<Submission>({
     documentType: { type: String },
     documentSize: { type: "integer" },
     document: { type: "blob", select: false },
+    reviewNote: { type: String, length: 1000, nullable: true },
+    reviewedAt: { type: Date, nullable: true },
+    reviewerId: { type: "uuid", nullable: true },
   },
-  indices: [{ columns: ["userId"] }],
+  indices: [{ columns: ["userId"] }, { columns: ["status"] }],
   checks: [
     { expression: `"category" IN ('Ensino', 'Pesquisa', 'Extensão')` },
-    { expression: `"status" = 'Em análise'` },
+    { expression: `"status" IN ('Em análise', 'Aprovado', 'Recusado')` },
     { expression: `"hours" BETWEEN 1 AND 200` },
     { expression: `"documentType" IN ('application/pdf', 'image/jpeg', 'image/png')` },
     { expression: `"documentSize" BETWEEN 1 AND 5242880 AND length("document") = "documentSize"` },
+    { expression: `("status" = 'Em análise' AND "reviewedAt" IS NULL) OR ("status" <> 'Em análise' AND "reviewedAt" IS NOT NULL)` },
   ],
-  relations: { user: { type: "many-to-one", target: "User", joinColumn: { name: "userId" }, onDelete: "RESTRICT", nullable: false } },
+  relations: {
+    user: { type: "many-to-one", target: "User", joinColumn: { name: "userId" }, onDelete: "RESTRICT", nullable: false },
+    reviewer: { type: "many-to-one", target: "User", joinColumn: { name: "reviewerId" }, onDelete: "SET NULL", nullable: true },
+  },
 });

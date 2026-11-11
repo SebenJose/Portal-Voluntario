@@ -104,9 +104,11 @@ test("API de domínio: autenticação, autorização, CRUD, inscrições, arquiv
       assert.equal((await send("/opportunities/horta-comunitaria", "PATCH", otherOrganizationToken, { title: "Tentativa indevida" })).status, 403);
       const before = await data(await send("/organizations/activities", "GET", organizationToken), activitiesSchema);
       assert.deepEqual(before.map((item) => item.id), ["horta-comunitaria"]);
+      // O papel vem do banco a cada requisição; sem organização aprovada, a gestão continua bloqueada.
       await app.get(DataSource).getRepository(UserEntity).update(volunteer.user.id, { role: "organization" });
-      assert.equal((await send("/organizations/activities", "GET", volunteerToken)).status, 200);
+      const promoted = await send("/organizations/activities", "GET", volunteerToken);
       await app.get(DataSource).getRepository(UserEntity).update(volunteer.user.id, { role: "volunteer" });
+      assert.equal(promoted.status, 403);
       assert.equal((await send("/organizations/activities", "GET", volunteerToken)).status, 403);
     });
 
@@ -251,6 +253,23 @@ test("API de domínio: autenticação, autorização, CRUD, inscrições, arquiv
       assert.equal((await send("/auth/login", "POST", undefined, { email, password: "SenhaInexistente" })).status, 429);
     });
 
+    await context.test("respostas não revelam o framework e trazem cabeçalhos de segurança", async () => {
+      for (const path of ["/health", "/rota-inexistente", "/opportunities", "/docs", "/docs-json"]) {
+        const response = await fetch(`${baseUrl}/api${path}`);
+        assert.equal(response.headers.get("x-powered-by"), null, path);
+        assert.equal(response.headers.get("x-content-type-options"), "nosniff", path);
+        assert.equal(response.headers.get("x-frame-options"), "DENY", path);
+        assert.equal(response.headers.get("referrer-policy"), "no-referrer", path);
+      }
+      for (const path of ["/health", "/rota-inexistente"]) {
+        assert.match((await fetch(`${baseUrl}/api${path}`)).headers.get("content-security-policy") ?? "", /default-src 'none'/u, path);
+      }
+      // O Swagger UI precisa dos próprios scripts: não recebe a CSP restritiva da API.
+      const docs = await fetch(`${baseUrl}/api/docs`);
+      assert.equal(docs.status, 200);
+      assert.equal(docs.headers.get("content-security-policy"), null);
+    });
+
     await context.test("Swagger publica OpenAPI com todas as rotas, cadeado JWT e respostas 401/403", async () => {
       const ui = await fetch(`${baseUrl}/api/docs`);
       assert.equal(ui.status, 200);
@@ -264,10 +283,12 @@ test("API de domínio: autenticação, autorização, CRUD, inscrições, arquiv
       const routes = Object.entries(spec.paths).flatMap(([path, methods]) => Object.keys(methods).map((method) => `${method.toUpperCase()} ${path}`)).sort();
       assert.deepEqual(routes, [
         "DELETE /api/opportunities/{id}", "DELETE /api/opportunities/{id}/registrations", "DELETE /api/submissions/{id}",
+        "GET /api/admin/organizations", "GET /api/admin/submissions", "GET /api/admin/submissions/{id}/document",
         "GET /api/auth/session", "GET /api/dashboard", "GET /api/health", "GET /api/opportunities", "GET /api/opportunities/{id}",
         "GET /api/organizations/activities", "GET /api/submissions", "GET /api/submissions/{id}", "GET /api/submissions/{id}/document",
+        "PATCH /api/account/password", "PATCH /api/account/profile", "PATCH /api/admin/organizations/{id}", "PATCH /api/admin/submissions/{id}/review",
         "PATCH /api/opportunities/{id}", "PATCH /api/organizations/activities/{id}/participants/{participantId}", "PATCH /api/submissions/{id}",
-        "POST /api/auth/login", "POST /api/auth/logout", "POST /api/auth/register", "POST /api/opportunities",
+        "POST /api/auth/login", "POST /api/auth/logout", "POST /api/auth/register", "POST /api/auth/register/organization", "POST /api/opportunities",
         "POST /api/opportunities/{id}/registrations", "POST /api/organizations/activities/{id}/certificates", "POST /api/submissions",
       ]);
       const operation = (method: string, path: string) => spec.paths[path]?.[method];
@@ -278,6 +299,7 @@ test("API de domínio: autenticação, autorização, CRUD, inscrições, arquiv
       assert.equal(operation("get", "/api/health")?.security, undefined);
       assert.equal(operation("post", "/api/auth/login")?.security, undefined);
       assert.ok(operation("post", "/api/submissions")?.requestBody, "upload documentado como multipart");
+      assert.ok(operation("patch", "/api/admin/submissions/{id}/review")?.responses["403"]);
     });
 
     await context.test("logins simultâneos aguardam o bcrypt em fila em vez de responder 429", async () => {
