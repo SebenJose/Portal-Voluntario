@@ -166,3 +166,16 @@ test("minha conta atualiza o nome e troca a senha", async ({ page }) => {
   await login(page, email, "/painel", newPassword);
   await expect(page.getByRole("heading", { name: "Meu painel", exact: true })).toBeVisible();
 });
+
+test("páginas não revelam o framework e enviam cabeçalhos de segurança", async ({ page }) => {
+  for (const path of ["/", "/entrar", "/oportunidades", "/api/opportunities"]) {
+    const response = await page.request.get(path);
+    const headers = response.headers();
+    expect(headers["x-powered-by"], path).toBeUndefined();
+    expect(headers["content-security-policy"], path).toContain("frame-ancestors 'none'");
+    expect(headers["content-security-policy"], path).toContain("object-src 'none'");
+    expect(headers["x-content-type-options"], path).toBe("nosniff");
+    expect(headers["x-frame-options"], path).toBe("DENY");
+    expect(headers["referrer-policy"], path).toBe("strict-origin-when-cross-origin");
+  }
+});
