@@ -31,7 +31,7 @@ export class AuthService implements OnModuleInit {
   }
 
   async register(input: RegisterDto): Promise<{ message: string }> {
-    this.budget.check(input.email);
+    this.budget.checkRegistration(input.email);
     if (Array.from(input.password).length < 8 || input.password !== input.passwordConfirmation) throw new BadRequestException("Confira a senha e sua confirmação (mínimo de 8 caracteres).");
     const passwordHash = await hashPassword(input.password);
     await this.transactions.run(async (manager) => {
@@ -44,14 +44,18 @@ export class AuthService implements OnModuleInit {
   }
 
   async login(input: LoginDto) {
-    this.budget.check(input.email);
+    this.budget.assertLoginAllowed(input.email);
     validatePasswordBytes(input.password);
     const user = await this.users.createQueryBuilder("user").addSelect("user.passwordHash")
       .where("user.email = :email", { email: input.email }).getOne();
     const passwordHash = user?.passwordHash ?? this.dummyHash;
     if (!passwordHash) throw new ServiceUnavailableException();
     const matches = await checkPassword(input.password, passwordHash);
-    if (!user || !matches) throw new UnauthorizedException("E-mail ou senha incorretos.");
+    if (!user || !matches) {
+      this.budget.recordLoginFailure(input.email);
+      throw new UnauthorizedException("E-mail ou senha incorretos.");
+    }
+    this.budget.resetLoginFailures(input.email);
     const expiresAt = new Date(Date.now() + sessionDurationSeconds * 1000);
     const session = await this.transactions.run(async (manager) => {
       const sessions = manager.withRepository(this.sessions);

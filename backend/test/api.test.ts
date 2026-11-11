@@ -245,6 +245,26 @@ test("API de domínio: autenticação, autorização, CRUD, inscrições, arquiv
       }
       assert.equal((await send("/auth/login", "POST", undefined, { email, password: "SenhaInexistente" })).status, 429);
     });
+
+    await context.test("logins simultâneos aguardam o bcrypt em fila em vez de responder 429", async () => {
+      const emails = ["voluntario", "outro", "organizacao", "organizacao2", "organizacao3"].map((name) => `${name}@portal.example`);
+      const responses = await Promise.all(emails.map((email) => send("/auth/login", "POST", undefined, { email, password })));
+      assert.deepEqual(responses.map((response) => response.status), emails.map(() => 200));
+    });
+
+    await context.test("login correto zera as falhas da conta e cadastro não bloqueia o login", async () => {
+      const email = "organizacao4@portal.example";
+      const attempt = (secret: string) => send("/auth/login", "POST", undefined, { email, password: secret });
+      for (let index = 0; index < 9; index += 1) assert.equal((await attempt("SenhaErrada")).status, 401);
+      assert.equal((await attempt(password)).status, 200);
+      for (let index = 0; index < 9; index += 1) assert.equal((await attempt("SenhaErrada")).status, 401);
+      assert.equal((await attempt(password)).status, 200);
+      for (let index = 0; index < 10; index += 1) {
+        await send("/auth/register", "POST", undefined, { name: "Repetido", email, password, passwordConfirmation: password });
+      }
+      assert.equal((await send("/auth/register", "POST", undefined, { name: "Repetido", email, password, passwordConfirmation: password })).status, 429);
+      assert.equal((await attempt(password)).status, 200);
+    });
   } finally {
     await app.close();
     await rm(directory, { recursive: true, force: true });
