@@ -253,6 +253,23 @@ test("API de domínio: autenticação, autorização, CRUD, inscrições, arquiv
       assert.equal((await send("/auth/login", "POST", undefined, { email, password: "SenhaInexistente" })).status, 429);
     });
 
+    await context.test("respostas não revelam o framework e trazem cabeçalhos de segurança", async () => {
+      for (const path of ["/health", "/rota-inexistente", "/opportunities", "/docs", "/docs-json"]) {
+        const response = await fetch(`${baseUrl}/api${path}`);
+        assert.equal(response.headers.get("x-powered-by"), null, path);
+        assert.equal(response.headers.get("x-content-type-options"), "nosniff", path);
+        assert.equal(response.headers.get("x-frame-options"), "DENY", path);
+        assert.equal(response.headers.get("referrer-policy"), "no-referrer", path);
+      }
+      for (const path of ["/health", "/rota-inexistente"]) {
+        assert.match((await fetch(`${baseUrl}/api${path}`)).headers.get("content-security-policy") ?? "", /default-src 'none'/u, path);
+      }
+      // O Swagger UI precisa dos próprios scripts: não recebe a CSP restritiva da API.
+      const docs = await fetch(`${baseUrl}/api/docs`);
+      assert.equal(docs.status, 200);
+      assert.equal(docs.headers.get("content-security-policy"), null);
+    });
+
     await context.test("Swagger publica OpenAPI com todas as rotas, cadeado JWT e respostas 401/403", async () => {
       const ui = await fetch(`${baseUrl}/api/docs`);
       assert.equal(ui.status, 200);

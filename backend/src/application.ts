@@ -4,6 +4,7 @@ import { ConsoleLogger, type INestApplication, type LoggerService, ValidationPip
 import { NestFactory } from "@nestjs/core";
 
 import { AppModule } from "@/app.module";
+import { securityHeaders } from "@/common/http/security-headers.middleware";
 import { setupApiDocs } from "@/common/http/api-docs";
 import { loadEnvironment, type Environment } from "@/config/environment";
 
@@ -17,7 +18,16 @@ export async function createApplication(
   return app;
 }
 
+function hasExpressSettings(value: unknown): value is { disable: (setting: string) => unknown } {
+  // A aplicação Express é uma função (handler de requisição) com métodos como `disable`.
+  return (typeof value === "function" || (typeof value === "object" && value !== null)) && "disable" in value && typeof value.disable === "function";
+}
+
 export function configureApplication(app: INestApplication, environment: Environment): void {
+  // Não anunciar o framework (X-Powered-By: Express).
+  const server: unknown = app.getHttpAdapter().getInstance();
+  if (hasExpressSettings(server)) server.disable("x-powered-by");
+  app.use(securityHeaders);
   app.setGlobalPrefix("api");
   app.useGlobalPipes(new ValidationPipe({
     whitelist: true,
