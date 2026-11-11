@@ -6,13 +6,13 @@ export const certificateDocumentTypes = ["application/pdf", "image/jpeg", "image
 export const maximumCertificateSize = 5 * 1024 * 1024;
 
 export const certificateFieldsSchema = z.object({
-  title: z.string().trim().min(5, "Informe um título com pelo menos 5 caracteres."),
+  title: z.string().trim().min(5, "Informe um título com pelo menos 5 caracteres.").max(150, "Use até 150 caracteres."),
   category: z.enum(activityCategories),
   hours: z.number({ error: "Informe um número válido de horas." })
     .int("Informe um número inteiro de horas.")
     .min(1, "Informe pelo menos 1 hora.")
     .max(200, "O limite é de 200 horas por envio."),
-  description: z.string().trim().min(10, "Descreva a atividade com pelo menos 10 caracteres."),
+  description: z.string().trim().min(10, "Descreva a atividade com pelo menos 10 caracteres.").max(5000, "Use até 5000 caracteres."),
 });
 
 export const certificateHoursDraftSchema = z.string().regex(

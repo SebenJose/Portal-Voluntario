@@ -12,6 +12,7 @@ export async function requireOrganizationRequest(request: NextRequest) {
 }
 
 export async function organizationBackendUnavailable(request: NextRequest, mutation = false): Promise<NextResponse> {
+  // Legacy response retained for reference; active management routes now forward to NestJS.
   try {
     if (mutation) requireMutationOrigin(request);
     await requireOrganizationRequest(request);

@@ -33,13 +33,17 @@ export function useOpportunityCatalog(userId: string | undefined, returnPath: st
         setRegisteredIds(new Set(result.registeredIds));
       } catch (error: unknown) {
         if (controller.signal.aborted) return;
+        if (error instanceof OpportunitiesServiceError && error.status === 401) {
+          router.replace(`/entrar?next=${encodeURIComponent(returnPath)}`);
+          return;
+        }
         setLoadError(error instanceof OpportunitiesServiceError ? error.message : "Não foi possível carregar suas atividades. Tente novamente.");
       } finally {
         if (!controller.signal.aborted) setIsLoading(false);
       }
     });
     return () => controller.abort();
-  }, [attempt, userId]);
+  }, [attempt, userId, router, returnPath]);
 
   async function changeRegistration(opportunityId: string, registered: boolean): Promise<boolean> {
     if (!userId) {

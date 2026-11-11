@@ -12,10 +12,10 @@ export const metadata: Metadata = { title: "Meu painel | Portal Voluntário" };
 export default async function Page({ searchParams }: { searchParams: Promise<{ demonstracao?: string | string[] }> }) {
   const { demonstracao } = await searchParams;
   const mode = z.enum(["horas", "conta"]).optional().safeParse(demonstracao);
-  const showPresentation = isDemoModeEnabled && mode.success && mode.data !== "conta";
+  const showPresentation = isDemoModeEnabled && mode.success && mode.data === "horas";
   const returnPath = mode.success && mode.data ? `/painel?demonstracao=${mode.data}` : "/painel";
   const user = await requireAuthenticatedUser(returnPath);
-  const summary = getDashboardSummary(user.id);
+  const summary = await getDashboardSummary();
   return showPresentation
     ? <PresentationDashboard summary={summary} user={user} />
     : <DashboardPage summary={summary} user={user} />;

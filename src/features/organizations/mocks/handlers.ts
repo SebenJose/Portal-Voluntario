@@ -95,3 +95,5 @@ export const organizationHandlers: RequestHandler[] = [
   }),
   ...createManagementHandlers("/api/demo/organizations/activities", async () => publicDemoActivities),
 ];
+
+export const publicOrganizationHandlers = createManagementHandlers("/api/demo/organizations/activities", async () => publicDemoActivities);

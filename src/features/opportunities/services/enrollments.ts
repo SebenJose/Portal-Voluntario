@@ -1,5 +1,7 @@
 import { z } from "zod";
 
+// Legacy catalogue/JSON adapter; active Route Handlers delegate to the NestJS API.
+
 import { opportunities } from "@/features/opportunities/data/opportunities";
 import { opportunitySchema, opportunitiesResponseSchema, registrationResponseSchema, type OpportunitiesResponse, type RegistrationResponse, cancellationResponseSchema, type CancellationResponse } from "@/features/opportunities/schemas/opportunity-schema";
 import { readLocalData, updateLocalData } from "@/lib/server/local-store";

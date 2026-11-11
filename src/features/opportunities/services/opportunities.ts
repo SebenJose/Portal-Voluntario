@@ -22,7 +22,7 @@ export async function getOpportunities(signal?: AbortSignal): Promise<Opportunit
   }
 
   if (!response.ok) {
-    throw new OpportunitiesServiceError("Não foi possível carregar as oportunidades. Tente novamente.");
+    throw new OpportunitiesServiceError(response.status === 401 ? "Sua sessão expirou. Entre novamente para continuar." : "Não foi possível carregar as oportunidades. Tente novamente.", response.status);
   }
 
   const result: unknown = await response.json().catch(() => null);

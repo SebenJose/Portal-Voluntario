@@ -1,5 +1,7 @@
 import "server-only";
 
+// Legacy JSON adapter retained for migration reference. Active routes use NestJS/SQLite.
+
 import { randomBytes, randomUUID, scrypt, timingSafeEqual } from "node:crypto";
 import { z } from "zod";
 

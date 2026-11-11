@@ -26,11 +26,11 @@ const managedActivitySchema = z.object({
 
 export const activityListSchema = z.array(managedActivitySchema);
 
-const attendanceUpdateSchema = z.object({
+export const attendanceUpdateSchema = z.object({
   participant: participantSchema,
 });
 
-const certificateDispatchSchema = z.object({
+export const certificateDispatchSchema = z.object({
   activityId: z.string(),
   sentCount: z.number().int().nonnegative(),
   certificatesDispatched: z.literal(true),
@@ -42,7 +42,7 @@ export type AttendanceStatus = z.infer<typeof participantSchema>["status"];
 export type CertificateDispatchReceipt = z.infer<typeof certificateDispatchSchema>;
 
 export class OrganizationActivitiesError extends Error {
-  constructor(message: string) {
+  constructor(message: string, readonly status?: number) {
     super(message);
     this.name = "OrganizationActivitiesError";
   }
@@ -50,7 +50,9 @@ export class OrganizationActivitiesError extends Error {
 
 async function readJson<T>(response: Response, schema: z.ZodType<T>): Promise<T> {
   if (!response.ok) {
-    throw new OrganizationActivitiesError("A solicitação não pôde ser concluída. Tente novamente.");
+    const body: unknown = await response.json().catch(() => null);
+    const message = z.object({ message: z.string().min(1) }).safeParse(body);
+    throw new OrganizationActivitiesError(message.success ? message.data.message : "A solicitação não pôde ser concluída. Tente novamente.", response.status);
   }
 
   const payload: unknown = await response.json().catch(() => null);
