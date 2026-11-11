@@ -1,4 +1,5 @@
 import { opportunitiesResponseSchema, registrationResponseSchema, type OpportunitiesResponse, type RegistrationResponse, cancellationResponseSchema, type CancellationResponse } from "@/features/opportunities/schemas/opportunity-schema";
+import type { OpportunityCategory } from "@/features/opportunities/types";
 
 export type { OpportunitiesResponse, RegistrationResponse } from "@/features/opportunities/schemas/opportunity-schema";
 
@@ -9,11 +10,18 @@ export class OpportunitiesServiceError extends Error {
   }
 }
 
-export async function getOpportunities(signal?: AbortSignal): Promise<OpportunitiesResponse> {
+export type OpportunityFilters = { search?: string; category?: OpportunityCategory };
+
+export async function getOpportunities(filters: OpportunityFilters = {}, signal?: AbortSignal): Promise<OpportunitiesResponse> {
+  const query = new URLSearchParams();
+  const search = filters.search?.trim().slice(0, 100);
+  if (search) query.set("search", search);
+  if (filters.category) query.set("category", filters.category);
+  const path = query.size > 0 ? `/api/opportunities?${query.toString()}` : "/api/opportunities";
   let response: Response;
 
   try {
-    response = await fetch("/api/opportunities", { signal, cache: "no-store" });
+    response = await fetch(path, { signal, cache: "no-store" });
   } catch (error: unknown) {
     if (error instanceof DOMException && error.name === "AbortError") {
       throw error;

@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import type { EntityManager, Repository } from "typeorm";
+import { Brackets, type EntityManager, type Repository } from "typeorm";
 import { TransactionsService } from "@/database/transactions.service";
 import { OpportunityEntity, type Opportunity } from "@/features/opportunities/opportunity.entity";
 import { ActivitySessionEntity, type ActivitySession } from "@/features/opportunities/activity-session.entity";
@@ -44,7 +44,16 @@ export class OpportunitiesService {
       .innerJoinAndSelect("activity.organization", "organization").leftJoinAndSelect("activity.sessions", "session");
     if (query.category) builder.andWhere("activity.category = :category", { category: query.category });
     if (query.format) builder.andWhere("activity.format = :format", { format: query.format });
-    if (query.search) builder.andWhere("(activity.title LIKE :search OR organization.name LIKE :search)", { search: `%${query.search}%` });
+    const search = query.search?.trim();
+    if (search) {
+      // Escape LIKE wildcards so "%" and "_" are searched literally.
+      const pattern = `%${search.replace(/[\\%_]/gu, (character) => `\\${character}`)}%`;
+      builder.andWhere(new Brackets((where) => {
+        for (const column of ["activity.title", "organization.name", "activity.description", "activity.location"]) {
+          where.orWhere(`${column} LIKE :search ESCAPE '\\'`, { search: pattern });
+        }
+      }));
+    }
     builder.orderBy(query.sort === "hours" ? "activity.hours" : "activity.title", "ASC");
     const items = await Promise.all((await builder.getMany()).map((item) => this.present(item)));
     const registrations = userId ? await this.enrollments.findBy({ userId }) : [];

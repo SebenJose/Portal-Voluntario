@@ -119,6 +119,11 @@ test("API de domínio: autenticação, autorização, CRUD, inscrições, arquiv
       assert.equal(own.registeredIds.length, 2);
       const filtered = await data(await send("/opportunities?category=Ensino&search=Monitoria&sort=hours"), catalogSchema);
       assert.equal(filtered.items.length, 1);
+      const search = async (term: string) => (await data(await send(`/opportunities?search=${encodeURIComponent(term)}`), catalogSchema)).items.map((item) => item.id);
+      assert.deepEqual(await search("Porto de Santa"), ["pesquisa-rio-parana"]);
+      assert.deepEqual(await search("mediação de leituras"), ["leitura-infantil"]);
+      assert.deepEqual(await search("%"), []);
+      assert.deepEqual(await search("_"), []);
       assert.equal((await send("/opportunities?category=Inexistente")).status, 400);
       assert.equal((await send("/opportunities/inexistente")).status, 404);
     });
