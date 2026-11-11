@@ -2,8 +2,9 @@ import { createParamDecorator, type ExecutionContext, SetMetadata, UnauthorizedE
 import type { Request } from "express";
 import type { Role } from "@/common/domain";
 import type { User } from "@/features/auth/user.entity";
+import type { Organization } from "@/features/organizations/organization.entity";
 
-export interface AuthIdentity { user: User; sessionId: string }
+export interface AuthIdentity { user: User; sessionId: string; organization?: Organization }
 export const requestIdentities = new WeakMap<Request, AuthIdentity>();
 export const ACCESS_MODE = "portal:access";
 export const REQUIRED_ROLES = "portal:roles";

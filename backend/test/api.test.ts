@@ -104,9 +104,11 @@ test("API de domínio: autenticação, autorização, CRUD, inscrições, arquiv
       assert.equal((await send("/opportunities/horta-comunitaria", "PATCH", otherOrganizationToken, { title: "Tentativa indevida" })).status, 403);
       const before = await data(await send("/organizations/activities", "GET", organizationToken), activitiesSchema);
       assert.deepEqual(before.map((item) => item.id), ["horta-comunitaria"]);
+      // O papel vem do banco a cada requisição; sem organização aprovada, a gestão continua bloqueada.
       await app.get(DataSource).getRepository(UserEntity).update(volunteer.user.id, { role: "organization" });
-      assert.equal((await send("/organizations/activities", "GET", volunteerToken)).status, 200);
+      const promoted = await send("/organizations/activities", "GET", volunteerToken);
       await app.get(DataSource).getRepository(UserEntity).update(volunteer.user.id, { role: "volunteer" });
+      assert.equal(promoted.status, 403);
       assert.equal((await send("/organizations/activities", "GET", volunteerToken)).status, 403);
     });
 
@@ -267,7 +269,7 @@ test("API de domínio: autenticação, autorização, CRUD, inscrições, arquiv
         "GET /api/auth/session", "GET /api/dashboard", "GET /api/health", "GET /api/opportunities", "GET /api/opportunities/{id}",
         "GET /api/organizations/activities", "GET /api/submissions", "GET /api/submissions/{id}", "GET /api/submissions/{id}/document",
         "PATCH /api/opportunities/{id}", "PATCH /api/organizations/activities/{id}/participants/{participantId}", "PATCH /api/submissions/{id}",
-        "POST /api/auth/login", "POST /api/auth/logout", "POST /api/auth/register", "POST /api/opportunities",
+        "POST /api/auth/login", "POST /api/auth/logout", "POST /api/auth/register", "POST /api/auth/register/organization", "POST /api/opportunities",
         "POST /api/opportunities/{id}/registrations", "POST /api/organizations/activities/{id}/certificates", "POST /api/submissions",
       ]);
       const operation = (method: string, path: string) => spec.paths[path]?.[method];

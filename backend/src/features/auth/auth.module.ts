@@ -8,10 +8,11 @@ import { AuthService, sessionDurationSeconds } from "@/features/auth/auth.servic
 import { AuthBudgetService } from "@/features/auth/auth-budget.service";
 import { SessionEntity } from "@/features/auth/session.entity";
 import { UserEntity } from "@/features/auth/user.entity";
+import { OrganizationEntity } from "@/features/organizations/organization.entity";
 
 @Global()
 @Module({
-  imports: [TypeOrmModule.forFeature([UserEntity, SessionEntity]), JwtModule.registerAsync({
+  imports: [TypeOrmModule.forFeature([UserEntity, SessionEntity, OrganizationEntity]), JwtModule.registerAsync({
     inject: [ENVIRONMENT],
     useFactory: (environment: Environment): JwtModuleOptions => ({
       secret: environment.JWT_SECRET,
