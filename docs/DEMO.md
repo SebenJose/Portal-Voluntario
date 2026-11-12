@@ -14,7 +14,8 @@ NEXT_PUBLIC_API_MOCKING=enabled pnpm start
 O padrão é desligado, inclusive em desenvolvimento. Requisições sem handler passam para a rede.
 O provider mostra erro e permite tentar novamente caso o worker não inicie.
 
-`/demonstracao/gestao` é pública e usa `/api/demo/organizations/activities`. Participantes,
+`/demonstracao/gestao` é pública, não aparece nos menus (acesse pela URL) e usa
+`/api/demo/organizations/activities`. Participantes,
 presença e despacho são fictícios, isolados em memória e reiniciados ao recarregar. Essa demo
 não altera organizações, contas, horas ou certificados reais.
 
