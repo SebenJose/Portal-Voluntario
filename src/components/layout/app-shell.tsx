@@ -180,7 +180,7 @@ export function AppShell({ active, children, description, title, user: initialUs
 
             <footer aria-label="Perfil da conta" className="rounded-2xl border border-white/10 bg-white/5 p-3">
               <div className="flex items-center gap-3">
-                <div className="flex size-9 items-center justify-center rounded-full bg-brand-yellow text-sm font-semibold text-brand-black">
+                <div className="flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-yellow text-sm font-semibold text-brand-black">
                   {initials}
                 </div>
                 <div className="min-w-0">
