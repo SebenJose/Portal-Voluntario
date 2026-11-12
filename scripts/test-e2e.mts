@@ -47,6 +47,10 @@ try {
   const environment = { ...process.env, JWT_SECRET: randomBytes(32).toString("hex"), API_PORT: String(apiPort),
     DATABASE_PATH: path.join(directory, "e2e.sqlite"), SEED_PASSWORD: password, BACKEND_API_URL: apiUrl,
     PORTAL_ORIGIN: baseUrl, E2E_BASE_URL: baseUrl, E2E_SEED_PASSWORD: password, NEXT_PUBLIC_API_MOCKING: "disabled" };
+  // NEXT_PUBLIC_* é embutido no build: compilar aqui impede que um .env.local com mocks habilitados
+  // registre o service worker do MSW e altere as requisições observadas pelo navegador.
+  const build = spawnSync(process.execPath, ["node_modules/next/dist/bin/next", "build", "--webpack"], { env: environment, stdio: "inherit" });
+  if (build.status !== 0) throw new Error("Não foi possível compilar o front-end para os testes.");
   const seed = spawnSync(process.execPath, ["backend/dist/database/cli.js", "seed"], { env: environment, encoding: "utf8" });
   if (seed.status !== 0) throw new Error(`Não foi possível criar o banco dos testes. ${seed.stderr}`);
   backend = spawn(process.execPath, ["backend/dist/main.js"], { env: environment, stdio: ["ignore", "ignore", "inherit"] });

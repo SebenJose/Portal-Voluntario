@@ -13,7 +13,7 @@
     "backend:dev": "pnpm --filter @portal-voluntario/backend dev",
     "backend:migrate": "pnpm --filter @portal-voluntario/backend db:migrate",
     "backend:seed": "pnpm --filter @portal-voluntario/backend db:seed",
-    "test:e2e": "pnpm backend:build && pnpm build && node --experimental-strip-types scripts/test-e2e.mts",
+    "test:e2e": "pnpm backend:build && node --experimental-strip-types scripts/test-e2e.mts",
     "backend:build": "pnpm --filter @portal-voluntario/backend build",
     "backend:start": "pnpm --filter @portal-voluntario/backend start",
     "backend:test": "pnpm --filter @portal-voluntario/backend test",
