@@ -59,13 +59,11 @@ const adminItems: Array<NavigationItem> = [
   opportunitiesItem,
 ];
 
-const prototypeItem: NavigationItem = { href: "/demonstracao/gestao", icon: ClipboardCheck, label: "Demonstração de gestão", value: "demo" };
-
-/** Menu de cada perfil. Visitantes veem o menu do voluntário e a demonstração pública. */
-function navigationFor(user: AuthUser | null): { main: Array<NavigationItem>; prototypes: Array<NavigationItem> } {
-  if (!user) return { main: volunteerItems, prototypes: [prototypeItem] };
+/** Menu de cada perfil. Visitantes veem o menu do voluntário; a demonstração fica fora dos menus. */
+function navigationFor(user: AuthUser | null): Array<NavigationItem> {
+  if (!user) return volunteerItems;
   const main = user.role === "admin" ? adminItems : user.role === "organization" ? organizationItems : volunteerItems;
-  return { main: [...main, accountItem], prototypes: [] };
+  return [...main, accountItem];
 }
 
 function NavigationLink({
@@ -165,7 +163,7 @@ export function AppShell({ active, children, description, title, user: initialUs
                   Principal
                 </p>
                 <ul className="space-y-1">
-                  {navigation.main.map((item) => (
+                  {navigation.map((item) => (
                     <li key={item.value}>
                       <NavigationLink
                         href={item.href}
@@ -178,12 +176,6 @@ export function AppShell({ active, children, description, title, user: initialUs
                 </ul>
               </nav>
 
-              {navigation.prototypes.length > 0 ? (
-                <nav aria-label="Protótipos" className="space-y-1">
-                  <p className="px-3 pb-2 text-xs font-semibold uppercase tracking-[0.16em] text-white/45">Protótipos</p>
-                  <ul>{navigation.prototypes.map((item) => <li key={item.value}><NavigationLink href={item.href} icon={item.icon} isActive={active === item.value} label={item.label} /></li>)}</ul>
-                </nav>
-              ) : null}
             </div>
 
             <footer aria-label="Perfil da conta" className="rounded-2xl border border-white/10 bg-white/5 p-3">
@@ -227,7 +219,7 @@ export function AppShell({ active, children, description, title, user: initialUs
             </div>
             <nav aria-label="Navegação mobile" className="overflow-x-auto px-4 pb-3">
               <ul className="flex min-w-max gap-1">
-                {[...navigation.main, ...navigation.prototypes].map((item) => (
+                {navigation.map((item) => (
                   <li key={item.value}>
                     <NavigationLink
                       href={item.href}
