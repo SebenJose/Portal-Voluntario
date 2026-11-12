@@ -132,7 +132,8 @@ pnpm exec playwright install chromium
 pnpm test:e2e
 ```
 
-A automação compila os dois projetos, inicia os servidores em portas temporárias, prepara um
+A automação compila os dois projetos (o front-end sempre com `NEXT_PUBLIC_API_MOCKING=disabled`,
+independentemente do `.env.local`), inicia os servidores em portas temporárias, prepara um
 SQLite isolado e valida os fluxos pelo navegador. Os artefatos ficam em `test-results/`, ignorado
 pelo Git. Em Linux sem bibliotecas do navegador, use `pnpm exec playwright install --with-deps chromium`.
 O CI inclui lint, tipos, testes, builds e navegador; `pnpm check` reúne os checks sem navegador.
@@ -156,10 +157,9 @@ Consulte [os endpoints e exemplos da API](docs/API.md), [a arquitetura do back-e
 [os controles de autenticação](docs/AUTH.md) e [o relatório de atendimento ao plano](docs/relatorio-final.md).
 A [análise inicial](docs/analise-inicial.md) registra o diagnóstico anterior à implementação.
 
-As antigas contas JSON, inscrições locais e arquivos no IndexedDB não são importados automaticamente.
-Os arquivos anteriores foram preservados; faça novo cadastro ou use o seed para a base SQLite.
-Os adaptadores JSON remanescentes no código não fazem parte do fluxo ativo. A demonstração pública
-continua separada dos dados reais; veja [como habilitá-la](docs/DEMO.md).
+As antigas contas JSON, inscrições locais e arquivos no IndexedDB do protótipo não são importados;
+faça novo cadastro ou use o seed para a base SQLite. A demonstração pública continua separada dos
+dados reais; veja [como habilitá-la](docs/DEMO.md).
 O PDF e a apresentação anteriores descrevem a versão do protótipo e foram preservados como material histórico.
 
 ## Identidade visual
